@@ -1,0 +1,19 @@
+|                        `~~新　規~~|
+{image:iVBORw0KGgoAAAANSUhEUgAAAIAAAABAAQMAAADoGO08AAAABlBMVEUAAAD///+l2Z/dAAAAaUlEQVQ4y2P4jwYYRgUGh8AHBgY7BgbmAwwMFQwM/ECBBwwMMkCBBgaGAlwC///IyP//3/z//4d6sBlECwDNQBIAmgYyFEXgALoA0IgCFDPwCQBdChQ4gOJ0FAGQbyECPyACo8lhSAgAACgAlSKnht6nAAAAAElFTkSuQmCC}
+|テーブル |   A05|伝　　票 | 0003-01|
+|時　　刻 | 19:00|人　　数 |       2|
+{width:3,*,4,9; border:line}
+-------------------------------------
+|    |     品名    | 数量 |  金額   |
+-------------------------------------
+|^^□|^^ビール     |  ^^^2|  ^^1,300|
+|^^□|^^千鳥コース |  ^^^2| ^^17,280|
+-------------------------------------
+{width:10,18; align:right}
+       | 小   計 |            18,580|
+       | ｻｰﾋﾞｽ料 |                 0|
+       ------------------------------
+       | ^^^合計 |         ^^^18,580|
+       ------------------------------
+{width:*; border:none; align:center}
+{code:0003; option:code39,48}

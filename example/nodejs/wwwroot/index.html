@@ -1,0 +1,78 @@
+﻿<!--
+Copyright 2019 Open Foodservice System Consortium
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>ReceiptLine Node.js Example</title>
+    <style type="text/css">
+        .invalid {
+            background-color: #faa;
+        }
+    </style>
+    <script type="text/javascript">
+        function initialize() {
+            const load = document.getElementById('load');
+            const printerid = document.getElementById('printerid');
+            const send = document.getElementById('send');
+            const edit = document.getElementById('edit');
+
+            load.onclick = event => load.value = '';
+            load.onchange = event => {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = event => edit.value = reader.result;
+                    reader.readAsText(file);
+                }
+            };
+
+            printerid.oninput = event => {
+                if (/^\w+$/.test(printerid.value)) {
+                    printerid.classList.remove('invalid');
+                    send.disabled = false;
+                }
+                else {
+                    printerid.classList.add('invalid');
+                    send.disabled = true;
+                }
+            };
+
+            send.onclick = event => {
+                const xhr = new XMLHttpRequest();
+                xhr.open("POST", printerid.value);
+                xhr.setRequestHeader("Content-Type", "text/plain; charset=utf-8");
+                xhr.onload = e => alert(`${xhr.status} ${xhr.statusText} ${xhr.responseText}`);
+                xhr.onabort = e => alert(e.type);
+                xhr.onerror = e => alert(e.type);
+                xhr.ontimeout = e => alert(e.type);
+                xhr.timeout = 300000;
+                xhr.send(edit.value);
+            };
+        }
+    </script>
+</head>
+<body onload="initialize()" style="background-color: #eee;">
+    <label for="load">Load</label>
+    <input id="load" type="file" accept="text/plain">
+    <label for="printerid">Printer</label>
+    <input id="printerid" type="text" size="8" value="printer1">
+    <button id="send">Send</button>
+    <hr>
+    <textarea id="edit" rows="24" cols="80" placeholder="ReceiptLine Text" autofocus="autofocus"></textarea>
+</body>
+</html>

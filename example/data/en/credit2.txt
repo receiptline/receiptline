@@ -1,0 +1,10 @@
+{width:21,10}
+|DATE                  |SLIP #       |
+|Feb. 22, 2019         |        12345|
+{width:10,10,10}
+|MERCHANT  | TRAN TYPE |PAY COND     |
+|   0123456| PARCHASE  |          123|
+|^^SEQ #   |           | ^^[Lump-sum]|
+|      7890|AMOUNT     |        12.34|
+|APP CODE  |TAX/OTHERS |         0.00|
+| ^^0001111|^^TOTAL    |      ^^12.34|

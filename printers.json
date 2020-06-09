@@ -1,0 +1,83 @@
+{
+    "printer1": {
+        "host": "127.0.0.1",
+        "port": 19100,
+        "cpl": 42,
+        "encoding": "cp437",
+        "gamma": 1.0,
+        "upsideDown": false,
+        "command": "svg"
+    },
+    "printer2": {
+        "host": "127.0.0.1",
+        "port": 19100,
+        "cpl": 48,
+        "encoding": "cp932",
+        "gamma": 1.0,
+        "upsideDown": false,
+        "command": "svg"
+    },
+    "printer3": {
+        "host": "127.0.0.1",
+        "port": 19100,
+        "cpl": 48,
+        "encoding": "cp932",
+        "gamma": 1.0,
+        "upsideDown": false,
+        "command": "escpos"
+    },
+    "tm_series1": {
+        "host": "127.0.0.1",
+        "port": 19100,
+        "cpl": 42,
+        "encoding": "cp437",
+        "gamma": 1.8,
+        "upsideDown": false,
+        "command": "escpos"
+    },
+    "rp_series1": {
+        "host": "127.0.0.1",
+        "port": 19100,
+        "cpl": 48,
+        "encoding": "cp932",
+        "gamma": 1.8,
+        "upsideDown": true,
+        "command": "sii"
+    },
+    "mc_series1": {
+        "host": "127.0.0.1",
+        "port": 19100,
+        "cpl": 48,
+        "encoding": "cp932",
+        "gamma": 1.8,
+        "upsideDown": true,
+        "command": "starmbcs"
+    },
+    "mc_series2": {
+        "host": "127.0.0.1",
+        "port": 19100,
+        "cpl": 48,
+        "encoding": "cp437",
+        "gamma": 1.8,
+        "upsideDown": true,
+        "command": "starsbcs"
+    },
+    "ct_series1": {
+        "host": "127.0.0.1",
+        "port": 19100,
+        "cpl": 48,
+        "encoding": "cp932",
+        "gamma": 1.8,
+        "upsideDown": true,
+        "command": "escpos"
+    },
+   "fp_series1": {
+        "host": "127.0.0.1",
+        "port": 19100,
+        "cpl": 48,
+        "encoding": "cp932",
+        "gamma": 1.8,
+        "upsideDown": false,
+        "command": "fit"
+    }
+}

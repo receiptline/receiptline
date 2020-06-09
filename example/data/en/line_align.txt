@@ -1,0 +1,13 @@
+{width: 25}
+{align: left}
+|Guest
+{border: line}
+^^What do you recommend?
+{border: space}
+11:59|
+{align: right}
+Server|
+{border: line}
+^^It is naka-ochi bowl and clam miso soup.
+{border: space}
+|12:00

@@ -1,0 +1,100 @@
+/*
+Copyright 2019 Open Foodservice System Consortium
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+body {
+    background-color: #eee;
+}
+header {
+    display: flex;
+    justify-content: space-around;
+    font-size: small;
+}
+main {
+    display: flex;
+    justify-content: start;
+}
+textarea {
+    color: #fff;
+    background-color: #000;
+    font-family: monospace;
+    font-size: 20px;
+    resize: none;
+    overflow-y: scroll;
+}
+section {
+    flex: 0 0 auto;
+    height: 80vh;
+    overflow-y: scroll;
+}
+details {
+    font-size: x-small;
+    padding: 1px;
+}
+summary {
+    font-size: small;
+    font-weight: bold;
+    background-color: #ccc;
+}
+article {
+    display: flex;
+    justify-content: space-around;
+}
+figcaption {
+    font-weight: bold;
+    font-style: italic;
+}
+figure img {
+    max-width: 100%;
+    height: auto;
+}
+footer {
+    font-size: x-small;
+    text-align: center;
+}
+.receipt {
+    width: 576px;
+    padding: 12px;
+    background-color: #fff;
+}
+.invalid {
+    background-color: #faa;
+}
+.nolist {
+    list-style-type: none;
+}
+.dialog {
+    display: none;
+}
+.note {
+    font-size: x-small;
+}
+.dialog > div:first-child {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #000;
+    opacity:0.5;
+}
+.dialog > div:last-child {
+    position: absolute;
+    padding: 1em;
+    background-color: #eee;
+}
+.dialog hr + div {
+    text-align: center;
+}

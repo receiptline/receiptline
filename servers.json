@@ -1,0 +1,29 @@
+{
+    "http": {
+        "host": "127.0.0.1",
+        "port": 10080,
+        "root": "./designer",
+        "timeout": 60000,
+        "mime": {
+            ".txt": "text/plain",
+            ".css": "text/css",
+            ".htm": "text/html",
+            ".html": "text/html",
+            ".js": "text/javascript",
+            ".gif": "image/gif",
+            ".jpg": "image/jpeg",
+            ".jpeg": "image/jpeg",
+            ".png": "image/png",
+            ".bmp": "image/bmp",
+            ".svg": "image/svg+xml",
+            ".ico" : "image/x-icon",
+            ".csv": "text/csv",
+            ".xml": "text/xml",
+            ".json": "application/json"
+        }
+    },
+    "print": {
+        "host": "127.0.0.1",
+        "port": 19100
+    }
+}

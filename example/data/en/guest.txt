@@ -1,0 +1,19 @@
+|                      `~~New Order~~|
+{image:iVBORw0KGgoAAAANSUhEUgAAAIAAAABAAQMAAADoGO08AAAABlBMVEUAAAD///+l2Z/dAAAAaUlEQVQ4y2P4jwYYRgUGh8AHBgY7BgbmAwwMFQwM/ECBBwwMMkCBBgaGAlwC///IyP//3/z//4d6sBlECwDNQBIAmgYyFEXgALoA0IgCFDPwCQBdChQ4gOJ0FAGQbyECPyACo8lhSAgAACgAlSKnht6nAAAAAElFTkSuQmCC}
+|Table |    A05|Order #    |  0003-01|
+|Time  |  19:00|Party Size |        2|
+{width:3,*,4,9; border:line}
+--------------------------------------
+|     |    ITEM     | QTY |  AMOUNT  |
+--------------------------------------
+|^^[ ]|^^BEER       | ^^^2|   ^^13.00|
+|^^[ ]|^^CHIDORI    | ^^^2|  ^^172.80|
+--------------------------------------
+{width:14,18; align:right}
+       |    SUBTOTAL    |      185.80|
+       | SERVICE CHARGE |        0.00|
+       -------------------------------
+       | ^^^TOTAL |         ^^^185.80|
+       -------------------------------
+{width:*; border:none; align:center}
+{code:0003; option:code39,48}

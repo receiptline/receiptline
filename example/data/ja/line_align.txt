@@ -1,0 +1,13 @@
+{width: 25}
+{align: left}
+|お客様
+{border: line}
+^^おすすめ料理は何ですか？
+{border: space}
+11:59|
+{align: right}
+ご案内係|
+{border: line}
+^^中おち丼とあさりのみそ汁です
+{border: space}
+|12:00

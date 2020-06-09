@@ -1,0 +1,383 @@
+﻿<!--
+Copyright 2019 Open Foodservice System Consortium
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>ReceiptLine Designer</title>
+    <link href="css/receiptline-designer.css" rel="stylesheet">
+    <script type="text/javascript" src="script/receiptline-designer.js"></script>
+    <script type="text/javascript" src="script/receiptline.js"></script>
+    <script type="text/javascript" src="script/qrcode-generator/qrcode.js"></script>
+</head>
+<body onload="initialize()">
+    <header>
+        <div>
+            <button id="load">
+                <svg width="24px" height="24px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" version="1.1">
+                    <path stroke="#000" fill="none" stroke-width="1" d="M.5,23.5l4,-15h19l-4,15zv-19h2l1,-2h5l1,2h10v4"/>
+                </svg>
+            </button>
+            <label for="zoom">Zoom</label>
+            <input id="zoom" type="range" value="20" min="10" max="30" step="2">
+        </div>
+        <div>
+            <button id="img">
+                <svg width="24px" height="24px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" version="1.1">
+                    <path stroke="#000" fill="none" stroke-width="1" d="M.5,.5h23v23h-23zM.5,17.5l15,-10l8,8"/>
+                    <circle stroke="#000" fill="none" stroke-width="1" cx="6" cy="6" r="2.5"/>
+                </svg>
+            </button>
+            <button id="bar">
+                <svg width="24px" height="24px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" version="1.1">
+                    <path fill="#000" d="M0,1h2v20h-2zM4,1h1v20h-1zM6,1h1v20h-1zM8,1h1v20h-1zM10,1h1v20h-1zM13,1h1v20h-1zM15,1h1v20h-1zM17,1h1v20h-1zM19,1h1v20h-1zM22,1h2v20h-2z"/>
+                    <path fill="#000" d="M3,22h2v2h-2zM7,22h2v2h-2zM11,22h2v2h-2zM15,22h2v2h-2zM19,22h2v2h-2z"/>
+                </svg>
+            </button>
+            <button id="qr">
+                <svg width="24px" height="24px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" version="1.1">
+                    <path fill="#000" d="M0,0h5v5h-5zM19,0h5v5h-5zM0,19h5v5h-5z"/>
+                    <path fill="#000" d="M7,1h2v2h-2zM11,1h2v2h-2zM15,1h2v2h-2z"/>
+                    <path fill="#000" d="M9,3h2v2h-2zM13,3h2v2h-2z"/>
+                    <path fill="#000" d="M7,5h2v2h-2zM11,5h2v2h-2zM15,5h2v2h-2z"/>
+                    <path fill="#000" d="M1,7h2v2h-2zM5,7h2v2h-2zM9,7h2v2h-2zM13,7h2v2h-2zM17,7h2v2h-2zM21,7h2v2h-2z"/>
+                    <path fill="#000" d="M3,9h2v2h-2zM7,9h2v2h-2zM11,9h2v2h-2zM15,9h2v2h-2zM19,9h2v2h-2z"/>
+                    <path fill="#000" d="M1,11h2v2h-2zM5,11h2v2h-2zM9,11h2v2h-2zM13,11h2v2h-2zM17,11h2v2h-2zM21,11h2v2h-2z"/>
+                    <path fill="#000" d="M3,13h2v2h-2zM7,13h2v2h-2zM11,13h2v2h-2zM15,13h2v2h-2zM19,13h2v2h-2z"/>
+                    <path fill="#000" d="M1,15h2v2h-2zM5,15h2v2h-2zM9,15h2v2h-2zM13,15h2v2h-2zM17,15h2v2h-2zM21,15h2v2h-2z"/>
+                    <path fill="#000" d="M7,17h2v2h-2zM11,17h2v2h-2zM15,17h2v2h-2zM19,17h2v2h-2z"/>
+                    <path fill="#000" d="M9,19h2v2h-2zM13,19h2v2h-2zM17,19h2v2h-2zM21,19h2v2h-2z"/>
+                    <path fill="#000" d="M7,21h2v2h-2zM11,21h2v2h-2zM15,21h2v2h-2zM19,21h2v2h-2z"/>
+                </svg>
+            </button>
+            <button id="hr">
+                <svg width="24px" height="24px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" version="1.1">
+                    <path stroke="#000" fill="none" stroke-width="1" d="M.5,11.5h23"/>
+                </svg>
+            </button>
+            <button id="cut">
+                <svg width="24px" height="24px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" version="1.1">
+                    <text x="12" y="20" text-anchor="middle" fill="#000" font-family="monospace" font-size="24">&#x2702;</text>
+                </svg>
+            </button>
+            <button id="ul">
+                <svg width="24px" height="24px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" version="1.1">
+                    <text x="12" y="20" text-anchor="middle" fill="#000" font-family="monospace" font-size="24" text-decoration="underline">a</text>
+                </svg>
+            </button>
+            <button id="em">
+                <svg width="24px" height="24px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" version="1.1">
+                    <text x="12" y="20" text-anchor="middle" fill="#000" font-family="monospace" font-size="24" font-weight="bold">a</text>
+                </svg>
+            </button>
+            <button id="rv">
+                <svg width="24px" height="24px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" version="1.1">
+                    <path fill="#000" d="M0,0h24v24h-24z"/>
+                    <text x="12" y="20" text-anchor="middle" fill="#fff" font-family="monospace" font-size="24">a</text>
+                </svg>
+            </button>
+            <button id="wh">
+                <svg width="24px" height="24px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" version="1.1">
+                    <text x="6" y="20" text-anchor="middle" fill="#000" font-family="monospace" font-size="24" transform="scale(2,1)">a</text>
+                </svg>
+            </button>
+        </div>
+        <div>
+            <label for="linewidth">Width</label>
+            <input id="linewidth" type="range" value="576" min="288" max="576" step="12">
+            <span id="dots">576</span> dots / <span id="cpl">48</span> cpl
+        </div>
+        <div>
+            <label for="printerid">Print</label>
+            <input id="printerid" type="text" size="8" value="printer1">
+            <button id="send">Send</button>
+        </div>
+    </header>
+    <hr>
+    <main>
+        <textarea id="edit" rows="24" cols="80" placeholder="ReceiptLine Text" autofocus="autofocus"></textarea>
+        <section>
+            <div id="paper" class="receipt"></div>
+        </section>
+    </main>
+    <hr>
+    <details>
+        <summary>Grammar</summary>
+        <article>
+            <div>
+                <strong>Columns</strong>
+                <ul>
+                    <li>1st</li>
+                    <li><b>|</b>1st<b>|</b></li>
+                    <li>1st<b>|</b>2nd</li>
+                    <li><b>|</b>1st<b>|</b>2nd<b>|</b></li>
+                    <li>1st<b>|</b> ... <b>|</b>nth</li>
+                    <li><b>|</b>1st<b>|</b> ... <b>|</b>nth<b>|</b></li>
+                </ul>
+                <strong>Alignment</strong>
+                <ul>
+                    <li>center</li>
+                    <li><b>|</b>center<b>|</b></li>
+                    <li><b>|␣</b>center<b>␣|</b></li>
+                    <li><b>|</b>left</li>
+                    <li><b>|</b>left<b>␣|</b></li>
+                    <li>left<b>␣|</b></li>
+                    <li>right<b>|</b></li>
+                    <li><b>|</b>␣right<b>|</b></li>
+                    <li><b>|</b>␣right</li>
+                </ul>
+            </div>
+            <div>
+                <strong>Special characters in text</strong>
+                <ul>
+                    <li><b>\</b> : character escape</li>
+                    <li><b>|</b> : column delimiter</li>
+                    <li><b>{</b> : property delimiter (start)</li>
+                    <li><b>}</b> : property delimiter (end)</li>
+                    <li><b>-</b> (1 or more, exclusive) : horizontal rule</li>
+                    <li><b>=</b> (1 or more, exclusive) : paper cut</li>
+                    <li><b>~</b> : space</li>
+                    <li><b>_</b> : underline</li>
+                    <li><b>"</b> : emphasis</li>
+                    <li><b>`</b> : invert</li>
+                    <li><b>^</b> : double width</li>
+                    <li><b>^^</b> : double height</li>
+                    <li><b>^^^</b> : 2x size</li>
+                    <li><b>^^^^</b> : 3x size</li>
+                    <li><b>^^^^^</b> : 4x size</li>
+                    <li><b>^^^^^^</b> : 5x size</li>
+                    <li><b>^^^^^^^</b> (7 or more) : 6x size</li>
+                </ul>
+            </div>
+            <div>
+                <strong>Escape characters in text</strong>
+                <ul>
+                    <li><b>\\</b> : \</li>
+                    <li><b>\|</b> : |</li>
+                    <li><b>\{</b> : {</li>
+                    <li><b>\}</b> : }</li>
+                    <li><b>\-</b> : - (cancel horizontal rule)</li>
+                    <li><b>\=</b> : = (cancel paper cut)</li>
+                    <li><b>\~</b> : ~</li>
+                    <li><b>\_</b> : _</li>
+                    <li><b>\"</b> : "</li>
+                    <li><b>\`</b> : `</li>
+                    <li><b>\^</b> : ^</li>
+                    <li><b>\n</b> : wrap text manually</li>
+                    <li><b>\x<i>nn</i></b> : hexadecimal character code</li>
+                    <li><b>\<i>char</i></b> (others) : ignore</li>
+                </ul>
+            </div>
+            <div>
+                <strong>Properties</strong>
+                <ul>
+                    <li><b>{i</b>|<b>image:</b> base64 png format<b>}</b></li>
+                    <li class="nolist">image (recommended: monochrome, critical chunks only)</li>
+                    <li><b>{c</b>|<b>code:</b> string<b>}</b></li>
+                    <li class="nolist">barcode / 2D code</li>
+                    <li><b>{o</b>|<b>option:</b> value, value ...<b>}</b></li>
+                    <li class="nolist">barcode / 2D code options (default: code128 2 72 nohri / 3 L)</li>
+                    <li><b>{a</b>|<b>align:</b> left|center|right<b>}</b></li>
+                    <li class="nolist">line alignment (default: center)</li>
+                    <li><b>{w</b>|<b>width:</b> number|*, number|* ...<b>}</b></li>
+                    <li class="nolist">column width (default: auto)</li>
+                    <li><b>{b</b>|<b>border:</b> none|space|line|0-2<b>}</b></li>
+                    <li class="nolist">column border (default: space)</li>
+                    <li><b>{t</b>|<b>text:</b> wrap|nowrap<b>}</b></li>
+                    <li class="nolist">text wrapping (default: wrap)</li>
+                    <li><b>{x</b>|<b>command:</b> string<b>}</b></li>
+                    <li class="nolist">device-specific commands</li>
+                    <li><b>{_</b>|<b>comment:</b> string<b>}</b></li>
+                    <li class="nolist">comment</li>
+                </ul>
+            </div>
+            <div>
+                <strong>Special characters in property values</strong>
+                <ul>
+                    <li><b>\</b> : character escape</li>
+                    <li><b>|</b> : column delimiter</li>
+                    <li><b>{</b> : property delimiter (start)</li>
+                    <li><b>}</b> : property delimiter (end)</li>
+                    <li><b>:</b> : key-value separator</li>
+                    <li><b>;</b> : key-value delimiter</li>
+                </ul>
+                <strong>Escape characters in property</strong>
+                <ul>
+                    <li><b>\\</b> : \</li>
+                    <li><b>\|</b> : |</li>
+                    <li><b>\{</b> : {</li>
+                    <li><b>\}</b> : }</li>
+                    <li><b>\;</b> : ;</li>
+                    <li><b>\n</b> : new line</li>
+                    <li><b>\x<i>nn</i></b> : hexadecimal character code</li>
+                    <li><b>\<i>char</i></b> (others) : ignore</li>
+                </ul>
+            </div>
+        </article>
+    </details>
+    <details>
+        <summary>Syntax</summary>
+        <article>
+            <div>
+                <figure>
+                    <figcaption>document</figcaption>
+                    <img alt="document" src="image/document.png">
+                </figure>
+                <figure>
+                    <figcaption>line</figcaption>
+                    <img alt="line" src="image/line.png">
+                </figure>
+                <figure>
+                    <figcaption>columns</figcaption>
+                    <img alt="columns" src="image/columns.png">
+                </figure>
+                <figure>
+                    <figcaption>column</figcaption>
+                    <img alt="column" src="image/column.png">
+                </figure>
+            </div>
+            <div>
+                <figure>
+                    <figcaption>text</figcaption>
+                    <img alt="text" src="image/text.png">
+                </figure>
+                <figure>
+                    <figcaption>char</figcaption>
+                    <img alt="char" src="image/char.png">
+                </figure>
+                <figure>
+                    <figcaption>escape</figcaption>
+                    <img alt="escape" src="image/escape.png">
+                </figure>
+                <figure>
+                    <figcaption>ws (whitespace)</figcaption>
+                    <img alt="ws" src="image/ws.png">
+                </figure>
+            </div>
+            <div>
+                <figure>
+                    <figcaption>property</figcaption>
+                    <img alt="property" src="image/property.png">
+                </figure>
+                <figure>
+                    <figcaption>member</figcaption>
+                    <img alt="member" src="image/member.png">
+                </figure>
+                <figure>
+                    <figcaption>key</figcaption>
+                    <img alt="key" src="image/key.png">
+                </figure>
+                <figure>
+                    <figcaption>value</figcaption>
+                    <img alt="value" src="image/value.png">
+                </figure>
+            </div>
+        </article>
+    </details>
+    <div id="loaddialog" class="dialog">
+        <div id="loadcancel"></div>
+        <div id="loadbox">
+            <input id="loadfile" type="file" accept="text/plain">
+            <br>
+            <textarea id="loadview" rows="12" cols="40" readonly></textarea>
+            <hr>
+            <div>
+                <button id="loadok">OK</button>
+            </div>
+        </div>
+    </div>
+    <div id="imgdialog" class="dialog">
+        <div id="imgcancel"></div>
+        <div id="imgbox">
+            <input id="imgfile" type="file" accept="image/png">
+            <br>
+            <canvas id="imgview"></canvas>
+            <hr>
+            <div>
+                <button id="imgok">OK</button>
+            </div>
+        </div>
+    </div>
+    <div id="bardialog" class="dialog">
+        <div id="barcancel"></div>
+        <div id="barbox">
+            <label for="bardata">Data</label>
+            <input id="bardata" type="text" value="1234">
+            <br>
+            <label for="bartype">Type</label>
+            <select id="bartype">
+                <option value="code128">CODE128</option>
+                <option value="code93">CODE93</option>
+                <option value="nw7">NW-7</option>
+                <option value="codabar">Codabar</option>
+                <option value="itf">ITF</option>
+                <option value="code39">CODE39</option>
+                <option value="jan">JAN</option>
+                <option value="ean">EAN</option>
+                <option value="upc">UPC</option>
+            </select>
+            <br>
+            <label for="barwidth">Width</label>
+            <input id="barwidth" type="range" value="2" min="2" max="4" step="1">
+            <br>
+            <label for="barheight">Height</label>
+            <input id="barheight" type="range" value="72" min="24" max="240" step="24">
+            <br>
+            <input id="barhri" type="checkbox">
+            <label for="barhri">HRI</label>
+            <div class="note">Quiet zones are required around the barcode.</div>
+            <div class="note">HRI: Human Readable Interpretation</div>
+            <hr>
+            <div>
+                <button id="barok">OK</button>
+            </div>
+        </div>
+    </div>
+    <div>
+        <div id="qrdialog" class="dialog">
+            <div id="qrcancel"></div>
+            <div id="qrbox">
+                <label for="qrdata">Data</label>
+                <input id="qrdata" type="text" value="http://www.ofsc.or.jp/">
+                <br>
+                <label for="qrtype">Type</label>
+                <select id="qrtype">
+                    <option value="qrcode">QR Code</option>
+                </select>
+                <br>
+                <label for="qrcell">Size</label>
+                <input id="qrcell" type="range" value="3" min="3" max="8" step="1">
+                <br>
+                <label for="qrlevel">Error correction level</label>
+                <select id="qrlevel">
+                    <option value="L">L</option>
+                    <option value="M">M</option>
+                    <option value="Q">Q</option>
+                    <option value="H">H</option>
+                </select>
+                <div class="note">Quiet zones are required around the 2D code.</div>
+                <div class="note">QR Code is a registered trademark of DENSO WAVE INCORPORATED.</div>
+                <hr>
+                <div>
+                    <button id="qrok">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <footer>ReceiptLine Designer Version 1.0.0 © 2019 Open Foodservice System Consortium</footer>
+</body>
+</html>

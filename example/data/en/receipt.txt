@@ -1,0 +1,16 @@
+{image:iVBORw0KGgoAAAANSUhEUgAAAIAAAAAwAQMAAADjOuD9AAAABlBMVEUAAAD///+l2Z/dAAAAZklEQVQoz2P4jwYYRrrABwYGOwYG5gMMDBUMDPxAgQcMDDJAgQYGhgJcAv//yMj//9/8//+HerAZRAsAzUASAJoGMhRF4AC6ANCIAhQz8AkAXQoUOIDidBQBkG8hAj8gAqPJAa8AAGjulhOsX97yAAAAAElFTkSuQmCC}
+          Ichigaya Terminal
+       1-Y-X Kudan, Chiyoda-ku
+-------------------------------------
+02-09-2019 19:00
+{border:line}
+^RECEIPT
+{border:space}
+{width:*,2,10}
+BEER                   | 2|     13.00
+CHIDORI                | 2|    172.80
+-------------------------------------
+{width:*,20}
+^TOTAL             |          ^185.80
+CASH               |           200.00
+CHANGE             |            14.20
