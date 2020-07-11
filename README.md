@@ -25,6 +25,8 @@ This reference implementation also provides the development tool "ReceiptLine De
 - Citizen CT series
 - Fujitsu FP series
 
+![Printers](readme_printer.jpg)  
+
 # Installation
 
 ```bash
@@ -136,6 +138,8 @@ The ReceiptLine Designer provides more features.
 - Edit and preview
 - Data transmission via TCP socket
 - Hex dump view by listening TCP 19100 port
+
+![Designer](readme_designer.png)  
 
 ## Setup
 
