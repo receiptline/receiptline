@@ -10,6 +10,7 @@ Transform markdown-like text to receipt printer commands or SVG images.
 # Features
 
 The reference implementation of the OFSC ReceiptLine Specification.  
+http://www.ofsc.or.jp/receiptline/en/  
 
 ReceiptLine is the receipt description language that expresses the output image of small roll paper.  
 It supports printing paper receipts using a receipt printer and displaying electronic receipts on a POS system or smartphone.  
