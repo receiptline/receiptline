@@ -1255,7 +1255,7 @@ limitations under the License.
         // generate Codabar(NW-7) data:
         codabar: function (data) {
             const r = {};
-            let s = data.replace(/((?!^[A-D][0-9\-$:/.+A-D]+[A-D]$).)*/i, '');
+            let s = data.replace(/((?!^[A-D][0-9\-$:/.+]+[A-D]$).)*/i, '');
             if (s.length > 0) {
                 // generate HRI
                 r.hri = s;
