@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.0.2] - 2020-07-23
+### Fixed
+- A bug that images are not displayed in SVG created in Node.js environment by [@eggplants](https://github.com/eggplants)
+
 ## [1.0.1] - 2020-07-11
 ### Added
 - Link to official specifications to README
