@@ -56,6 +56,7 @@ limitations under the License.
             encoding: /^cp(437|85[28]|86[0356]|1252|932)$/.test(printer.encoding) ? printer.encoding : 'cp437',
             upsideDown: !!printer.upsideDown,
             spacing: !!printer.spacing,
+            cutting: 'cutting' in printer ? !!printer.cutting : true,
             gamma: printer.gamma || 1.8,
             command: commands[printer.command] || commands.svg
         };
@@ -1444,15 +1445,17 @@ limitations under the License.
         // printer configuration
         upsideDown: false,
         spacing: false,
+        cutting: true,
         // start printing: ESC @ GS a n ESC M n FS ( A pL pH fn m ESC SP n FS S n1 n2 (ESC 2) (ESC 3 n) ESC { n
         open: function (printer) {
             this.upsideDown = printer.upsideDown;
             this.spacing = printer.spacing;
+            this.cutting = printer.cutting;
             return '\x1b@\x1da\x00\x1bM0\x1c(A' + $(2, 0, 48, 0) + '\x1b \x00\x1cS\x00\x00' + (this.spacing ? '\x1b2' : '\x1b3\x00') + '\x1b{' + $(this.upsideDown);
         },
         // finish printing: GS r n
         close: function () {
-            return this.cut() + '\x1dr1';
+            return (this.cutting ? this.cut() : '') + '\x1dr1';
         },
         // set print area: GS L nL nH GS W nL nH
         area: function (left, width, right) {
@@ -1700,11 +1703,12 @@ limitations under the License.
         open: function (printer) {
             this.upsideDown = printer.upsideDown;
             this.spacing = printer.spacing;
+            this.cutting = printer.cutting;
             return '\x1b@\x1da\x00\x1bM0\x1b \x00\x1cS\x00\x00' + (this.spacing ? '\x1b2' : '\x1b3\x00') + '\x1b{' + $(this.upsideDown);
         },
         // finish printing: GS r n
         close: function () {
-            return this.cut() + '\x12\x71\x00';
+            return (this.cutting ? this.cut() : '') + '\x12\x71\x00';
         },
         // set print area: GS L nL nH GS W nL nH
         area: function (left, width, right) {
@@ -1904,15 +1908,17 @@ limitations under the License.
         // printer configuration
         upsideDown: false,
         spacing: false,
+        cutting: true,
         // start printing: ESC @ ESC RS a n ESC RS F n ESC SP n ESC s n1 n2 (ESC z n) (ESC 0) (SI) (DC2)
         open: function (printer) {
             this.upsideDown = printer.upsideDown;
             this.spacing = printer.spacing;
+            this.cutting = printer.cutting;
             return '\x1b@\x1b\x1ea0\x1b\x1eF\x00\x1b 0\x1bs00' + (this.spacing ? '\x1bz1' : '\x1b0') + (this.upsideDown ? '\x0f' : '\x12');
         },
         // finish printing: ESC GS ETX s n1 n2
         close: function () {
-            return this.cut() + '\x1b\x1d\x03\x01\x00\x00';
+            return (this.cutting ? this.cut() : '') + '\x1b\x1d\x03\x01\x00\x00';
         },
         // set print area: ESC l n ESC Q n
         area: (left, width, right) => '\x1bl' + $(0) + '\x1bQ' + $(left + width + right) + '\x1bl' + $(left) + '\x1bQ' + $(left + width),
