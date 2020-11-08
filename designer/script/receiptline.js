@@ -55,6 +55,7 @@ limitations under the License.
             cpl: printer.cpl || 48,
             encoding: /^cp(437|85[28]|86[0356]|1252|932)$/.test(printer.encoding) ? printer.encoding : 'cp437',
             upsideDown: !!printer.upsideDown,
+            spacing: !!printer.spacing,
             gamma: printer.gamma || 1.8,
             command: commands[printer.command] || commands.svg
         };
@@ -75,7 +76,7 @@ limitations under the License.
                     ptr.command.area(state.rules.left, state.rules.width, state.rules.right) +
                     ptr.command.align(0) +
                     ptr.command.vrstop(state.rules.widths, 1, 1) +
-                    ptr.command.lf());
+                    ptr.command.vrlf(false));
                 state.line = 'waiting';
                 break;
             default:
@@ -357,7 +358,7 @@ limitations under the License.
                         printer.command.area(left, width, right) +
                         printer.command.align(0) +
                         printer.command.vrstart(widths, 1, 1) +
-                        printer.command.lf());
+                        printer.command.vrlf(true));
                     state.line = 'running';
                     break;
                 case 'horizontal':
@@ -457,7 +458,7 @@ limitations under the License.
                             printer.command.area(state.rules.left, state.rules.width, state.rules.right) +
                             printer.command.align(0) +
                             printer.command.vrstop(state.rules.widths, 1, 1) +
-                            printer.command.lf());
+                            printer.command.vrlf(false));
                         // append commands to cut paper
                         result.push(printer.command.cut());
                         // set state to start rules
@@ -509,7 +510,7 @@ limitations under the License.
                             printer.command.area(state.rules.left, state.rules.width, state.rules.right) +
                             printer.command.align(0) +
                             printer.command.vrstop(state.rules.widths, 1, 1) +
-                            printer.command.lf());
+                            printer.command.vrlf(false));
                         state.line = 'waiting';
                         break;
                     default:
@@ -778,6 +779,14 @@ limitations under the License.
         vrstop: (widths, left, right) => '',
     
         /**
+         * Function - vrlf
+         * Set line spacing and feed new line
+         * @param {boolean} vr whether vertical ruled lines are printed
+         * @returns {string} commands
+         */
+        vrlf: vr => '',
+
+        /**
          * Function - cut
          * Cut paper
          * @returns {string} commands
@@ -893,6 +902,9 @@ limitations under the License.
         textScale: 1,
         textEncoding: '',
         fontFamily: '',
+        feedMinimum: 24,
+        // printer configuration
+        spacing: false,
         // start printing:
         open: function (printer) {
             this.svgWidth = printer.cpl * this.charWidth;
@@ -908,6 +920,8 @@ limitations under the License.
             this.textScale = 1;
             this.textEncoding = printer.encoding;
             this.fontFamily = `${printer.encoding === 'cp932' ? "'MS Gothic', 'San Francisco', 'Osaka-Mono', " : ""}'Courier New', 'Courier', monospace`;
+            this.feedMinimum = Number(this.charWidth * (printer.spacing ? 2.5 : 2));
+            this.spacing = printer.spacing;
             return '';
         },
         // finish printing:
@@ -958,6 +972,11 @@ limitations under the License.
         vrstop: function (widths, left, right) {
             this.text(widths.reduce((a, w) => a + '\u2550'.repeat(w) + '\u2569', '\u255a').slice(0, -1) + '\u255d', this.textEncoding);
             return '';
+        },
+        // set line spacing and feed new line:
+        vrlf: function (vr) {
+            this.feedMinimum = Number(this.charWidth * (!vr && this.spacing ? 2.5 : 2));
+            return this.lf();
         },
         // cut paper:
         cut: function () {
@@ -1012,8 +1031,9 @@ limitations under the License.
         },
         // feed new line:
         lf: function () {
-            this.svgHeight += this.lineHeight * this.charWidth * 2;
-            this.svgContent += `<g transform="translate(${this.lineMargin * this.charWidth},${this.svgHeight})">${this.textElement}</g>`;
+            const h = this.lineHeight * this.charWidth * 2;
+            this.svgContent += `<g transform="translate(${this.lineMargin * this.charWidth},${this.svgHeight + h})">${this.textElement}</g>`;
+            this.svgHeight += Math.max(h, this.feedMinimum);
             this.lineHeight = 1;
             this.textElement = '';
             this.textPosition = 0;
@@ -1423,10 +1443,12 @@ limitations under the License.
     const _escpos = {
         // printer configuration
         upsideDown: false,
-        // start printing: ESC @ GS a n ESC M n FS ( A pL pH fn m ESC SP n FS S n1 n2 ESC 3 n ESC { n
+        spacing: false,
+        // start printing: ESC @ GS a n ESC M n FS ( A pL pH fn m ESC SP n FS S n1 n2 (ESC 2) (ESC 3 n) ESC { n
         open: function (printer) {
             this.upsideDown = printer.upsideDown;
-            return '\x1b@\x1da\x00\x1bM0\x1c(A' + $(2, 0, 48, 0) + '\x1b \x00\x1cS\x00\x00\x1b3\x00\x1b{' + $(this.upsideDown);
+            this.spacing = printer.spacing;
+            return '\x1b@\x1da\x00\x1bM0\x1c(A' + $(2, 0, 48, 0) + '\x1b \x00\x1cS\x00\x00' + (this.spacing ? '\x1b2' : '\x1b3\x00') + '\x1b{' + $(this.upsideDown);
         },
         // finish printing: GS r n
         close: function () {
@@ -1450,16 +1472,20 @@ limitations under the License.
             const p = position * this.charWidth;
             return '\x1b\\' + $(p & 255, p >> 8 & 255);
         },
-        // print horizontal rule: FS C n ESC t n ... LF
+        // print horizontal rule: FS C n ESC t n ...
         hr: width => '\x1cC0\x1bt\x01' + '\x95'.repeat(width),
         // print vertical rules: GS ! n FS C n ESC t n ...
         vr: function (widths, height) {
             return widths.reduce((a, w) => a + this.relative(w) + '\x96', '\x1d!' + $(height - 1) + '\x1cC0\x1bt\x01\x96');
         },
-        // start rules: FS C n ESC t n ... LF
+        // start rules: FS C n ESC t n ...
         vrstart: (widths, left, right) => '\x1cC0\x1bt\x01' + widths.reduce((a, w) => a + '\x95'.repeat(w) + '\x91', left ? '\x9c' : '\x98').slice(0, -1) + (right ? '\x9d' : '\x99'),
-        // stop rules: FS C n ESC t n ... LF
+        // stop rules: FS C n ESC t n ...
         vrstop: (widths, left, right) => '\x1cC0\x1bt\x01' + widths.reduce((a, w) => a + '\x95'.repeat(w) + '\x90', left ? '\x9e' : '\x9a').slice(0, -1) + (right ? '\x9f' : '\x9b'),
+        // set line spacing and feed new line: (ESC 2) (ESC 3 n)
+        vrlf: function (vr) {
+            return (vr === this.upsideDown && this.spacing ? '\x1b2' : '\x1b3\x00') + this.lf();
+        },
         // cut paper: GS V m n
         cut: () => '\x1dVB\x00',
         // underline text: ESC - n FS - n
@@ -1670,10 +1696,11 @@ limitations under the License.
     // SII
     //
     const _sii = {
-        // start printing: ESC @ GS a n ESC M n ESC SP n FS S n1 n2 ESC 3 n ESC { n
+        // start printing: ESC @ GS a n ESC M n ESC SP n FS S n1 n2 (ESC 2) (ESC 3 n) ESC { n
         open: function (printer) {
             this.upsideDown = printer.upsideDown;
-            return '\x1b@\x1da\x00\x1bM0\x1b \x00\x1cS\x00\x00\x1b3\x00\x1b{' + $(this.upsideDown);
+            this.spacing = printer.spacing;
+            return '\x1b@\x1da\x00\x1bM0\x1b \x00\x1cS\x00\x00' + (this.spacing ? '\x1b2' : '\x1b3\x00') + '\x1b{' + $(this.upsideDown);
         },
         // finish printing: GS r n
         close: function () {
@@ -1876,10 +1903,12 @@ limitations under the License.
     const _starmbcs = {
         // printer configuration
         upsideDown: false,
-        // start printing: ESC @ ESC RS a n ESC RS F n ESC SP n ESC s n1 n2 ESC 0 (SI) (DC2)
+        spacing: false,
+        // start printing: ESC @ ESC RS a n ESC RS F n ESC SP n ESC s n1 n2 (ESC z n) (ESC 0) (SI) (DC2)
         open: function (printer) {
             this.upsideDown = printer.upsideDown;
-            return '\x1b@\x1b\x1ea0\x1b\x1eF\x00\x1b 0\x1bs00\x1b0' + (this.upsideDown ? '\x0f' : '\x12');
+            this.spacing = printer.spacing;
+            return '\x1b@\x1b\x1ea0\x1b\x1eF\x00\x1b 0\x1bs00' + (this.spacing ? '\x1bz1' : '\x1b0') + (this.upsideDown ? '\x0f' : '\x12');
         },
         // finish printing: ESC GS ETX s n1 n2
         close: function () {
@@ -1899,16 +1928,20 @@ limitations under the License.
             const p = position * this.charWidth;
             return '\x1b\x1dR' + $(p & 255, p >> 8 & 255);
         },
-        // print horizontal rule: ESC $ n ... LF
+        // print horizontal rule: ESC $ n ...
         hr: width => '\x1b$0' + '\x95'.repeat(width),
         // print vertical rules: ESC i n1 n2 ESC $ n ...
         vr: function (widths, height) {
             return widths.reduce((a, w) => a + this.relative(w) + '\x96', '\x1bi' + $(height - 1, 0) + '\x1b$0\x96');
         },
-        // start rules: ESC $ n ... LF
+        // start rules: ESC $ n ...
         vrstart: (widths, left, right) => '\x1b$0' + widths.reduce((a, w) => a + '\x95'.repeat(w) + '\x91', left ? '\x9c' : '\x98').slice(0, -1) + (right ? '\x9d' : '\x99'),
-        // stop rules: ESC $ n ... LF
+        // stop rules: ESC $ n ...
         vrstop: (widths, left, right) => '\x1b$0' + widths.reduce((a, w) => a + '\x95'.repeat(w) + '\x90', left ? '\x9e' : '\x9a').slice(0, -1) + (right ? '\x9f' : '\x9b'),
+        // set line spacing and feed new line: (ESC z n) (ESC 0)
+        vrlf: function (vr) {
+            return (this.upsideDown ? this.lf() : '') + (vr === this.upsideDown && this.spacing ? '\x1bz1' : '\x1b0') + (this.upsideDown ? '' : this.lf());
+        },
         // cut paper: ESC d n
         cut: () => '\x1bd3',
         // underline text: ESC - n
@@ -2025,15 +2058,15 @@ limitations under the License.
     // StarPRNT SBCS
     //
     const _starsbcs = {
-        // print horizontal rule: ESC GS t n ... LF
+        // print horizontal rule: ESC GS t n ...
         hr: width => '\x1b\x1dt\x01' + '\xc4'.repeat(width),
         // print vertical rules: ESC i n1 n2 ESC GS t n ...
         vr: function (widths, height) {
             return widths.reduce((a, w) => a + this.relative(w) + '\xb3', '\x1bi' + $(height - 1, 0) + '\x1b\x1dt\x01\xb3');
         },
-        // start rules: ESC GS t n ... LF
+        // start rules: ESC GS t n ...
         vrstart: (widths, left, right) => '\x1b\x1dt\x01' + widths.reduce((a, w) => a + '\xc4'.repeat(w) + '\xc2', '\xda').slice(0, -1) + '\xbf',
-        // stop rules: ESC GS t n ... LF
+        // stop rules: ESC GS t n ...
         vrstop: (widths, left, right) => '\x1b\x1dt\x01' + widths.reduce((a, w) => a + '\xc4'.repeat(w) + '\xc1', '\xc0').slice(0, -1) + '\xd9',
     };
 
