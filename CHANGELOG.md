@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [1.1.0] - 2020-11-09
+### Added
+- Printing options (line spacing and paper cutting)
+- Serial-LAN converter
+
+### Changed
+- SVG font from OS standard font to web font
+
 ## [1.0.2] - 2020-07-23
 ### Fixed
 - A bug that images are not displayed in SVG created in Node.js environment by [@eggplants](https://github.com/eggplants)

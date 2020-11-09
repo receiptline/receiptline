@@ -16,7 +16,7 @@ ReceiptLine is the receipt description language that expresses the output image 
 It supports printing paper receipts using a receipt printer and displaying electronic receipts on a POS system or smartphone.  
 It can be described simply with markdown-like text data that does not depend on the paper width.  
 
-This reference implementation also provides the development tool "ReceiptLine Designer" for editing, previewing, hex dumps with a virtual printer, and test printing on receipt printers with LAN support.  
+This reference implementation also provides the development tool "ReceiptLine Designer" for editing, previewing, hex dumps with a virtual printer, and test printing on receipt printers.  
 
 # Receipt Printers
 
@@ -90,11 +90,17 @@ const svg = receiptline.transform(doc, display);
   - `cp866`: Cyrillic
   - `cp932`: Japanese
   - `cp1252`: Western European
-- `gamma` (for printer)
-  - image gamma correction (default: `1.8`)
 - `upsideDown` (for printer)
   - `false`: normal (default)
   - `true`: upside down
+- `spacing`
+  - `false`: no line spacing (default)
+  - `true`: line spacing
+- `cutting` (for printer)
+  - `false`: no paper cutting
+  - `true`: paper cutting (default)
+- `gamma` (for printer)
+  - image gamma correction (default: `1.8`)
 - `command`
   - `svg`: SVG (default)
   - `escpos`: Epson, Citizen
@@ -163,8 +169,10 @@ The ReceiptLine Designer provides more features.
         "port": 19100,
         "cpl": 48,
         "encoding": "cp437",
-        "gamma": 1.8,
         "upsideDown": false,
+        "spacing": false,
+        "cutting": true,
+        "gamma": 1.8,
         "command": "svg"
     }
     ```
@@ -175,8 +183,46 @@ The ReceiptLine Designer provides more features.
       - printer address
     - `port`
       - printer port (will be `9100`)
-    - `cpl`, `encoding`, `gamma`, `upsideDown`, `command`
+    - `cpl`, `encoding`, `upsideDown`, `spacing`, `cutting`, `gamma`, `command`
       - see the printer configuration above
+
+# Serial-LAN Converter
+
+The serial-LAN converter enables test printing to USB / Bluetooth printers that support virtual serial ports.  
+
+## Setup
+
+1. Install the virtual serial port driver for the printer and [Node Serialport](https://www.npmjs.com/package/serialport)
+
+    ```bash
+    $ npm install serialport
+    $ cd node_modules/receiptline
+    ```
+
+1. Configure servers.json
+
+    ```json
+    "serial": {
+        "host": "127.0.0.1",
+        "port": 9100,
+        "device": "COM9"
+    }
+    ```
+
+    - `serial`
+      - to enable it, change from `_serial`
+    - `host`
+      - local address
+    - `port`
+      - local port
+    - `device`
+      - the system path of the serial port
+
+1. Restart the server
+
+    ```bash
+    $ npm start
+    ```
 
 # Syntax
 
