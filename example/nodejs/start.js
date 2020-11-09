@@ -24,6 +24,28 @@ const net = require('net');
 const receiptline = require('receiptline');
 const servers = require('./servers.json');
 
+// Serial-LAN Converter
+if ('serial' in servers) {
+    const serialport = require('serialport');
+    const serial = net.createServer(conn => {
+        const port = new serialport(servers.serial.device, { autoOpen: false });
+        port.on('error', err => {
+            console.log(err);
+            conn.destroy();
+        });
+        port.on('open', () => {
+            conn.pipe(port).pipe(conn);
+            conn.on('end', () => port.unpipe(conn));
+            conn.on('close', had_error => port.close());
+        });
+        port.open();
+    });
+    serial.maxConnections = 1;
+    serial.listen(servers.serial.port, () => {
+        console.log(`Serial-LAN converter running at ${servers.serial.host}:${servers.serial.port}`);
+    });
+}
+
 // Virtual Printer
 if ('print' in servers) {
     const printer = net.createServer(conn => {
