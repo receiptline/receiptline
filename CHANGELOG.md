@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.1.1] - 2020-11-18
+### Changed
+- SVG font for barcode text to web font
+
 ## [1.1.0] - 2020-11-09
 ### Added
 - Printing options (line spacing and paper cutting)

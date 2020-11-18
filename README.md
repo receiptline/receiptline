@@ -6,6 +6,7 @@ Transform markdown-like text to receipt printer commands or SVG images.
 
 ![English](screenshot_en.png)  
 ![Japanese](screenshot_ja.png)  
+![German](screenshot_de.png)  
 
 # Features
 
@@ -186,6 +187,8 @@ The ReceiptLine Designer provides more features.
     - `cpl`, `encoding`, `upsideDown`, `spacing`, `cutting`, `gamma`, `command`
       - see the printer configuration above
 
+    *Please back up this json file as it will be initialized by updating the package.*  
+
 # Serial-LAN Converter
 
 The serial-LAN converter enables test printing to USB / Bluetooth printers that support virtual serial ports.  
@@ -217,6 +220,8 @@ The serial-LAN converter enables test printing to USB / Bluetooth printers that 
       - local port
     - `device`
       - the system path of the serial port
+
+    *Please back up this json file as it will be initialized by updating the package.*  
 
 1. Restart the server
 
