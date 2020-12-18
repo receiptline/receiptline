@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.1.2] - 2020-12-18
+### Fixed
+- Escape processing of the barcode / 2D code dialog box
+
 ## [1.1.1] - 2020-11-18
 ### Changed
 - SVG font for barcode text to web font
