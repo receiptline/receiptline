@@ -156,7 +156,7 @@ function initialize() {
 
     // register barcode ok event listener
     barok.onclick = event => {
-        const code = bardata.value.replace(/[\\{};]/g, '\\$&');
+        const code = bardata.value.replace(/[\\|{};]/g, '\\$&');
         const option = [bartype.value, barwidth.value, barheight.value, barhri.checked ? 'hri' : 'nohri'];
         // insert barcode
         insertText(edit, `{code:${code}; option:${option}}`, true);
@@ -178,7 +178,7 @@ function initialize() {
 
     // register 2D code ok event listener
     qrok.onclick = event => {
-        const code = qrdata.value.replace(/[\\{};]/g, '\\$&');
+        const code = qrdata.value.replace(/[\\|{};]/g, '\\$&');
         const option = [qrtype.value, qrcell.value, qrlevel.value];
         // insert 2D code
         insertText(edit, `{code:${code}; option:${option}}`, true);
