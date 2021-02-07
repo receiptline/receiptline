@@ -38,18 +38,6 @@ div {
     /*background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAADAQMAAACplL1tAAAABlBMVEWQ7pD///+SGxGEAAAAFElEQVQI12M4l/+AYf/mCQyFdwoAJNIF3T0xRTsAAAAASUVORK5CYII=);*/
 }
 </style>
-<script type="text/javascript">
-window.onload = () => {
-    document.getElementsByName('bg').forEach(el => {
-        el.onchange = event => {
-            document.querySelector('div').className = event.target.value;
-        };
-    });
-    document.getElementById('zoom').onchange = event => {
-        document.querySelector('div').style.transform = 'scale(' + event.target.value + ')';
-    };
-};
-</script>
 </head>
 <body>
 <a href="/print">Print</a>
