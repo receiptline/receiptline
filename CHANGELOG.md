@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [1.2.0] - 2021-02-07
+### Added
+- Examples of displaying and printing receipts
+
+### Changed
+- SVG ruled line drawing from text to path
+
+### Fixed
+- Printing of transparent images
+
 ## [1.1.2] - 2020-12-18
 ### Fixed
 - Escape processing of the barcode / 2D code dialog box
