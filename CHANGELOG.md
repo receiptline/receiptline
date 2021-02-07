@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.2.1] - 2021-02-07
+### Fixed
+- Examples of displaying and printing receipts
+
 ## [1.2.0] - 2021-02-07
 ### Added
 - Examples of displaying and printing receipts
