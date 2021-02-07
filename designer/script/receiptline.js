@@ -479,7 +479,7 @@ limitations under the License.
                         result.push(printer.command.normal() +
                             printer.command.area(left, width, right) +
                             printer.command.align(0) +
-                            printer.command.hr(width, printer.encoding) +
+                            printer.command.hr(width) +
                             printer.command.lf());
                         break;
                     case 'running':
