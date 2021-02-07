@@ -1530,7 +1530,7 @@ limitations under the License.
                     let b = 0;
                     for (let p = 0; p < 8; p++) {
                         if (a <= x + p && i < img.width) {
-                            const f = Math.floor((d[i] + e * 5) / 16 + Math.pow((img.data[j] * .299 + img.data[j + 1] * .587 + img.data[j + 2] * .114) / 255, 1 / gamma) * 255);
+                            const f = Math.floor((d[i] + e * 5) / 16 + Math.pow(((img.data[j] * .299 + img.data[j + 1] * .587 + img.data[j + 2] * .114 - 255) * img.data[j + 3] + 65525) / 65525, 1 / gamma) * 255);
                             j += this.upsideDown ? -4 : 4;
                             d[i] = e * 3;
                             e = f < 128 ? (b |= 128 >> p, f) : f - 255;
@@ -1882,7 +1882,7 @@ limitations under the License.
                     let b = 0;
                     for (let p = 0; p < 8; p++) {
                         if (a <= x + p && i < img.width) {
-                            const f = Math.floor((d[i] + e * 5) / 16 + Math.pow((img.data[j] * .299 + img.data[j + 1] * .587 + img.data[j + 2] * .114) / 255, 1 / gamma) * 255);
+                            const f = Math.floor((d[i] + e * 5) / 16 + Math.pow(((img.data[j] * .299 + img.data[j + 1] * .587 + img.data[j + 2] * .114 - 255) * img.data[j + 3] + 65525) / 65525, 1 / gamma) * 255);
                             j += 4;
                             d[i] = e * 3;
                             e = f < 128 ? (b |= 128 >> p, f) : f - 255;
@@ -1988,7 +1988,7 @@ limitations under the License.
                     let b = 0;
                     for (let p = 0; p < 8; p++) {
                         if (a <= x + p && i < img.width) {
-                            const f = Math.floor((d[i] + e * 5) / 16 + Math.pow((img.data[j] * .299 + img.data[j + 1] * .587 + img.data[j + 2] * .114) / 255, 1 / gamma) * 255);
+                            const f = Math.floor((d[i] + e * 5) / 16 + Math.pow(((img.data[j] * .299 + img.data[j + 1] * .587 + img.data[j + 2] * .114 - 255) * img.data[j + 3] + 65525) / 65525, 1 / gamma) * 255);
                             j += 4;
                             d[i] = e * 3;
                             e = f < 128 ? (b |= 128 >> p, f) : f - 255;
