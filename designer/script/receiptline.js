@@ -2084,6 +2084,224 @@ limitations under the License.
         vrstop: (widths, left, right) => '\x1b\x1dt\x01' + widths.reduce((a, w) => a + '\xc4'.repeat(w) + '\xc1', '\xc0').slice(0, -1) + '\xd9',
     };
 
+    //
+    // ESC/POS Impact
+    //
+    const _impact = {
+        font: 0,
+        style: 0,
+        color: 0,
+        margin: 0,
+        position: 0,
+        rules: '',
+        red: [],
+        black: [],
+        // printer configuration
+        upsideDown: false,
+        spacing: false,
+        cutting: true,
+        // start printing: ESC @ GS a n ESC M n (ESC 2) (ESC 3 n) ESC { n
+        open: function (printer) {
+            this.style = this.font;
+            this.color = 0;
+            this.margin = 0;
+            this.position = 0;
+            this.rules = '';
+            this.red = [];
+            this.black = [];
+            this.upsideDown = printer.upsideDown;
+            this.spacing = printer.spacing;
+            this.cutting = printer.cutting;
+            return '\x1b@\x1da\x00\x1bM' + $(this.font) + (this.spacing ? '\x1b2' : '\x1b3\x12') + '\x1b{' + $(this.upsideDown) + '\x1c.';
+        },
+        // finish printing: GS r n
+        close: function () {
+            return (this.cutting ? this.cut() : '') + '\x1dr1';
+        },
+        // set print area:
+        area: function (left, width, right) {
+            this.margin = left;
+            return '';
+        },
+        // set line alignment: ESC a n
+        align: align => '\x1ba' + $(align),
+        // set absolute print position:
+        absolute: function (position) {
+            this.position = position;
+            return '';
+        },
+        // set relative print position:
+        relative: function (position) {
+            this.position += Math.round(position);
+            return '';
+        },
+        // print horizontal rule: ESC t n ...
+        hr: function (width) {
+            this.rules = ' '.repeat(this.position) + '\x95'.repeat(width);
+            return '';
+        },
+        // print vertical rules: ESC ! n ESC t n ...
+        vr: function (widths, height) {
+            const d = '\x1b!' + $(this.font + (height > 1 ? 16 : 0)) + '\x1bt\x01\x96';
+            this.black.push({ data: d, index: this.position, length: 1 });
+            widths.forEach(w => {
+                this.position += w + 1;
+                this.black.push({ data: d, index: this.position, length: 1 });
+            });
+            return '';
+        },
+        vrtable: {
+            ' '    : { ' ' : ' ',    '\x90' : '\x90', '\x95' : '\x95', '\x9a' : '\x9a', '\x9b' : '\x9b', '\x9e' : '\x9e', '\x9f' : '\x9f' },
+            '\x91' : { ' ' : '\x91', '\x90' : '\x8f', '\x95' : '\x91', '\x9a' : '\x8f', '\x9b' : '\x8f', '\x9e' : '\x8f', '\x9f' : '\x8f' },
+            '\x95' : { ' ' : '\x95', '\x90' : '\x90', '\x95' : '\x95', '\x9a' : '\x90', '\x9b' : '\x90', '\x9e' : '\x90', '\x9f' : '\x90' },
+            '\x98' : { ' ' : '\x98', '\x90' : '\x8f', '\x95' : '\x91', '\x9a' : '\x93', '\x9b' : '\x8f', '\x9e' : '\x93', '\x9f' : '\x8f' },
+            '\x99' : { ' ' : '\x99', '\x90' : '\x8f', '\x95' : '\x91', '\x9a' : '\x8f', '\x9b' : '\x92', '\x9e' : '\x8f', '\x9f' : '\x92' },
+            '\x9c' : { ' ' : '\x9c', '\x90' : '\x8f', '\x95' : '\x91', '\x9a' : '\x93', '\x9b' : '\x8f', '\x9e' : '\x93', '\x9f' : '\x8f' },
+            '\x9d' : { ' ' : '\x9d', '\x90' : '\x8f', '\x95' : '\x91', '\x9a' : '\x8f', '\x9b' : '\x92', '\x9e' : '\x8f', '\x9f' : '\x92' }
+        },
+        // start rules:
+        vrstart: function (widths, left, right) {
+            let r = ' '.repeat(this.position) + widths.reduce((a, w) => a + '\x95'.repeat(w) + '\x91', left ? '\x9c' : '\x98').slice(0, -1) + (right ? '\x9d' : '\x99');
+            const l = this.rules.length;
+            if (l > 0) {
+                if (r.length < l) {
+                    r += ' '.repeat(l - r.length);
+                }
+                this.rules = r.split('').map((c, i) => this.vrtable[c][i < l ? this.rules[i] : ' ']).join('');
+            }
+            else {
+                this.rules = r;
+            }
+            return '';
+        },
+        // stop rules:
+        vrstop: function (widths, left, right) {
+            this.rules = ' '.repeat(this.position) + widths.reduce((a, w) => a + '\x95'.repeat(w) + '\x90', left ? '\x9e' : '\x9a').slice(0, -1) + (right ? '\x9f' : '\x9b');
+            return '';
+        },
+        // set line spacing and feed new line: (ESC 2) (ESC 3 n)
+        vrlf: function (vr) {
+            return (vr === this.upsideDown && this.spacing ? '\x1b2' : '\x1b3\x12') + this.lf();
+        },
+        // cut paper: GS V m n
+        cut: () => '\x1dVB\x00',
+        // underline text:
+        ul: function () {
+            this.style += 128;
+            return '';
+        },
+        // emphasize text:
+        em: function () {
+            this.style += 8;
+            return '';
+        },
+        // invert text:
+        iv: function () {
+            this.color = 1;
+            return '';
+        },
+        // scale up text:
+        wh: function (wh) {
+            if (wh > 0) {
+                this.style += wh < 3 ? 64 >> wh : 48;
+            }
+            return '';
+        },
+        // cancel text decoration:
+        normal: function () {
+            this.style = this.font;
+            this.color = 0;
+            return '';
+        },
+        // print text:
+        text: function (text, encoding) {
+            const t = iconv.encode(text, encoding).toString('binary');
+            const d = '\x1b!' + $(this.style) + this.codepage[encoding] + t;
+            const l = t.length * (this.style & 32 ? 2 : 1);
+            if (this.color > 0) {
+                this.red.push({ data: d, index: this.position, length: l });
+            }
+            else {
+                this.black.push({ data: d, index: this.position, length: l });
+            }
+            this.position += l;
+            return '';
+        },
+        // codepages: (ESC t n) (ESC R n)
+        codepage: {
+            cp437: '\x1bt\x00', cp852: '\x1bt\x12', cp858: '\x1bt\x13', cp860: '\x1bt\x03',
+            cp863: '\x1bt\x04', cp865: '\x1bt\x05', cp866: '\x1bt\x11', cp1252: '\x1bt\x10',
+            cp932: '\x1bt\x01\x1bR\x08'
+        },
+        // feed new line: LF
+        lf: function () {
+            let r = '';
+            if (this.rules.length > 0) {
+                r += '\x1b!' + $(this.font) + ' '.repeat(this.margin) + '\x1bt\x01' + this.rules;
+            }
+            if (this.red.length > 0) {
+                let p = 0;
+                r += this.red.sort((a, b) => a.index - b.index).reduce((a, c) => {
+                    const s = a + '\x1b!' + $(this.font) + ' '.repeat(c.index - p) + c.data;
+                    p = c.index + c.length;
+                    return s;
+                }, '\x1br\x01\x1b!' + $(this.font) + ' '.repeat(this.margin)) + '\x0d\x1br\x00';
+            }
+            if (this.black.length > 0) {
+                let p = 0;
+                r += this.black.sort((a, b) => a.index - b.index).reduce((a, c) => {
+                    const s = a + '\x1b!' + $(this.font) + ' '.repeat(c.index - p) + c.data;
+                    p = c.index + c.length;
+                    return s;
+                }, '\x1b!' + $(this.font) + ' '.repeat(this.margin));
+            }
+            r += '\x0a';
+            this.position = 0;
+            this.rules = '';
+            this.red = [];
+            this.black = [];
+            return r;
+        },
+        // insert commands:
+        command: command => command,
+        // print image: ESC * 0 wL wH d1 ... dk ESC J n
+        image: function (image, gamma, align, left, width, right) {
+            let r = this.align(align);
+            const img = PNG.sync.read(Buffer.from(image, 'base64'));
+            const w = img.width;
+            if (w < 1024) {
+                const d = Array(w).fill(0);
+                let j = this.upsideDown ? img.data.length - 4 : 0;
+                for (let y = 0; y < img.height; y += 8) {
+                    const b = Array(w).fill(0);
+                    const h = Math.min(8, img.height - y);
+                    for (let p = 0; p < h; p++) {
+                        let i = 0, e = 0;
+                        for (let x = 0; x < w; x++) {
+                            const f = Math.floor((d[i] + e * 5) / 16 + Math.pow(((img.data[j] * .299 + img.data[j + 1] * .587 + img.data[j + 2] * .114 - 255) * img.data[j + 3] + 65525) / 65525, 1 / gamma) * 255);
+                            j += this.upsideDown ? -4 : 4;
+                            d[i] = e * 3;
+                            e = f < 128 ? (this.upsideDown ? b[w - x - 1] |= 1 << p : b[x] |= 128 >> p, f) : f - 255;
+                            if (i > 0) {
+                                d[i - 1] += e;
+                            }
+                            d[i++] += e * 7;
+                        }
+                    }
+                    r += '\x1b*\x00' + $(w & 255, w >> 8 & 255) + b.map(c => $(c)).join('') + '\x1bJ' + $(h * 2);
+                }
+            }
+            return r;
+        }
+    };
+
+    //
+    // ESC/POS Impact Font B
+    //
+    const _impactb = {
+        font: 1
+    };
+
     // command set
     const commands = {
         svg: Object.assign(Object.create(_base), _svg),
@@ -2091,7 +2309,9 @@ limitations under the License.
         sii: Object.assign(Object.create(_base), _escpos, _sii),
         fit: Object.assign(Object.create(_base), _escpos, _fit),
         starmbcs: Object.assign(Object.create(_base), _starmbcs),
-        starsbcs: Object.assign(Object.create(_base), _starmbcs, _starsbcs)
+        starsbcs: Object.assign(Object.create(_base), _starmbcs, _starsbcs),
+        impact: Object.assign(Object.create(_base), _impact),
+        impactb: Object.assign(Object.create(_base), _impact, _impactb)
     };
 
     // web browser

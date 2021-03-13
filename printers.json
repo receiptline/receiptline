@@ -97,5 +97,16 @@
         "spacing": true,
         "cutting": true,
         "command": "fit"
+    },
+    "tm_u220": {
+        "host": "127.0.0.1",
+        "port": 19100,
+        "cpl": 33,
+        "encoding": "cp437",
+        "gamma": 1.8,
+        "upsideDown": false,
+        "spacing": true,
+        "cutting": true,
+        "command": "impact"
     }
 }
