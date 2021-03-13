@@ -17,7 +17,6 @@ limitations under the License.
 // QR Code is a registered trademark of DENSO WAVE INCORPORATED.
 
 const http = require('http');
-const url = require('url');
 const path = require('path');
 const fs = require('fs');
 const net = require('net');
@@ -65,7 +64,7 @@ if ('print' in servers) {
 // ReceiptLine Server
 if ('http' in servers) {
     const server = http.createServer((req, res) => {
-        let pathname = url.parse(req.url).pathname;
+        let pathname = new URL(req.url, `http://${req.headers.host}`).pathname;
         switch (req.method) {
             case 'GET':
                 if (pathname === '/') {

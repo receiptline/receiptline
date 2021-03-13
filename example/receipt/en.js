@@ -1,6 +1,23 @@
+/*
+Copyright 2021 Open Foodservice System Consortium
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+// QR Code is a registered trademark of DENSO WAVE INCORPORATED.
+
 const http = require('http');
 const net = require('net');
-const url = require('url');
 const receiptline = require('receiptline');
 
 // ReceiptLine
@@ -32,7 +49,6 @@ const html = `<!DOCTYPE html>
 div {
     float: left;
     padding: 24px;
-    transform-origin: top left;
     box-shadow: 0 6px 12px rgba(0, 0, 0, .5);
     background: linear-gradient(lavender, ghostwhite);
     /*background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAADAQMAAACplL1tAAAABlBMVEWQ7pD///+SGxGEAAAAFElEQVQI12M4l/+AYf/mCQyFdwoAJNIF3T0xRTsAAAAASUVORK5CYII=);*/
@@ -60,7 +76,7 @@ const printer = {
 const server = http.createServer((req, res) => {
     switch (req.method) {
         case 'GET':
-            if (url.parse(req.url).pathname === `/print`) {
+            if (new URL(req.url, `http://${req.headers.host}`).pathname === '/print') {
                 const socket = net.connect(printer.port, printer.host, () => {
                     socket.end(receiptline.transform(text, printer), 'binary');
                 });
