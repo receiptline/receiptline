@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [1.3.0] - 2021-03-13
+### Added
+- Impact printer (TM-U220)
+
+### Fixed
+- SVG to avoid empty group elements
+- URL parsing
+
 ## [1.2.1] - 2021-02-07
 ### Fixed
 - Examples of displaying and printing receipts

@@ -109,6 +109,8 @@ const svg = receiptline.transform(doc, display);
   - `starmbcs`: Star MBCS
   - `starsbcs`: Star SBCS
   - `fit`: Fujitsu
+  - `impact`: Epson TM-U220
+  - `impactb`: Epson TM-U220 (Font B)
 
 # Examples
 
@@ -438,6 +440,13 @@ Escape special characters.
 - Communication with the printer, status event processing, and error handling are out of scope.
 - SVG images depend on the font family installed on the computer and may not display properly.
 - The QR code for display is encoded in UTF-8, while the QR code for printing is encoded in ASCII or Shift_JIS.
+- Impact printer has some limitations for printing
+  - Characters larger than 2x size
+  - Inverted characters (**will be printed in red**)
+  - Double height characters in different colors on the same line
+  - Multibyte characters
+  - Image position and size ratio
+  - Barcodes and 2D codes
 
 # Author
 
