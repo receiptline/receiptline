@@ -23,6 +23,13 @@ function initialize() {
     const loadfile = document.getElementById('loadfile');
     const loadok = document.getElementById('loadok');
     const loadcancel = document.getElementById('loadcancel');
+    const save = document.getElementById('save');
+    const savedialog = document.getElementById('savedialog');
+    const savebox = document.getElementById('savebox');
+    const savetext = document.getElementById('savetext');
+    const savesvg = document.getElementById('savesvg');
+    const saveok = document.getElementById('saveok');
+    const savecancel = document.getElementById('savecancel');
     const zoom = document.getElementById('zoom');
     const img = document.getElementById('img');
     const imgdialog = document.getElementById('imgdialog');
@@ -37,7 +44,7 @@ function initialize() {
     const bartype = document.getElementById('bartype');
     const barwidth = document.getElementById('barwidth');
     const barheight = document.getElementById('barheight');
-    const barhri = document.getElementById('barhri');    
+    const barhri = document.getElementById('barhri');
     const barok = document.getElementById('barok');
     const barcancel = document.getElementById('barcancel');
     const qr = document.getElementById('qr');
@@ -49,13 +56,15 @@ function initialize() {
     const qrlevel = document.getElementById('qrlevel');
     const qrok = document.getElementById('qrok');
     const qrcancel = document.getElementById('qrcancel');
+    const col = document.getElementById('col');
     const hr = document.getElementById('hr');
     const cut = document.getElementById('cut');
     const ul = document.getElementById('ul');
     const em = document.getElementById('em');
-    const rv = document.getElementById('rv');
+    const iv = document.getElementById('iv');
     const wh = document.getElementById('wh');
     const linewidth = document.getElementById('linewidth');
+    const linespace = document.getElementById('linespace');
     const dots = document.getElementById('dots');
     const cpl = document.getElementById('cpl');
     const printerid = document.getElementById('printerid');
@@ -99,6 +108,54 @@ function initialize() {
 
     // register file cancel event listener
     loadcancel.onclick = event => loaddialog.style.display = 'none';
+
+    // register save button event listener
+    save.onclick = event => {
+        // set the position of the dialog box
+        savebox.style.left = event.pageX + 'px';
+        savebox.style.top = event.pageY + 'px';
+        // open the dialog box
+        savedialog.style.display = 'block';
+    };
+
+    // register save button event listener
+    save.onclick = event => {
+        // set the position of the dialog box
+        savebox.style.left = event.pageX + 'px';
+        savebox.style.top = event.pageY + 'px';
+        // open the dialog box
+        savedialog.style.display = 'block';
+    };
+
+    // register save ok event listener
+    saveok.onclick = event => {
+        const bom = new Uint8Array([0xef, 0xbb, 0xbf]);
+        // save text file
+        if (savetext.checked) {
+            const a = document.createElement('a');
+            a.href = window.URL.createObjectURL(new Blob([ bom, edit.value ], { type: 'text/plain' }));
+            a.download = 'receiptline.txt';
+            a.click();
+        }
+        // save svg file
+        if (savesvg.checked) {
+            const printer = {
+                cpl: Number(cpl.textContent),
+                encoding: /^ja/.test(window.navigator.language) ? 'cp932' : 'cp437',
+                spacing: linespace.checked
+            };
+            const svg = receiptline.transform(edit.value, printer);
+            const a = document.createElement('a');
+            a.href = window.URL.createObjectURL(new Blob([ bom, svg ], { type: 'image/svg+xml' }));
+            a.download = 'receiptline.svg';
+            a.click();
+        }
+        // close the dialog box
+        loaddialog.style.display = 'none';
+    };
+
+    // register save cancel event listener
+    savecancel.onclick = event => savedialog.style.display = 'none';
 
     // register zoom slide bar event listener
     zoom.oninput = event => edit.style.fontSize = zoom.value + 'px';
@@ -189,6 +246,9 @@ function initialize() {
     // register 2D code cancel event listener
     qrcancel.onclick = event => qrdialog.style.display = 'none';
 
+    // register column button event listener
+    col.onclick = event => insertText(edit, '|');
+
     // register horizontal rule button event listener
     hr.onclick = event => insertText(edit, '-', true);
 
@@ -202,7 +262,7 @@ function initialize() {
     em.onclick = event => insertText(edit, '"');
 
     // register invert button event listener
-    rv.onclick = event => insertText(edit, '`');
+    iv.onclick = event => insertText(edit, '`');
 
     // register scale up button event listener
     wh.onclick = event => insertText(edit, '^');
@@ -216,11 +276,15 @@ function initialize() {
         edit.oninput();
     };
 
+    // register spacing checkbox event listener
+    linespace.onchange = event => edit.oninput();
+
     // register input event listener (immediately invoked)
     (edit.oninput = event => {
         const printer = {
             cpl: Number(cpl.textContent),
-            encoding: /^ja/.test(window.navigator.language) ? 'cp932' : 'cp437'
+            encoding: /^ja/.test(window.navigator.language) ? 'cp932' : 'cp437',
+            spacing: linespace.checked
         };
         const svg = receiptline.transform(edit.value, printer);
         const dom = new DOMParser().parseFromString(svg, 'image/svg+xml').documentElement;

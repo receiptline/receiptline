@@ -21,6 +21,7 @@ header {
     display: flex;
     justify-content: space-around;
     font-size: small;
+    user-select: none;
 }
 main {
     display: flex;
@@ -77,6 +78,7 @@ footer {
 }
 .dialog {
     display: none;
+    user-select: none;
 }
 .note {
     font-size: x-small;
@@ -97,4 +99,12 @@ footer {
 }
 .dialog hr + div {
     text-align: center;
+}
+.tooltip[data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    border-radius: 3px;
+    padding: 3px;
+    color: #fff;
+    background-color: #777;
 }

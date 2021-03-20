@@ -27,28 +27,33 @@ limitations under the License.
 <body onload="initialize()">
     <header>
         <div>
-            <button id="load">
+            <button id="load" class="tooltip" data-tooltip="open">
                 <svg width="24px" height="24px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" version="1.1">
                     <path stroke="#000" fill="none" stroke-width="1" d="M.5,23.5l4,-15h19l-4,15zv-19h2l1,-2h5l1,2h10v4"/>
+                </svg>
+            </button>
+            <button id="save" class="tooltip" data-tooltip="download">
+                <svg width="24px" height="24px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" version="1.1">
+                    <path stroke="#000" fill="none" stroke-width="1" d="M11.5,.5v16m-4,-4l4,4l4,-4M4.5,8.5h-4v15h22v-15h-4"/>
                 </svg>
             </button>
             <label for="zoom">Zoom</label>
             <input id="zoom" type="range" value="20" min="10" max="30" step="2">
         </div>
         <div>
-            <button id="img">
+            <button id="img" class="tooltip" data-tooltip="image">
                 <svg width="24px" height="24px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" version="1.1">
                     <path stroke="#000" fill="none" stroke-width="1" d="M.5,.5h23v23h-23zM.5,17.5l15,-10l8,8"/>
                     <circle stroke="#000" fill="none" stroke-width="1" cx="6" cy="6" r="2.5"/>
                 </svg>
             </button>
-            <button id="bar">
+            <button id="bar" class="tooltip" data-tooltip="barcode">
                 <svg width="24px" height="24px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" version="1.1">
                     <path fill="#000" d="M0,1h2v20h-2zM4,1h1v20h-1zM6,1h1v20h-1zM8,1h1v20h-1zM10,1h1v20h-1zM13,1h1v20h-1zM15,1h1v20h-1zM17,1h1v20h-1zM19,1h1v20h-1zM22,1h2v20h-2z"/>
                     <path fill="#000" d="M3,22h2v2h-2zM7,22h2v2h-2zM11,22h2v2h-2zM15,22h2v2h-2zM19,22h2v2h-2z"/>
                 </svg>
             </button>
-            <button id="qr">
+            <button id="qr" class="tooltip" data-tooltip="2D code">
                 <svg width="24px" height="24px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" version="1.1">
                     <path fill="#000" d="M0,0h5v5h-5zM19,0h5v5h-5zM0,19h5v5h-5z"/>
                     <path fill="#000" d="M7,1h2v2h-2zM11,1h2v2h-2zM15,1h2v2h-2z"/>
@@ -64,33 +69,38 @@ limitations under the License.
                     <path fill="#000" d="M7,21h2v2h-2zM11,21h2v2h-2zM15,21h2v2h-2zM19,21h2v2h-2z"/>
                 </svg>
             </button>
-            <button id="hr">
+            <button id="col" class="tooltip" data-tooltip="column delimiter">
+                <svg width="24px" height="24px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" version="1.1">
+                    <path stroke="#000" fill="none" stroke-width="1" d="M11.5,.5v23"/>
+                </svg>
+            </button>
+            <button id="hr" class="tooltip" data-tooltip="horizontal rule">
                 <svg width="24px" height="24px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" version="1.1">
                     <path stroke="#000" fill="none" stroke-width="1" d="M.5,11.5h23"/>
                 </svg>
             </button>
-            <button id="cut">
+            <button id="cut" class="tooltip" data-tooltip="paper cut">
                 <svg width="24px" height="24px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" version="1.1">
                     <text x="12" y="20" text-anchor="middle" fill="#000" font-family="monospace" font-size="24">&#x2702;</text>
                 </svg>
             </button>
-            <button id="ul">
+            <button id="ul" class="tooltip" data-tooltip="underline">
                 <svg width="24px" height="24px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" version="1.1">
                     <text x="12" y="20" text-anchor="middle" fill="#000" font-family="monospace" font-size="24" text-decoration="underline">a</text>
                 </svg>
             </button>
-            <button id="em">
+            <button id="em" class="tooltip" data-tooltip="emphasis">
                 <svg width="24px" height="24px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" version="1.1">
                     <text x="12" y="20" text-anchor="middle" fill="#000" font-family="monospace" font-size="24" font-weight="bold">a</text>
                 </svg>
             </button>
-            <button id="rv">
+            <button id="iv" class="tooltip" data-tooltip="invert">
                 <svg width="24px" height="24px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" version="1.1">
                     <path fill="#000" d="M0,0h24v24h-24z"/>
                     <text x="12" y="20" text-anchor="middle" fill="#fff" font-family="monospace" font-size="24">a</text>
                 </svg>
             </button>
-            <button id="wh">
+            <button id="wh" class="tooltip" data-tooltip="size">
                 <svg width="24px" height="24px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" version="1.1">
                     <text x="6" y="20" text-anchor="middle" fill="#000" font-family="monospace" font-size="24" transform="scale(2,1)">a</text>
                 </svg>
@@ -100,9 +110,10 @@ limitations under the License.
             <label for="linewidth">Width</label>
             <input id="linewidth" type="range" value="576" min="288" max="576" step="12">
             <span id="dots">576</span> dots / <span id="cpl">48</span> cpl
+            <input id="linespace" type="checkbox">
+            <label for="linespace">Spacing</label>
         </div>
         <div>
-            <label for="printerid">Print</label>
             <input id="printerid" type="text" size="8" value="printer1">
             <button id="send">Send</button>
         </div>
@@ -300,6 +311,21 @@ limitations under the License.
             </div>
         </div>
     </div>
+    <div id="savedialog" class="dialog">
+        <div id="savecancel"></div>
+        <div id="savebox">
+            <div>Download</div>
+            <input type="radio" id="savetext" name="savetype" value="text" checked>
+            <label for="savetext">ReceiptLine Text</label>
+            <br>
+            <input type="radio" id="savesvg" name="savetype" value="svg">
+            <label for="savesvg">SVG Image</label>
+            <hr>
+            <div>
+                <button id="saveok">OK</button>
+            </div>
+        </div>
+    </div>
     <div id="imgdialog" class="dialog">
         <div id="imgcancel"></div>
         <div id="imgbox">
@@ -378,6 +404,6 @@ limitations under the License.
             </div>
         </div>
     </div>
-    <footer>ReceiptLine Designer Version 1.3.0 © 2019 Open Foodservice System Consortium</footer>
+    <footer>ReceiptLine Designer Version 1.3.1 © 2019 Open Foodservice System Consortium</footer>
 </body>
 </html>
