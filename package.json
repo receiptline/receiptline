@@ -1,6 +1,6 @@
 {
   "name": "receiptline",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "Printable digital receipts - Transform markdown-like text to receipt printer commands or SVG images.",
   "main": "lib/receiptline.js",
   "directories": {
@@ -17,6 +17,7 @@
   },
   "keywords": [
     "thermal",
+    "impact",
     "printer",
     "epson",
     "escpos",

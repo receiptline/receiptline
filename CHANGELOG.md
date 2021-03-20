@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [1.3.1] - 2021-03-20
+### Added
+- Features to the ReceiptLine Designer (download, tooltip, column delimiter, spacing)
+- Examples of displaying PNG receipts
+- Examples of printing SVG receipts
+
 ## [1.3.0] - 2021-03-13
 ### Added
 - Impact printer (TM-U220)
