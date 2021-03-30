@@ -108,3 +108,6 @@ footer {
     color: #fff;
     background-color: #777;
 }
+.hidden {
+    display: none;
+}

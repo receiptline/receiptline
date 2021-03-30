@@ -56,6 +56,15 @@ function initialize() {
     const qrlevel = document.getElementById('qrlevel');
     const qrok = document.getElementById('qrok');
     const qrcancel = document.getElementById('qrcancel');
+    const format = document.getElementById('format');
+    const formatdialog = document.getElementById('formatdialog');
+    const formatbox = document.getElementById('formatbox');
+    const formatwidth = document.getElementById('formatwidth');
+    const formatborder = document.getElementById('formatborder');
+    const formattext = document.getElementById('formattext');
+    const formatalign = document.getElementById('formatalign');
+    const formatok = document.getElementById('formatok');
+    const formatcancel = document.getElementById('formatcancel');
     const col = document.getElementById('col');
     const hr = document.getElementById('hr');
     const cut = document.getElementById('cut');
@@ -118,15 +127,6 @@ function initialize() {
         savedialog.style.display = 'block';
     };
 
-    // register save button event listener
-    save.onclick = event => {
-        // set the position of the dialog box
-        savebox.style.left = event.pageX + 'px';
-        savebox.style.top = event.pageY + 'px';
-        // open the dialog box
-        savedialog.style.display = 'block';
-    };
-
     // register save ok event listener
     saveok.onclick = event => {
         const bom = new Uint8Array([0xef, 0xbb, 0xbf]);
@@ -151,7 +151,7 @@ function initialize() {
             a.click();
         }
         // close the dialog box
-        loaddialog.style.display = 'none';
+        savedialog.style.display = 'none';
     };
 
     // register save cancel event listener
@@ -245,6 +245,43 @@ function initialize() {
 
     // register 2D code cancel event listener
     qrcancel.onclick = event => qrdialog.style.display = 'none';
+
+    // register formatting button event listener
+    format.onclick = event => {
+        // set the position of the dialog box
+        formatbox.style.left = event.pageX + 'px';
+        formatbox.style.top = event.pageY + 'px';
+        // open the dialog box
+        formatdialog.style.display = 'block';
+    };
+
+    // register formatting ok event listener
+    formatok.onclick = event => {
+        let property = [];
+        const width = formatwidth.value.replace(/[\\|{};]/g, '\\$&');
+        const border = formatborder.value;
+        const text = formattext.value;
+        const align = formatalign.value;
+        if (width.length > 0) {
+            property.push(`width:${width}`);
+        }
+        if (border.length > 0) {
+            property.push(`border:${border}`);
+        }
+        if (text.length > 0) {
+            property.push(`text:${text}`);
+        }
+        if (align.length > 0) {
+            property.push(`align:${align}`);
+        }
+        // insert formatting
+        insertText(edit, `{${property.join('; ')}}`, true);
+        // close the dialog box
+        formatdialog.style.display = 'none';
+    };
+
+    // register formatting cancel event listener
+    formatcancel.onclick = event => formatdialog.style.display = 'none';
 
     // register column button event listener
     col.onclick = event => insertText(edit, '|');
