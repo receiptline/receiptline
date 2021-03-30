@@ -35,7 +35,7 @@ if ('serial' in servers) {
         port.on('open', () => {
             conn.pipe(port).pipe(conn);
             conn.on('end', () => port.unpipe(conn));
-            conn.on('close', had_error => port.close());
+            conn.on('close', had_error => port.drain(err => port.close()));
         });
         port.open();
     });
@@ -108,7 +108,7 @@ if ('http' in servers) {
                                     const command = receiptline.transform(text, printer);
                                     sock.write(command, /^<svg/.test(command) ? 'utf8' : 'binary');
                                 });
-                                sock.on('data', data => {
+                                sock.once('data', data => {
                                     sock.end();
                                     res.writeHead(200, {'Content-Type': 'text/plain'});
                                     res.end('success');
