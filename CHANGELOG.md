@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+## [1.3.2] - 2021-03-30
+### Added
+- Features to the ReceiptLine Designer (formatting, favicon, Open Graph tags)
+
+### Changed
+- Connection termination process of the serial-LAN converter
+- MIME type from image/x-icon to image/vnd.microsoft.icon
+
+### Fixed
+- A bug that the edge of the image is not printed when cpl is odd
+- Examples of displaying and printing receipts
+
 ## [1.3.1] - 2021-03-20
 ### Added
 - Features to the ReceiptLine Designer (download, tooltip, column delimiter, spacing)

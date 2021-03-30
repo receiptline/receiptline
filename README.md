@@ -147,6 +147,9 @@ Generate the QR Code for display. Optional.
 
 # ReceiptLine Designer
 
+Online version is available.  
+https://receiptline.github.io/designer/  
+
 The ReceiptLine Designer provides more features.  
 
 - Edit and preview
