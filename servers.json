@@ -16,7 +16,7 @@
             ".png": "image/png",
             ".bmp": "image/bmp",
             ".svg": "image/svg+xml",
-            ".ico" : "image/x-icon",
+            ".ico" : "image/vnd.microsoft.icon",
             ".csv": "text/csv",
             ".xml": "text/xml",
             ".json": "application/json"
