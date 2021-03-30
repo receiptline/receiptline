@@ -51,7 +51,7 @@ div {
     float: left;
     padding: 24px;
     box-shadow: 0 6px 12px rgba(0, 0, 0, .5);
-    background: linear-gradient(lavender, ghostwhite);
+    background: linear-gradient(lightblue, white);
     /*background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAADAQMAAACplL1tAAAABlBMVEWQ7pD///+SGxGEAAAAFElEQVQI12M4l/+AYf/mCQyFdwoAJNIF3T0xRTsAAAAASUVORK5CYII=);*/
 }
 </style>
@@ -81,6 +81,9 @@ const server = http.createServer(async (req, res) => {
                 const socket = net.connect(printer.port, printer.host, () => {
                     socket.end(receiptline.transform(text, printer), 'binary');
                 });
+                socket.on('error', err => {
+                    console.log(err.message);
+                });
             }
             const png = await convert(svg);
             res.end(html.replace(/<svg.*\/svg>/, `<img src="data:image/png;base64,${png.toString('base64')}">`));
@@ -91,5 +94,5 @@ const server = http.createServer(async (req, res) => {
     }
 });
 server.listen(8080, "127.0.0.1", () => {
-    console.log('Server running at http://127.0.0.1:8080/');
+    console.log('Server running at http://localhost:8080/');
 });
