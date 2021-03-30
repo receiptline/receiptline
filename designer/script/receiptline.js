@@ -1527,27 +1527,26 @@ limitations under the License.
         image: function (image, gamma, align, left, width, right) {
             let r = this.upsideDown ? this.area(right, width, left) + this.align(2 - align) : this.area(left, width, right) + this.align(align);
             const img = PNG.sync.read(Buffer.from(image, 'base64'));
-            const d = Array(img.width).fill(0);
-            const w = img.width + 7 & ~7;
-            const a = (w - img.width) * align >> 1;
-            const l = (w >> 3) * img.height + 10;
-            r += '\x1d8L' + $(l & 255, l >> 8 & 255, l >> 16 & 255, l >> 24 & 255, 48, 112, 48, 1, 1, 49, w & 255, w >> 8 & 255, img.height & 255, img.height >> 8 & 255);
+            const w = img.width;
+            const h = img.height;
+            const d = Array(w).fill(0);
+            const l = (w + 7 >> 3) * h + 10;
+            r += '\x1d8L' + $(l & 255, l >> 8 & 255, l >> 16 & 255, l >> 24 & 255, 48, 112, 48, 1, 1, 49, w & 255, w >> 8 & 255, h & 255, h >> 8 & 255);
             let j = this.upsideDown ? img.data.length - 4 : 0;
-            for (let y = 0; y < img.height; y++) {
+            for (let y = 0; y < h; y++) {
                 let i = 0, e = 0;
                 for (let x = 0; x < w; x += 8) {
                     let b = 0;
-                    for (let p = 0; p < 8; p++) {
-                        if (a <= x + p && i < img.width) {
-                            const f = Math.floor((d[i] + e * 5) / 16 + Math.pow(((img.data[j] * .299 + img.data[j + 1] * .587 + img.data[j + 2] * .114 - 255) * img.data[j + 3] + 65525) / 65525, 1 / gamma) * 255);
-                            j += this.upsideDown ? -4 : 4;
-                            d[i] = e * 3;
-                            e = f < 128 ? (b |= 128 >> p, f) : f - 255;
-                            if (i > 0) {
-                                d[i - 1] += e;
-                            }
-                            d[i++] += e * 7;
+                    const q = Math.min(w - x, 8);
+                    for (let p = 0; p < q; p++) {
+                        const f = Math.floor((d[i] + e * 5) / 16 + Math.pow(((img.data[j] * .299 + img.data[j + 1] * .587 + img.data[j + 2] * .114 - 255) * img.data[j + 3] + 65525) / 65525, 1 / gamma) * 255);
+                        j += this.upsideDown ? -4 : 4;
+                        d[i] = e * 3;
+                        e = f < 128 ? (b |= 128 >> p, f) : f - 255;
+                        if (i > 0) {
+                            d[i - 1] += e;
                         }
+                        d[i++] += e * 7;
                     }
                     r += $(b);
                 }
@@ -1879,27 +1878,26 @@ limitations under the License.
         image: function (image, gamma, align, left, width, right) {
             let r = (this.upsideDown && align === 2 ? this.area(right, width, left) : this.area(left, width, right)) + this.align(align);
             const img = PNG.sync.read(Buffer.from(image, 'base64'));
-            const d = Array(img.width).fill(0);
-            const w = img.width + 7 & ~7;
-            const a = (w - img.width) * align >> 1;
-            const l = (w >> 3) * img.height + 10;
-            r += '\x1d8L' + $(l & 255, l >> 8 & 255, l >> 16 & 255, l >> 24 & 255, 48, 112, 48, 1, 1, 49, w & 255, w >> 8 & 255, img.height & 255, img.height >> 8 & 255);
+            const w = img.width;
+            const h = img.height;
+            const d = Array(w).fill(0);
+            const l = (w + 7 >> 3) * h + 10;
+            r += '\x1d8L' + $(l & 255, l >> 8 & 255, l >> 16 & 255, l >> 24 & 255, 48, 112, 48, 1, 1, 49, w & 255, w >> 8 & 255, h & 255, h >> 8 & 255);
             let j = 0;
-            for (let y = 0; y < img.height; y++) {
+            for (let y = 0; y < h; y++) {
                 let i = 0, e = 0;
                 for (let x = 0; x < w; x += 8) {
                     let b = 0;
-                    for (let p = 0; p < 8; p++) {
-                        if (a <= x + p && i < img.width) {
-                            const f = Math.floor((d[i] + e * 5) / 16 + Math.pow(((img.data[j] * .299 + img.data[j + 1] * .587 + img.data[j + 2] * .114 - 255) * img.data[j + 3] + 65525) / 65525, 1 / gamma) * 255);
-                            j += 4;
-                            d[i] = e * 3;
-                            e = f < 128 ? (b |= 128 >> p, f) : f - 255;
-                            if (i > 0) {
-                                d[i - 1] += e;
-                            }
-                            d[i++] += e * 7;
+                    const q = Math.min(w - x, 8);
+                    for (let p = 0; p < q; p++) {
+                        const f = Math.floor((d[i] + e * 5) / 16 + Math.pow(((img.data[j] * .299 + img.data[j + 1] * .587 + img.data[j + 2] * .114 - 255) * img.data[j + 3] + 65525) / 65525, 1 / gamma) * 255);
+                        j += 4;
+                        d[i] = e * 3;
+                        e = f < 128 ? (b |= 128 >> p, f) : f - 255;
+                        if (i > 0) {
+                            d[i - 1] += e;
                         }
+                        d[i++] += e * 7;
                     }
                     r += $(b);
                 }
@@ -1986,26 +1984,26 @@ limitations under the License.
         image: function (image, gamma, align, left, width, right) {
             let r = this.area(left, width, right) + this.align(align);
             const img = PNG.sync.read(Buffer.from(image, 'base64'));
-            const d = Array(img.width).fill(0);
-            const w = img.width + 7 & ~7;
-            const a = (w - img.width) * align >> 1;
-            r += '\x1b\x1dS' + $(1, w >> 3 & 255, w >> 11 & 255, img.height & 255, img.height >> 8 & 255, 0);
+            const w = img.width;
+            const h = img.height;
+            const d = Array(w).fill(0);
+            const l = w + 7 >> 3;
+            r += '\x1b\x1dS' + $(1, l & 255, l >> 8 & 255, h & 255, h >> 8 & 255, 0);
             let j = 0;
-            for (let y = 0; y < img.height; y++) {
+            for (let y = 0; y < h; y++) {
                 let i = 0, e = 0;
                 for (let x = 0; x < w; x += 8) {
                     let b = 0;
-                    for (let p = 0; p < 8; p++) {
-                        if (a <= x + p && i < img.width) {
-                            const f = Math.floor((d[i] + e * 5) / 16 + Math.pow(((img.data[j] * .299 + img.data[j + 1] * .587 + img.data[j + 2] * .114 - 255) * img.data[j + 3] + 65525) / 65525, 1 / gamma) * 255);
-                            j += 4;
-                            d[i] = e * 3;
-                            e = f < 128 ? (b |= 128 >> p, f) : f - 255;
-                            if (i > 0) {
-                                d[i - 1] += e;
-                            }
-                            d[i++] += e * 7;
+                    const q = Math.min(w - x, 8);
+                    for (let p = 0; p < q; p++) {
+                        const f = Math.floor((d[i] + e * 5) / 16 + Math.pow(((img.data[j] * .299 + img.data[j + 1] * .587 + img.data[j + 2] * .114 - 255) * img.data[j + 3] + 65525) / 65525, 1 / gamma) * 255);
+                        j += 4;
+                        d[i] = e * 3;
+                        e = f < 128 ? (b |= 128 >> p, f) : f - 255;
+                        if (i > 0) {
+                            d[i - 1] += e;
                         }
+                        d[i++] += e * 7;
                     }
                     r += $(b);
                 }
