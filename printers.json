@@ -118,5 +118,18 @@
         "spacing": true,
         "cutting": true,
         "command": "impact"
+    },
+    "tsp_series1": {
+        "host": "127.0.0.1",
+        "port": 19100,
+        "cpl": 48,
+        "encoding": "cp437",
+        "gradient": true,
+        "gamma": 1.8,
+        "threshold": 128,
+        "upsideDown": false,
+        "spacing": true,
+        "cutting": true,
+        "command": "starlinesbcs"
     }
 }
