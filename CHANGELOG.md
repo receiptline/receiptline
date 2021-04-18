@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [1.4.0] - 2021-04-18
+### Added
+- Image processing options
+- Star Line Mode (TSP series)
+
+### Changed
+- SVG text-anchor from start to middle
+
 ## [1.3.2] - 2021-03-30
 ### Added
 - Features to the ReceiptLine Designer (formatting, favicon, Open Graph tags)

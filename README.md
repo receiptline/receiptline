@@ -100,14 +100,21 @@ const svg = receiptline.transform(doc, display);
 - `cutting` (for printer)
   - `false`: no paper cutting
   - `true`: paper cutting (default)
+- `gradient` (for printer)
+  - `false`: image processing for text, barcodes, and 2D codes
+  - `true`: image processing for photos (default)
 - `gamma` (for printer)
   - image gamma correction (default: `1.8`)
+- `threshold` (for printer)
+  - image thresholding (default: `128`)
 - `command`
   - `svg`: SVG (default)
   - `escpos`: Epson, Citizen
   - `sii`: SII
-  - `starmbcs`: Star MBCS
-  - `starsbcs`: Star SBCS
+  - `starmbcs`: StarPRNT MBCS
+  - `starsbcs`: StarPRNT SBCS
+  - `starlinembcs`: Star Line Mode MBCS
+  - `starlinesbcs`: Star Line Mode SBCS
   - `fit`: Fujitsu
   - `impact`: Epson TM-U220
   - `impactb`: Epson TM-U220 (Font B)
