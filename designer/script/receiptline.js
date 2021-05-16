@@ -2454,6 +2454,80 @@ limitations under the License.
         }
     };
 
+    //
+    // Star Graphic Mode
+    //
+    const _stargraphic = {
+        // printer configuration
+        upsideDown: false,
+        spacing: false,
+        cutting: true,
+        gradient: true,
+        gamma: 1.8,
+        threshold: 128,
+        // start printing: ESC RS a n ESC * r A ESC * r P n NUL (ESC * r E n NUL)
+        open: function (printer) {
+            this.upsideDown = printer.upsideDown;
+            this.spacing = printer.spacing;
+            this.cutting = printer.cutting;
+            this.gradient = printer.gradient;
+            this.gamma = printer.gamma;
+            this.threshold = printer.threshold;
+            return '\x1b\x1ea\x00\x1b*rA\x1b*rP0\x00' + (this.cutting ? '' : '\x1b*rE1\x00');
+        },
+        // finish printing: ESC * r B ESC ACK SOH
+        close: function () {
+            return '\x1b*rB\x1b\x06\x01';
+        },
+        // cut paper: ESC FF NUL
+        cut: () => '\x1b\x0c\x00',
+        // feed new line: ESC * r Y n NUL
+        lf: function () {
+            return '\x1b*rY' + this.charWidth * (this.spacing ? 2.5 : 2) + '\x00';
+        },
+        // insert commands:
+        command: command => command,
+        // print image: b n1 n2 data
+        image: function (image, align, left, width, right) {
+            let r = '';
+            const img = PNG.sync.read(Buffer.from(image, 'base64'));
+            const w = img.width;
+            const d = Array(w).fill(0);
+            const m = Math.max((this.upsideDown ? right : left) * this.charWidth + (width * this.charWidth - w) * (this.upsideDown ? 2 - align: align) >> 1, 0);
+            const l = m + w + 7 >> 3;
+            let j = this.upsideDown ? img.data.length - 4 : 0;
+            for (let y = 0; y < img.height; y++) {
+                let i = 0, e = 0;
+                r += 'b' + $(l & 255, l >> 8 & 255);
+                for (let x = 0; x < m + w; x += 8) {
+                    let b = 0;
+                    const q = Math.min(m + w - x, 8);
+                    for (let p = 0; p < q; p++) {
+                        if (m <= x + p) {
+                            const f = Math.floor((d[i] + e * 5) / 16 + Math.pow(((img.data[j] * .299 + img.data[j + 1] * .587 + img.data[j + 2] * .114 - 255) * img.data[j + 3] + 65525) / 65525, 1 / this.gamma) * 255);
+                            j += this.upsideDown ? -4 : 4;
+                            if (this.gradient) {
+                                d[i] = e * 3;
+                                e = f < this.threshold ? (b |= 128 >> p, f) : f - 255;
+                                if (i > 0) {
+                                    d[i - 1] += e;
+                                }
+                                d[i++] += e * 7;
+                            }
+                            else {
+                                if (f < this.threshold) {
+                                    b |= 128 >> p;
+                                }
+                            }
+                        }
+                    }
+                    r += $(b);
+                }
+            }
+            return r;
+        }
+    };
+
     // command set
     const commands = {
         svg: Object.assign(Object.create(_base), _svg),
@@ -2466,7 +2540,8 @@ limitations under the License.
         starsbcs: Object.assign(Object.create(_base), _star, _sbcs),
         starmbcs: Object.assign(Object.create(_base), _star, _mbcs),
         starlinesbcs: Object.assign(Object.create(_base), _star, _line, _sbcs),
-        starlinembcs: Object.assign(Object.create(_base), _star, _line, _mbcs)
+        starlinembcs: Object.assign(Object.create(_base), _star, _line, _mbcs),
+        stargraphic: Object.assign(Object.create(_base), _stargraphic)
     };
 
     // web browser
