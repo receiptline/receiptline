@@ -78,6 +78,7 @@ function initialize() {
     const cpl = document.getElementById('cpl');
     const printerid = document.getElementById('printerid');
     const send = document.getElementById('send');
+    const main = document.getElementById('main');
     const edit = document.getElementById('edit');
     const paper = document.getElementById('paper');
     const charWidth = 12;
@@ -139,9 +140,24 @@ function initialize() {
         }
         // save svg file
         if (savesvg.checked) {
+            const lang = window.navigator.language;
+            let encoding = 'cp437';
+            switch (lang.slice(0, 2)) {
+                case 'ja':
+                    encoding = 'cp932';
+                    break;
+                case 'zh':
+                    encoding = /^zh-(tw|hk)/i.test(lang) ? 'cp950' : 'cp936';
+                    break;
+                case 'ko':
+                    encoding = 'cp949';
+                    break;
+                default:
+                    break;
+            }
             const printer = {
                 cpl: Number(cpl.textContent),
-                encoding: /^ja/.test(window.navigator.language) ? 'cp932' : 'cp437',
+                encoding: encoding,
                 spacing: linespace.checked
             };
             const svg = receiptline.transform(edit.value, printer);
@@ -318,9 +334,25 @@ function initialize() {
 
     // register input event listener (immediately invoked)
     (edit.oninput = event => {
+        const lang = window.navigator.language;
+        main.lang = lang;
+        let encoding = 'cp437';
+        switch (lang.slice(0, 2)) {
+            case 'ja':
+                encoding = 'cp932';
+                break;
+            case 'zh':
+                encoding = /^zh-(tw|hk)/i.test(lang) ? 'cp950' : 'cp936';
+                break;
+            case 'ko':
+                encoding = 'cp949';
+                break;
+            default:
+                break;
+        }
         const printer = {
             cpl: Number(cpl.textContent),
-            encoding: /^ja/.test(window.navigator.language) ? 'cp932' : 'cp437',
+            encoding: encoding,
             spacing: linespace.checked
         };
         const svg = receiptline.transform(edit.value, printer);
