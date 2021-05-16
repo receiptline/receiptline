@@ -78,7 +78,7 @@ limitations under the License.
                 res.push(ptr.command.normal() +
                     ptr.command.area(state.rules.left, state.rules.width, state.rules.right) +
                     ptr.command.align(0) +
-                    ptr.command.vrstop(state.rules.widths, 1, 1) +
+                    ptr.command.vrstop(state.rules.widths) +
                     ptr.command.vrlf(false));
                 state.line = 'waiting';
                 break;
@@ -360,7 +360,7 @@ limitations under the License.
                     result.push(printer.command.normal() +
                         printer.command.area(left, width, right) +
                         printer.command.align(0) +
-                        printer.command.vrstart(widths, 1, 1) +
+                        printer.command.vrstart(widths) +
                         printer.command.vrlf(true));
                     state.line = 'running';
                     break;
@@ -372,11 +372,8 @@ limitations under the License.
                     const r = Math.min(right, state.rules.right);
                     result.push(printer.command.normal() +
                         printer.command.area(l, printer.cpl - l - r, r) +
-                        printer.command.align(0) + 
-                        printer.command.absolute(Math.max(-m, 0)) +
-                        printer.command.vrstop(state.rules.widths, m > 0, m + w < 0) +
-                        printer.command.absolute(Math.max(m, 0)) +
-                        printer.command.vrstart(widths, m < 0, m + w > 0) +
+                        printer.command.align(0) +
+                        printer.command.vrhr(state.rules.widths, widths, m, m + w) +
                         printer.command.lf());
                     state.line = 'running';
                     break;
@@ -460,7 +457,7 @@ limitations under the License.
                         result.push(printer.command.normal() +
                             printer.command.area(state.rules.left, state.rules.width, state.rules.right) +
                             printer.command.align(0) +
-                            printer.command.vrstop(state.rules.widths, 1, 1) +
+                            printer.command.vrstop(state.rules.widths) +
                             printer.command.vrlf(false));
                         // append commands to cut paper
                         result.push(printer.command.cut());
@@ -512,7 +509,7 @@ limitations under the License.
                         result.push(printer.command.normal() +
                             printer.command.area(state.rules.left, state.rules.width, state.rules.right) +
                             printer.command.align(0) +
-                            printer.command.vrstop(state.rules.widths, 1, 1) +
+                            printer.command.vrstop(state.rules.widths) +
                             printer.command.vrlf(false));
                         state.line = 'waiting';
                         break;
@@ -765,22 +762,29 @@ limitations under the License.
          * Function - vrstart
          * Start rules
          * @param {Array<number>} widths vertical line spacing
-         * @param {boolean} left round left corner
-         * @param {boolean} right round right corner
          * @returns {string} commands
          */
-        vrstart: (widths, left, right) => '',
+         vrstart: widths => '',
     
         /**
          * Function - vrstop
          * Stop rules
          * @param {Array<number>} widths vertical line spacing
-         * @param {boolean} left round left corner
-         * @param {boolean} right round right corner
          * @returns {string} commands
          */
-        vrstop: (widths, left, right) => '',
+         vrstop: widths => '',
     
+         /**
+          * Function - vrhr
+          * Print vertical and horizontal rules
+          * @param {Array<number>} widths1 vertical line spacing (stop)
+          * @param {Array<number>} widths2 vertical line spacing (start)
+          * @param {number} dl difference in left position
+          * @param {number} dr difference in right position
+          * @returns {string} commands
+          */
+         vrhr: (widths1, widths2, dl, dr) => '',
+     
         /**
          * Function - vrlf
          * Set line spacing and feed new line
@@ -960,28 +964,37 @@ limitations under the License.
         hr: function (width) {
             const w = this.charWidth;
             const path = `<path d="M0,${w}h${w * width}" fill="none" stroke="#000" stroke-width="2"/>`;
-            this.svgContent += `<g transform="translate(${(this.lineMargin + this.textPosition) * w},${this.svgHeight})">${path}</g>`;
+            this.svgContent += `<g transform="translate(${this.lineMargin * w},${this.svgHeight})">${path}</g>`;
             return '';
         },
         // print vertical rules:
         vr: function (widths, height) {
             const w = this.charWidth, u = w / 2, v = (w + w) * height;
             const path = `<path d="` + widths.reduce((a, width) => a + `m${w * width + w},${-v}v${v}`, `M${u},0v${v}`) + `" fill="none" stroke="#000" stroke-width="2"/>`;
-            this.svgContent += `<g transform="translate(${(this.lineMargin + this.textPosition) * w},${this.svgHeight})">${path}</g>`;
+            this.svgContent += `<g transform="translate(${this.lineMargin * w},${this.svgHeight})">${path}</g>`;
             return '';
         },
         // start rules:
-        vrstart: function (widths, left, right) {
+        vrstart: function (widths) {
             const w = this.charWidth, u = w / 2;
-            const path = `<path d="` + widths.reduce((a, width) => a + `h${w * width}h${u}v${w}m0,${-w}h${u}`, `M${u},${w + w}` + (left ? `v${-u}q0,${-u},${u},${-u}`: `v${-w}h${u}`)).replace(/h\d+v\d+m0,-\d+h\d+$/, right ? `q${u},0,${u},${u}v${u}` : `h${u}v${w}`) + `" fill="none" stroke="#000" stroke-width="2"/>`;
-            this.svgContent += `<g transform="translate(${(this.lineMargin + this.textPosition) * w},${this.svgHeight})">${path}</g>`;
+            const path = `<path d="` + widths.reduce((a, width) => a + `h${w * width}h${u}v${w}m0,${-w}h${u}`, `M${u},${w + w}v${-u}q0,${-u},${u},${-u}`).replace(/h\d+v\d+m0,-\d+h\d+$/, `q${u},0,${u},${u}v${u}`) + `" fill="none" stroke="#000" stroke-width="2"/>`;
+            this.svgContent += `<g transform="translate(${this.lineMargin * w},${this.svgHeight})">${path}</g>`;
             return '';
         },
         // stop rules:
-        vrstop: function (widths, left, right) {
+        vrstop: function (widths) {
             const w = this.charWidth, u = w / 2;
-            const path = `<path d="` + widths.reduce((a, width) => a + `h${w * width}h${u}v${-w}m0,${w}h${u}`, `M${u},0` + (left ? `v${u}q0,${u},${u},${u}`: `v${w}h${u}`)).replace(/h\d+v-\d+m0,\d+h\d+$/, right ? `q${u},0,${u},${-u}v${-u}` : `h${u}v${-w}`) + `" fill="none" stroke="#000" stroke-width="2"/>`;
-            this.svgContent += `<g transform="translate(${(this.lineMargin + this.textPosition) * w},${this.svgHeight})">${path}</g>`;
+            const path = `<path d="` + widths.reduce((a, width) => a + `h${w * width}h${u}v${-w}m0,${w}h${u}`, `M${u},0v${u}q0,${u},${u},${u}`).replace(/h\d+v-\d+m0,\d+h\d+$/, `q${u},0,${u},${-u}v${-u}`) + `" fill="none" stroke="#000" stroke-width="2"/>`;
+            this.svgContent += `<g transform="translate(${this.lineMargin * w},${this.svgHeight})">${path}</g>`;
+            return '';
+        },
+        // print vertical and horizontal rules:
+        vrhr: function (widths1, widths2, dl, dr) {
+            const w = this.charWidth, u = w / 2;
+            const path1 = `<path d="` + widths1.reduce((a, width) => a + `h${w * width}h${u}v${-w}m0,${w}h${u}`, `M${u},0` + (dl > 0 ? `v${u}q0,${u},${u},${u}`: `v${w}h${u}`)).replace(/h\d+v-\d+m0,\d+h\d+$/, dr < 0 ? `q${u},0,${u},${-u}v${-u}` : `h${u}v${-w}`) + `" fill="none" stroke="#000" stroke-width="2"/>`;
+            this.svgContent += `<g transform="translate(${(this.lineMargin + Math.max(-dl, 0)) * w},${this.svgHeight})">${path1}</g>`;
+            const path2 = `<path d="` + widths2.reduce((a, width) => a + `h${w * width}h${u}v${w}m0,${-w}h${u}`, `M${u},${w + w}` + (dl < 0 ? `v${-u}q0,${-u},${u},${-u}`: `v${-w}h${u}`)).replace(/h\d+v\d+m0,-\d+h\d+$/, dr > 0 ? `q${u},0,${u},${u}v${u}` : `h${u}v${w}`) + `" fill="none" stroke="#000" stroke-width="2"/>`;
+            this.svgContent += `<g transform="translate(${(this.lineMargin + Math.max(dl, 0)) * w},${this.svgHeight})">${path2}</g>`;
             return '';
         },
         // set line spacing and feed new line:
@@ -1491,16 +1504,32 @@ limitations under the License.
             const p = position * this.charWidth;
             return '\x1b\\' + $(p & 255, p >> 8 & 255);
         },
-        // print horizontal rule: FS C n ESC t n ...
-        hr: width => '\x1cC0\x1bt\x01' + '\x95'.repeat(width),
-        // print vertical rules: GS ! n FS C n ESC t n ...
+        // print horizontal rule: FS C n FS . ESC t n ...
+        hr: width => '\x1cC0\x1c.\x1bt\x01' + '\x95'.repeat(width),
+        // print vertical rules: GS ! n FS C n FS . ESC t n ...
         vr: function (widths, height) {
-            return widths.reduce((a, w) => a + this.relative(w) + '\x96', '\x1d!' + $(height - 1) + '\x1cC0\x1bt\x01\x96');
+            return widths.reduce((a, w) => a + this.relative(w) + '\x96', '\x1d!' + $(height - 1) + '\x1cC0\x1c.\x1bt\x01\x96');
         },
-        // start rules: FS C n ESC t n ...
-        vrstart: (widths, left, right) => '\x1cC0\x1bt\x01' + widths.reduce((a, w) => a + '\x95'.repeat(w) + '\x91', left ? '\x9c' : '\x98').slice(0, -1) + (right ? '\x9d' : '\x99'),
-        // stop rules: FS C n ESC t n ...
-        vrstop: (widths, left, right) => '\x1cC0\x1bt\x01' + widths.reduce((a, w) => a + '\x95'.repeat(w) + '\x90', left ? '\x9e' : '\x9a').slice(0, -1) + (right ? '\x9f' : '\x9b'),
+        // start rules: FS C n FS . ESC t n ...
+        vrstart: widths => '\x1cC0\x1c.\x1bt\x01' + widths.reduce((a, w) => a + '\x95'.repeat(w) + '\x91', '\x9c').slice(0, -1) + '\x9d',
+        // stop rules: FS C n FS . ESC t n ...
+        vrstop: widths => '\x1cC0\x1c.\x1bt\x01' + widths.reduce((a, w) => a + '\x95'.repeat(w) + '\x90', '\x9e').slice(0, -1) + '\x9f',
+        // print vertical and horizontal rules: FS C n FS . ESC t n ...
+        vrhr: function (widths1, widths2, dl, dr) {
+            const r1 = ' '.repeat(Math.max(-dl, 0)) + widths1.reduce((a, w) => a + '\x95'.repeat(w) + '\x90', dl > 0 ? '\x9e' : '\x9a').slice(0, -1) + (dr < 0 ? '\x9f' : '\x9b') + ' '.repeat(Math.max(dr, 0));
+            const r2 = ' '.repeat(Math.max(dl, 0)) + widths2.reduce((a, w) => a + '\x95'.repeat(w) + '\x91', dl < 0 ? '\x9c' : '\x98').slice(0, -1) + (dr > 0 ? '\x9d' : '\x99') + ' '.repeat(Math.max(-dr, 0));
+            return '\x1cC0\x1c.\x1bt\x01' + r2.split('').map((c, i) => this.vrtable[c][r1[i]]).join('');
+        },
+        // ruled line composition
+        vrtable: {
+            ' '    : { ' ' : ' ',    '\x90' : '\x90', '\x95' : '\x95', '\x9a' : '\x9a', '\x9b' : '\x9b', '\x9e' : '\x9e', '\x9f' : '\x9f' },
+            '\x91' : { ' ' : '\x91', '\x90' : '\x8f', '\x95' : '\x91', '\x9a' : '\x8f', '\x9b' : '\x8f', '\x9e' : '\x8f', '\x9f' : '\x8f' },
+            '\x95' : { ' ' : '\x95', '\x90' : '\x90', '\x95' : '\x95', '\x9a' : '\x90', '\x9b' : '\x90', '\x9e' : '\x90', '\x9f' : '\x90' },
+            '\x98' : { ' ' : '\x98', '\x90' : '\x8f', '\x95' : '\x91', '\x9a' : '\x93', '\x9b' : '\x8f', '\x9e' : '\x93', '\x9f' : '\x8f' },
+            '\x99' : { ' ' : '\x99', '\x90' : '\x8f', '\x95' : '\x91', '\x9a' : '\x8f', '\x9b' : '\x92', '\x9e' : '\x8f', '\x9f' : '\x92' },
+            '\x9c' : { ' ' : '\x9c', '\x90' : '\x8f', '\x95' : '\x91', '\x9a' : '\x93', '\x9b' : '\x8f', '\x9e' : '\x93', '\x9f' : '\x8f' },
+            '\x9d' : { ' ' : '\x9d', '\x90' : '\x8f', '\x95' : '\x91', '\x9a' : '\x8f', '\x9b' : '\x92', '\x9e' : '\x8f', '\x9f' : '\x92' }
+        },
         // set line spacing and feed new line: (ESC 2) (ESC 3 n)
         vrlf: function (vr) {
             return (vr === this.upsideDown && this.spacing ? '\x1b2' : '\x1b3\x00') + this.lf();
@@ -2095,7 +2124,7 @@ limitations under the License.
     };
 
     //
-    // StarPRNT MBCS
+    // Star MBCS
     //
     const _mbcs = {
         // print horizontal rule: ESC $ n ...
@@ -2105,13 +2134,29 @@ limitations under the License.
             return widths.reduce((a, w) => a + this.relative(w) + '\x96', '\x1bi' + $(height - 1, 0) + '\x1b$0\x96');
         },
         // start rules: ESC $ n ...
-        vrstart: (widths, left, right) => '\x1b$0' + widths.reduce((a, w) => a + '\x95'.repeat(w) + '\x91', left ? '\x9c' : '\x98').slice(0, -1) + (right ? '\x9d' : '\x99'),
+        vrstart: widths => '\x1b$0' + widths.reduce((a, w) => a + '\x95'.repeat(w) + '\x91', '\x9c').slice(0, -1) + '\x9d',
         // stop rules: ESC $ n ...
-        vrstop: (widths, left, right) => '\x1b$0' + widths.reduce((a, w) => a + '\x95'.repeat(w) + '\x90', left ? '\x9e' : '\x9a').slice(0, -1) + (right ? '\x9f' : '\x9b'),
+        vrstop: widths => '\x1b$0' + widths.reduce((a, w) => a + '\x95'.repeat(w) + '\x90', '\x9e').slice(0, -1) + '\x9f',
+        // print vertical and horizontal rules: ESC $ n ...
+        vrhr: function (widths1, widths2, dl, dr) {
+            const r1 = ' '.repeat(Math.max(-dl, 0)) + widths1.reduce((a, w) => a + '\x95'.repeat(w) + '\x90', dl > 0 ? '\x9e' : '\x9a').slice(0, -1) + (dr < 0 ? '\x9f' : '\x9b') + ' '.repeat(Math.max(dr, 0));
+            const r2 = ' '.repeat(Math.max(dl, 0)) + widths2.reduce((a, w) => a + '\x95'.repeat(w) + '\x91', dl < 0 ? '\x9c' : '\x98').slice(0, -1) + (dr > 0 ? '\x9d' : '\x99') + ' '.repeat(Math.max(-dr, 0));
+            return '\x1b$0' + r2.split('').map((c, i) => this.vrtable[c][r1[i]]).join('');
+        },
+        // ruled line composition
+        vrtable: {
+            ' '    : { ' ' : ' ',    '\x90' : '\x90', '\x95' : '\x95', '\x9a' : '\x9a', '\x9b' : '\x9b', '\x9e' : '\x9e', '\x9f' : '\x9f' },
+            '\x91' : { ' ' : '\x91', '\x90' : '\x8f', '\x95' : '\x91', '\x9a' : '\x8f', '\x9b' : '\x8f', '\x9e' : '\x8f', '\x9f' : '\x8f' },
+            '\x95' : { ' ' : '\x95', '\x90' : '\x90', '\x95' : '\x95', '\x9a' : '\x90', '\x9b' : '\x90', '\x9e' : '\x90', '\x9f' : '\x90' },
+            '\x98' : { ' ' : '\x98', '\x90' : '\x8f', '\x95' : '\x91', '\x9a' : '\x93', '\x9b' : '\x8f', '\x9e' : '\x93', '\x9f' : '\x8f' },
+            '\x99' : { ' ' : '\x99', '\x90' : '\x8f', '\x95' : '\x91', '\x9a' : '\x8f', '\x9b' : '\x92', '\x9e' : '\x8f', '\x9f' : '\x92' },
+            '\x9c' : { ' ' : '\x9c', '\x90' : '\x8f', '\x95' : '\x91', '\x9a' : '\x93', '\x9b' : '\x8f', '\x9e' : '\x93', '\x9f' : '\x8f' },
+            '\x9d' : { ' ' : '\x9d', '\x90' : '\x8f', '\x95' : '\x91', '\x9a' : '\x8f', '\x9b' : '\x92', '\x9e' : '\x8f', '\x9f' : '\x92' }
+        }
     };
 
     //
-    // StarPRNT SBCS
+    // Star SBCS
     //
     const _sbcs = {
         // print horizontal rule: ESC GS t n ...
@@ -2121,53 +2166,35 @@ limitations under the License.
             return widths.reduce((a, w) => a + this.relative(w) + '\xb3', '\x1bi' + $(height - 1, 0) + '\x1b\x1dt\x01\xb3');
         },
         // start rules: ESC GS t n ...
-        vrstart: (widths, left, right) => '\x1b\x1dt\x01' + widths.reduce((a, w) => a + '\xc4'.repeat(w) + '\xc2', '\xda').slice(0, -1) + '\xbf',
+        vrstart: widths => '\x1b\x1dt\x01' + widths.reduce((a, w) => a + '\xc4'.repeat(w) + '\xc2', '\xda').slice(0, -1) + '\xbf',
         // stop rules: ESC GS t n ...
-        vrstop: (widths, left, right) => '\x1b\x1dt\x01' + widths.reduce((a, w) => a + '\xc4'.repeat(w) + '\xc1', '\xc0').slice(0, -1) + '\xd9',
+        vrstop: widths => '\x1b\x1dt\x01' + widths.reduce((a, w) => a + '\xc4'.repeat(w) + '\xc1', '\xc0').slice(0, -1) + '\xd9',
+        // print vertical and horizontal rules: ESC GS t n ...
+        vrhr: function (widths1, widths2, dl, dr) {
+            const r1 = ' '.repeat(Math.max(-dl, 0)) + widths1.reduce((a, w) => a + '\xc4'.repeat(w) + '\xc1', '\xc0').slice(0, -1) + '\xd9' + ' '.repeat(Math.max(dr, 0));
+            const r2 = ' '.repeat(Math.max(dl, 0)) + widths2.reduce((a, w) => a + '\xc4'.repeat(w) + '\xc2', '\xda').slice(0, -1) + '\xbf' + ' '.repeat(Math.max(-dr, 0));
+            return '\x1b\x1dt\x01' + r2.split('').map((c, i) => this.vrtable[c][r1[i]]).join('');
+        },
+        // ruled line composition
+        vrtable: {
+            ' '    : { ' ' : ' ',    '\xc0' : '\xc0', '\xc1' : '\xc1', '\xc4' : '\xc4', '\xd9' : '\xd9' },
+            '\xbf' : { ' ' : '\xbf', '\xc0' : '\xc5', '\xc1' : '\xc5', '\xc4' : '\xc2', '\xd9' : '\xb4' },
+            '\xc2' : { ' ' : '\xc2', '\xc0' : '\xc5', '\xc1' : '\xc5', '\xc4' : '\xc2', '\xd9' : '\xc5' },
+            '\xc4' : { ' ' : '\xc4', '\xc0' : '\xc1', '\xc1' : '\xc1', '\xc4' : '\xc4', '\xd9' : '\xc1' },
+            '\xda' : { ' ' : '\xda', '\xc0' : '\xc3', '\xc1' : '\xc5', '\xc4' : '\xc2', '\xd9' : '\xc5' }
+        }
     };
 
     //
-    // Star Line Mode Common
+    // Star Line Mode
     //
     const _line = {
-        position: 0,
-        rules: '',
-        // start printing: ESC @ ESC RS a n ESC RS F n ESC SP n ESC s n1 n2 (ESC z n) (ESC 0) (SI) (DC2)
-        open: function (printer) {
-            this.position = 0;
-            this.rules = '';
-            this.upsideDown = printer.upsideDown;
-            this.spacing = printer.spacing;
-            this.cutting = printer.cutting;
-            this.gradient = printer.gradient;
-            this.gamma = printer.gamma;
-            this.threshold = printer.threshold;
-            return '\x1b@\x1b\x1ea\x00\x1b\x1eF\x00\x1b 0\x1bs00' + (this.spacing ? '\x1bz1' : '\x1b0') + (this.upsideDown ? '\x0f' : '\x12');
-        },
         // finish printing: ESC GS ETX s n1 n2 EOT
         close: function () {
             return (this.cutting ? this.cut() : '') + '\x1b\x1d\x03\x01\x00\x00\x04';
         },
-        // set absolute print position: ESC GS A n1 n2
-        absolute: function (position) {
-            this.position = position;
-            const p = position * this.charWidth;
-            return '\x1b\x1dA' + $(p & 255, p >> 8 & 255);
-        },
-        // set relative print position: ESC GS R n1 n2
-        relative: function (position) {
-            this.position += Math.round(position);
-            const p = position * this.charWidth;
-            return '\x1b\x1dR' + $(p & 255, p >> 8 & 255);
-        },
         vrlf: function (vr) {
             return (vr === this.upsideDown && this.spacing ? '\x1bz1' : '\x1b0') + this.lf();
-        },
-        // feed new line: LF
-        lf: function () {
-            this.position = 0;
-            this.rules = '';
-            return '\x0a';
         },
         // print image: ESC k n1 n2 d1 ... dk
         image: function (image, align, left, width, right) {
@@ -2220,66 +2247,6 @@ limitations under the License.
     };
 
     //
-    // Star Line Mode MBCS
-    //
-    const _linembcs = {
-        vrtable: {
-            ' '    : { ' ' : ' ',    '\x90' : '\x90', '\x95' : '\x95', '\x9a' : '\x9a', '\x9b' : '\x9b', '\x9e' : '\x9e', '\x9f' : '\x9f' },
-            '\x91' : { ' ' : '\x91', '\x90' : '\x8f', '\x95' : '\x91', '\x9a' : '\x8f', '\x9b' : '\x8f', '\x9e' : '\x8f', '\x9f' : '\x8f' },
-            '\x95' : { ' ' : '\x95', '\x90' : '\x90', '\x95' : '\x95', '\x9a' : '\x90', '\x9b' : '\x90', '\x9e' : '\x90', '\x9f' : '\x90' },
-            '\x98' : { ' ' : '\x98', '\x90' : '\x8f', '\x95' : '\x91', '\x9a' : '\x93', '\x9b' : '\x8f', '\x9e' : '\x93', '\x9f' : '\x8f' },
-            '\x99' : { ' ' : '\x99', '\x90' : '\x8f', '\x95' : '\x91', '\x9a' : '\x8f', '\x9b' : '\x92', '\x9e' : '\x8f', '\x9f' : '\x92' },
-            '\x9c' : { ' ' : '\x9c', '\x90' : '\x8f', '\x95' : '\x91', '\x9a' : '\x93', '\x9b' : '\x8f', '\x9e' : '\x93', '\x9f' : '\x8f' },
-            '\x9d' : { ' ' : '\x9d', '\x90' : '\x8f', '\x95' : '\x91', '\x9a' : '\x8f', '\x9b' : '\x92', '\x9e' : '\x8f', '\x9f' : '\x92' }
-        },
-        // start rules: ESC $ n ...
-        vrstart: function (widths, left, right) {
-            let r = widths.reduce((a, w) => a + '\x95'.repeat(w) + '\x91', left ? '\x9c' : '\x98').slice(0, -1) + (right ? '\x9d' : '\x99');
-            const l = this.rules.length;
-            if (l > 0) {
-                const p = this.position;
-                r = r.split('').map((c, i) => this.vrtable[c][i + p < l ? this.rules[i + p] : ' ']).join('');
-            }
-            return '\x1b$0' + r;
-        },
-        // stop rules: ESC $ n ...
-        vrstop: function (widths, left, right) {
-            const r = widths.reduce((a, w) => a + '\x95'.repeat(w) + '\x90', left ? '\x9e' : '\x9a').slice(0, -1) + (right ? '\x9f' : '\x9b');
-            this.rules = ' '.repeat(this.position) + r;
-            return '\x1b$0' + r;
-        }
-    };
-
-    //
-    // Star Line Mode SBCS
-    //
-    const _linesbcs = {
-        vrtable: {
-            ' '    : { ' ' : ' ',    '\xc0' : '\xc0', '\xc1' : '\xc1', '\xc4' : '\xc4', '\xd9' : '\xd9' },
-            '\xbf' : { ' ' : '\xbf', '\xc0' : '\xc5', '\xc1' : '\xc5', '\xc4' : '\xc2', '\xd9' : '\xb4' },
-            '\xc2' : { ' ' : '\xc2', '\xc0' : '\xc5', '\xc1' : '\xc5', '\xc4' : '\xc2', '\xd9' : '\xc5' },
-            '\xc4' : { ' ' : '\xc4', '\xc0' : '\xc1', '\xc1' : '\xc1', '\xc4' : '\xc4', '\xd9' : '\xc1' },
-            '\xda' : { ' ' : '\xda', '\xc0' : '\xc3', '\xc1' : '\xc5', '\xc4' : '\xc2', '\xd9' : '\xc5' }
-        },
-        // start rules: ESC GS t n ...
-        vrstart: function (widths, left, right) {
-            let r = widths.reduce((a, w) => a + '\xc4'.repeat(w) + '\xc2', '\xda').slice(0, -1) + '\xbf';
-            const l = this.rules.length;
-            if (l > 0) {
-                const p = this.position;
-                r = r.split('').map((c, i) => this.vrtable[c][i + p < l ? this.rules[i + p] : ' ']).join('');
-            }
-            return '\x1b\x1dt\x01' + r;
-        },
-        // stop rules: ESC GS t n ...
-        vrstop: function (widths, left, right) {
-            const r = widths.reduce((a, w) => a + '\xc4'.repeat(w) + '\xc1', '\xc0').slice(0, -1) + '\xd9';
-            this.rules = ' '.repeat(this.position) + r;
-            return '\x1b\x1dt\x01' + r;
-        }
-    }
-
-    //
     // ESC/POS Impact
     //
     const _impact = {
@@ -2288,7 +2255,6 @@ limitations under the License.
         color: 0,
         margin: 0,
         position: 0,
-        rules: '',
         red: [],
         black: [],
         // printer configuration
@@ -2304,7 +2270,6 @@ limitations under the License.
             this.color = 0;
             this.margin = 0;
             this.position = 0;
-            this.rules = '';
             this.red = [];
             this.black = [];
             this.upsideDown = printer.upsideDown;
@@ -2338,8 +2303,7 @@ limitations under the License.
         },
         // print horizontal rule: ESC t n ...
         hr: function (width) {
-            this.rules = ' '.repeat(this.position) + '\x95'.repeat(width);
-            return '';
+            return '\x1b!' + $(this.font) + ' '.repeat(this.margin) + '\x1bt\x01' + '\x95'.repeat(width);
         },
         // print vertical rules: ESC ! n ESC t n ...
         vr: function (widths, height) {
@@ -2360,25 +2324,19 @@ limitations under the License.
             '\x9c' : { ' ' : '\x9c', '\x90' : '\x8f', '\x95' : '\x91', '\x9a' : '\x93', '\x9b' : '\x8f', '\x9e' : '\x93', '\x9f' : '\x8f' },
             '\x9d' : { ' ' : '\x9d', '\x90' : '\x8f', '\x95' : '\x91', '\x9a' : '\x8f', '\x9b' : '\x92', '\x9e' : '\x8f', '\x9f' : '\x92' }
         },
-        // start rules:
-        vrstart: function (widths, left, right) {
-            let r = ' '.repeat(this.position) + widths.reduce((a, w) => a + '\x95'.repeat(w) + '\x91', left ? '\x9c' : '\x98').slice(0, -1) + (right ? '\x9d' : '\x99');
-            const l = this.rules.length;
-            if (l > 0) {
-                if (r.length < l) {
-                    r += ' '.repeat(l - r.length);
-                }
-                this.rules = r.split('').map((c, i) => this.vrtable[c][i < l ? this.rules[i] : ' ']).join('');
-            }
-            else {
-                this.rules = r;
-            }
-            return '';
+        // start rules: ESC ! n ESC t n ...
+        vrstart: function (widths) {
+            return '\x1b!' + $(this.font) + ' '.repeat(this.margin) + '\x1bt\x01' + widths.reduce((a, w) => a + '\x95'.repeat(w) + '\x91', '\x9c').slice(0, -1) + '\x9d';
         },
-        // stop rules:
-        vrstop: function (widths, left, right) {
-            this.rules = ' '.repeat(this.position) + widths.reduce((a, w) => a + '\x95'.repeat(w) + '\x90', left ? '\x9e' : '\x9a').slice(0, -1) + (right ? '\x9f' : '\x9b');
-            return '';
+        // stop rules: ESC ! n ESC t n ...
+        vrstop: function (widths) {
+            return '\x1b!' + $(this.font) + ' '.repeat(this.margin) + '\x1bt\x01' + widths.reduce((a, w) => a + '\x95'.repeat(w) + '\x90', '\x9e').slice(0, -1) + '\x9f';
+        },
+        // print vertical and horizontal rules: ESC ! n ESC t n ...
+        vrhr: function (widths1, widths2, dl, dr) {
+            const r1 = ' '.repeat(Math.max(-dl, 0)) + widths1.reduce((a, w) => a + '\x95'.repeat(w) + '\x90', dl > 0 ? '\x9e' : '\x9a').slice(0, -1) + (dr < 0 ? '\x9f' : '\x9b') + ' '.repeat(Math.max(dr, 0));
+            const r2 = ' '.repeat(Math.max(dl, 0)) + widths2.reduce((a, w) => a + '\x95'.repeat(w) + '\x91', dl < 0 ? '\x9c' : '\x98').slice(0, -1) + (dr > 0 ? '\x9d' : '\x99') + ' '.repeat(Math.max(-dr, 0));
+            return '\x1b!' + $(this.font) + ' '.repeat(this.margin) + '\x1bt\x01' + r2.split('').map((c, i) => this.vrtable[c][r1[i]]).join('');
         },
         // set line spacing and feed new line: (ESC 2) (ESC 3 n)
         vrlf: function (vr) {
@@ -2437,9 +2395,6 @@ limitations under the License.
         // feed new line: LF
         lf: function () {
             let r = '';
-            if (this.rules.length > 0) {
-                r += '\x1b!' + $(this.font) + ' '.repeat(this.margin) + '\x1bt\x01' + this.rules;
-            }
             if (this.red.length > 0) {
                 let p = 0;
                 r += this.red.sort((a, b) => a.index - b.index).reduce((a, c) => {
@@ -2458,7 +2413,6 @@ limitations under the License.
             }
             r += '\x0a';
             this.position = 0;
-            this.rules = '';
             this.red = [];
             this.black = [];
             return r;
@@ -2518,8 +2472,8 @@ limitations under the License.
         fit: Object.assign(Object.create(_base), _escpos, _fit),
         starmbcs: Object.assign(Object.create(_base), _star, _mbcs),
         starsbcs: Object.assign(Object.create(_base), _star, _sbcs),
-        starlinembcs: Object.assign(Object.create(_base), _star, _mbcs, _line, _linembcs),
-        starlinesbcs: Object.assign(Object.create(_base), _star, _sbcs, _line, _linesbcs),
+        starlinembcs: Object.assign(Object.create(_base), _star, _line, _mbcs),
+        starlinesbcs: Object.assign(Object.create(_base), _star, _line, _sbcs),
         impact: Object.assign(Object.create(_base), _impact),
         impactb: Object.assign(Object.create(_base), _impact, _impactb)
     };
