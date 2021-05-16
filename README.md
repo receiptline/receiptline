@@ -89,8 +89,15 @@ const svg = receiptline.transform(doc, display);
   - `cp863`: French Canadian
   - `cp865`: Nordic
   - `cp866`: Cyrillic
-  - `cp932`: Japanese
   - `cp1252`: Western European
+  - `cp932`: Japanese
+  - `shiftjis`: Japanese
+  - `cp936`: Simplified Chinese
+  - `gb18030`: Simplified Chinese
+  - `cp949`: Korean
+  - `ksc5601`: Korean
+  - `cp950`: Traditional Chinese
+  - `big5`: Traditional Chinese
 - `upsideDown` (for printer)
   - `false`: normal (default)
   - `true`: upside down
@@ -109,15 +116,19 @@ const svg = receiptline.transform(doc, display);
   - image thresholding (default: `128`)
 - `command`
   - `svg`: SVG (default)
-  - `escpos`: Epson, Citizen
-  - `sii`: SII
-  - `starmbcs`: StarPRNT MBCS
-  - `starsbcs`: StarPRNT SBCS
-  - `starlinembcs`: Star Line Mode MBCS
-  - `starlinesbcs`: Star Line Mode SBCS
-  - `fit`: Fujitsu
-  - `impact`: Epson TM-U220
-  - `impactb`: Epson TM-U220 (Font B)
+  - `escpos`: ESC/POS (Epson)
+  - `sii`: ESC/POS (SII)
+  - `citizen`: ESC/POS (Citizen)
+  - `fit`: ESC/POS (Fujitsu)
+  - `impact`: ESC/POS (TM-U220)
+  - `impactb`: ESC/POS (TM-U220 Font B)
+  - `starsbcs`: StarPRNT (SBCS)
+  - `starmbcs`: StarPRNT (Japanese)
+  - `starmbcs2`: StarPRNT (Chinese, Korean)
+  - `starlinesbcs`: Star Line Mode (SBCS)
+  - `starlinembcs`: Star Line Mode (Japanese)
+  - `starlinembcs2`: Star Line Mode (Chinsese, Korean)
+  - `stargrahic`: Star Graphic Mode (TSP100LAN)
 
 # Examples
 
@@ -450,13 +461,14 @@ Escape special characters.
 - Communication with the printer, status event processing, and error handling are out of scope.
 - SVG images depend on the font family installed on the computer and may not display properly.
 - The QR code for display is encoded in UTF-8, while the QR code for printing is encoded in ASCII or Shift_JIS.
-- Impact printer has some limitations for printing
+- Impact printer has some limitations for printing.
   - Characters larger than 2x size
   - Inverted characters (**will be printed in red**)
   - Double height characters in different colors on the same line
   - Multibyte characters
   - Image position and size ratio
   - Barcodes and 2D codes
+- Star Graphic Mode printing only supports images, line feeds, and paper cuts.
 
 # Author
 

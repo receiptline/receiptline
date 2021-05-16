@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+## [1.5.0] - 2021-05-16
+### Added
+- Chinese and Korean languages
+- Star Graphic Mode (TSP100LAN)
+
+### Changed
+- Ruled line drawing
+- SVG paper cut drawing from text to path
+
 ## [1.4.0] - 2021-04-18
 ### Added
 - Image processing options
