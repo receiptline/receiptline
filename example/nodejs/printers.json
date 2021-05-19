@@ -18,6 +18,7 @@
     "printer3": {
         "host": "127.0.0.1",
         "port": 19100,
+        "asImage": false,
         "cpl": 48,
         "encoding": "cp932",
         "gradient": true,
@@ -31,6 +32,7 @@
     "tm_series1": {
         "host": "127.0.0.1",
         "port": 19100,
+        "asImage": false,
         "cpl": 42,
         "encoding": "cp437",
         "gradient": true,
@@ -44,6 +46,7 @@
     "rp_series1": {
         "host": "127.0.0.1",
         "port": 19100,
+        "asImage": false,
         "cpl": 48,
         "encoding": "cp932",
         "gradient": true,
@@ -57,6 +60,7 @@
     "mc_series1": {
         "host": "127.0.0.1",
         "port": 19100,
+        "asImage": false,
         "cpl": 48,
         "encoding": "cp932",
         "gradient": true,
@@ -70,6 +74,7 @@
     "mc_series2": {
         "host": "127.0.0.1",
         "port": 19100,
+        "asImage": false,
         "cpl": 48,
         "encoding": "cp437",
         "gradient": true,
@@ -83,6 +88,7 @@
     "ct_series1": {
         "host": "127.0.0.1",
         "port": 19100,
+        "asImage": false,
         "cpl": 48,
         "encoding": "cp932",
         "gradient": true,
@@ -96,6 +102,7 @@
    "fp_series1": {
         "host": "127.0.0.1",
         "port": 19100,
+        "asImage": false,
         "cpl": 48,
         "encoding": "cp932",
         "gradient": true,
@@ -109,6 +116,7 @@
     "tm_u220": {
         "host": "127.0.0.1",
         "port": 19100,
+        "asImage": false,
         "cpl": 33,
         "encoding": "cp437",
         "gradient": true,
@@ -122,6 +130,7 @@
     "tsp_series1": {
         "host": "127.0.0.1",
         "port": 19100,
+        "asImage": false,
         "cpl": 48,
         "encoding": "cp437",
         "gradient": true,
@@ -135,11 +144,12 @@
     "tsp100lan": {
         "host": "127.0.0.1",
         "port": 19100,
+        "asImage": true,
         "cpl": 48,
         "encoding": "cp437",
-        "gradient": true,
-        "gamma": 1.8,
-        "threshold": 128,
+        "gradient": false,
+        "gamma": 1.0,
+        "threshold": 192,
         "upsideDown": false,
         "spacing": true,
         "cutting": true,

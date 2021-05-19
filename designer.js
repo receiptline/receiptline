@@ -22,6 +22,13 @@ const fs = require('fs');
 const net = require('net');
 const receiptline = require('receiptline');
 const servers = require('./servers.json');
+let convert;
+try {
+    ({ convert } = require('convert-svg-to-png'));
+}
+catch (e) {
+    // nothing to do
+}
 
 // Serial-LAN Converter
 if ('serial' in servers) {
@@ -105,8 +112,18 @@ if ('http' in servers) {
                                 const port = printer.port || 19100;
                                 const sock = net.connect(port, host);
                                 sock.on('connect', () => {
-                                    const command = receiptline.transform(text, printer);
-                                    sock.write(command, /^<svg/.test(command) ? 'utf8' : 'binary');
+                                    if (printer.asImage && convert !== undefined) {
+                                        const display = Object.assign({}, printer, { 'command': 'svg' });
+                                        const svg = receiptline.transform(text, display);
+                                        convert(svg).then(png => {
+                                            const image = `|{i:${png.toString('base64')}}`;
+                                            sock.write(receiptline.transform(image, printer), 'binary');
+                                        });
+                                    }
+                                    else {
+                                        const command = receiptline.transform(text, printer);
+                                        sock.write(command, /^<svg/.test(command) ? 'utf8' : 'binary');
+                                    }
                                 });
                                 sock.once('data', data => {
                                     sock.end();
