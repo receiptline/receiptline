@@ -98,6 +98,13 @@ const svg = receiptline.transform(doc, display);
   - `ksc5601`: Korean
   - `cp950`: Traditional Chinese
   - `big5`: Traditional Chinese
+- `gradient` (for printer)
+  - `false`: image processing for text, barcodes, and 2D codes
+  - `true`: image processing for photos (default)
+- `gamma` (for printer)
+  - image gamma correction (range: `0.1` - `10.0`, default: `1.8`)
+- `threshold` (for printer)
+  - image thresholding (range: `0` - `255`, default: `128`)
 - `upsideDown` (for printer)
   - `false`: normal (default)
   - `true`: upside down
@@ -107,13 +114,6 @@ const svg = receiptline.transform(doc, display);
 - `cutting` (for printer)
   - `false`: no paper cutting
   - `true`: paper cutting (default)
-- `gradient` (for printer)
-  - `false`: image processing for text, barcodes, and 2D codes
-  - `true`: image processing for photos (default)
-- `gamma` (for printer)
-  - image gamma correction (default: `1.8`)
-- `threshold` (for printer)
-  - image thresholding (default: `128`)
 - `command`
   - `svg`: SVG (default)
   - `escpos`: ESC/POS (Epson)
@@ -128,7 +128,7 @@ const svg = receiptline.transform(doc, display);
   - `starlinesbcs`: Star Line Mode (SBCS)
   - `starlinembcs`: Star Line Mode (Japanese)
   - `starlinembcs2`: Star Line Mode (Chinsese, Korean)
-  - `stargrahic`: Star Graphic Mode (TSP100LAN)
+  - `stargraphic`: Star Graphic Mode (TSP100LAN)
 
 # Examples
 
@@ -195,13 +195,16 @@ The ReceiptLine Designer provides more features.
     "printer_id": {
         "host": "127.0.0.1",
         "port": 19100,
+        "asImage": false,
         "cpl": 48,
-        "encoding": "cp437",
-        "upsideDown": false,
-        "spacing": false,
-        "cutting": true,
+        "encoding": "cp932",
+        "gradient": true,
         "gamma": 1.8,
-        "command": "svg"
+        "threshold": 128,
+        "upsideDown": false,
+        "spacing": true,
+        "cutting": true,
+        "command": "escpos"
     }
     ```
 
@@ -211,7 +214,10 @@ The ReceiptLine Designer provides more features.
       - printer address
     - `port`
       - printer port (will be `9100`)
-    - `cpl`, `encoding`, `upsideDown`, `spacing`, `cutting`, `gamma`, `command`
+    - `asImage`
+      - `false`: print with device font (default)
+      - `true`: print as image (Requires [convert-svg-to-png](https://www.npmjs.com/package/convert-svg-to-png))
+    - `cpl`, `encoding`, `gradient`, `gamma`, `threshold`, `upsideDown`, `spacing`, `cutting`, `command`
       - see the printer configuration above
 
     *Please back up this json file as it will be initialized by updating the package.*  

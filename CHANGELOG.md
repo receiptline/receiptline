@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.5.1] - 2021-05-19
+### Added
+- An option to select whether to print with device fonts or as images
+
 ## [1.5.0] - 2021-05-16
 ### Added
 - Chinese and Korean languages
