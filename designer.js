@@ -111,24 +111,31 @@ if ('http' in servers) {
                                 const host = printer.host || '127.0.0.1';
                                 const port = printer.port || 19100;
                                 const sock = net.connect(port, host);
+                                let drain = false;
                                 sock.on('connect', () => {
                                     if (printer.asImage && convert !== undefined) {
                                         const display = Object.assign({}, printer, { 'command': 'svg' });
                                         const svg = receiptline.transform(text, display);
                                         convert(svg).then(png => {
                                             const image = `|{i:${png.toString('base64')}}`;
-                                            sock.write(receiptline.transform(image, printer), 'binary');
+                                            drain = sock.write(receiptline.transform(image, printer), 'binary');
                                         });
                                     }
                                     else {
                                         const command = receiptline.transform(text, printer);
-                                        sock.write(command, /^<svg/.test(command) ? 'utf8' : 'binary');
+                                        drain = sock.write(command, /^<svg/.test(command) ? 'utf8' : 'binary');
                                     }
                                 });
-                                sock.once('data', data => {
-                                    sock.end();
-                                    res.writeHead(200, {'Content-Type': 'text/plain'});
-                                    res.end('success');
+                                sock.on('data', data => {
+                                    if (drain) {
+                                        sock.end();
+                                        res.writeHead(200, {'Content-Type': 'text/plain'});
+                                        res.end('success');
+                                        drain = false;
+                                    }
+                                });
+                                sock.on('drain', () => {
+                                    drain = true;
                                 });
                                 sock.on('timeout', () => {
                                     sock.end();
