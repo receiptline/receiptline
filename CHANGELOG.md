@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+## [1.5.2] - 2021-05-28
+### Added
+- Command Emulator Star Line Mode
+
+### Changed
+- HTTP port from 10080 to 8080
+
+### Fixed
+- Large image printing
+- Print end process
+
 ## [1.5.1] - 2021-05-19
 ### Added
 - An option to select whether to print with device fonts or as images

@@ -128,6 +128,9 @@ const svg = receiptline.transform(doc, display);
   - `starlinesbcs`: Star Line Mode (SBCS)
   - `starlinembcs`: Star Line Mode (Japanese)
   - `starlinembcs2`: Star Line Mode (Chinsese, Korean)
+  - `emustarlinesbcs`: Command Emulator Star Line Mode (SBCS)
+  - `emustarlinembcs`: Command Emulator Star Line Mode (Japanese)
+  - `emustarlinembcs2`: Command Emulator Star Line Mode (Chinsese, Korean)
   - `stargraphic`: Star Graphic Mode (TSP100LAN)
 
 # Examples
@@ -185,7 +188,7 @@ The ReceiptLine Designer provides more features.
     $ npm start
     ```
 
-1. Open http://localhost:10080
+1. Open http://localhost:8080
 
     Use a modern browser.  
 
