@@ -1,7 +1,7 @@
 {
     "http": {
         "host": "127.0.0.1",
-        "port": 10080,
+        "port": 8080,
         "root": "./wwwroot",
         "timeout": 60000,
         "mime": {
