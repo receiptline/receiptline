@@ -1606,42 +1606,46 @@ limitations under the License.
         lf: () => '\x0a',
         // insert commands:
         command: command => command,
+        // image split size
+        split: 512,
         // print image: GS 8 L p1 p2 p3 p4 m fn a bx by c xL xH yL yH d1 ... dk GS ( L pL pH m fn
         image: function (image, align, left, width, right) {
             let r = this.upsideDown ? this.area(right, width, left) + this.align(2 - align) : this.area(left, width, right) + this.align(align);
             const img = PNG.sync.read(Buffer.from(image, 'base64'));
             const w = img.width;
-            const h = img.height;
             const d = Array(w).fill(0);
-            const l = (w + 7 >> 3) * h + 10;
-            r += '\x1d8L' + $(l & 255, l >> 8 & 255, l >> 16 & 255, l >> 24 & 255, 48, 112, 48, 1, 1, 49, w & 255, w >> 8 & 255, h & 255, h >> 8 & 255);
             let j = this.upsideDown ? img.data.length - 4 : 0;
-            for (let y = 0; y < h; y++) {
-                let i = 0, e = 0;
-                for (let x = 0; x < w; x += 8) {
-                    let b = 0;
-                    const q = Math.min(w - x, 8);
-                    for (let p = 0; p < q; p++) {
-                        const f = Math.floor((d[i] + e * 5) / 16 + Math.pow(((img.data[j] * .299 + img.data[j + 1] * .587 + img.data[j + 2] * .114 - 255) * img.data[j + 3] + 65525) / 65525, 1 / this.gamma) * 255);
-                        j += this.upsideDown ? -4 : 4;
-                        if (this.gradient) {
-                            d[i] = e * 3;
-                            e = f < this.threshold ? (b |= 128 >> p, f) : f - 255;
-                            if (i > 0) {
-                                d[i - 1] += e;
+            for (let z = 0; z < img.height; z += this.split) {
+                const h = Math.min(this.split, img.height - z);
+                const l = (w + 7 >> 3) * h + 10;
+                r += '\x1d8L' + $(l & 255, l >> 8 & 255, l >> 16 & 255, l >> 24 & 255, 48, 112, 48, 1, 1, 49, w & 255, w >> 8 & 255, h & 255, h >> 8 & 255);
+                for (let y = 0; y < h; y++) {
+                    let i = 0, e = 0;
+                    for (let x = 0; x < w; x += 8) {
+                        let b = 0;
+                        const q = Math.min(w - x, 8);
+                        for (let p = 0; p < q; p++) {
+                            const f = Math.floor((d[i] + e * 5) / 16 + Math.pow(((img.data[j] * .299 + img.data[j + 1] * .587 + img.data[j + 2] * .114 - 255) * img.data[j + 3] + 65525) / 65525, 1 / this.gamma) * 255);
+                            j += this.upsideDown ? -4 : 4;
+                            if (this.gradient) {
+                                d[i] = e * 3;
+                                e = f < this.threshold ? (b |= 128 >> p, f) : f - 255;
+                                if (i > 0) {
+                                    d[i - 1] += e;
+                                }
+                                d[i++] += e * 7;
                             }
-                            d[i++] += e * 7;
-                        }
-                        else {
-                            if (f < this.threshold) {
-                                b |= 128 >> p;
+                            else {
+                                if (f < this.threshold) {
+                                    b |= 128 >> p;
+                                }
                             }
                         }
+                        r += $(b);
                     }
-                    r += $(b);
                 }
+                r += '\x1d(L' + $(2, 0, 48, 50);
             }
-            r += '\x1d(L' + $(2, 0, 48, 50);
             return r;
         },
         // print QR Code: GS ( k pL pH cn fn n1 n2 GS ( k pL pH cn fn n GS ( k pL pH cn fn n GS ( k pL pH cn fn m d1 ... dk GS ( k pL pH cn fn m
@@ -1816,6 +1820,8 @@ limitations under the License.
             const w = width * this.charWidth;
             return '\x1dL' + $(m & 255, m >> 8 & 255) + '\x1dW' + $(w & 255, w >> 8 & 255);
         },
+        // image split size
+        split: 1662,
         // print QR Code: DC2 ; n GS p 1 model e v mode nl nh dk
         qrcode: function (symbol, encoding) {
             const d = iconv.encode(symbol.data, encoding).toString('binary').slice(0, 7089);
@@ -1967,48 +1973,54 @@ limitations under the License.
     // Citizen
     //
     const _citizen = {
+        // image split size
+        split: 1662
     };
 
     //
     // Fujitsu Isotec
     //
     const _fit = {
+        // image split size
+        split: 1662,
         // print image: GS 8 L p1 p2 p3 p4 m fn a bx by c xL xH yL yH d1 ... dk GS ( L pL pH m fn
         image: function (image, align, left, width, right) {
             let r = (this.upsideDown && align === 2 ? this.area(right, width, left) : this.area(left, width, right)) + this.align(align);
             const img = PNG.sync.read(Buffer.from(image, 'base64'));
             const w = img.width;
-            const h = img.height;
             const d = Array(w).fill(0);
-            const l = (w + 7 >> 3) * h + 10;
-            r += '\x1d8L' + $(l & 255, l >> 8 & 255, l >> 16 & 255, l >> 24 & 255, 48, 112, 48, 1, 1, 49, w & 255, w >> 8 & 255, h & 255, h >> 8 & 255);
             let j = 0;
-            for (let y = 0; y < h; y++) {
-                let i = 0, e = 0;
-                for (let x = 0; x < w; x += 8) {
-                    let b = 0;
-                    const q = Math.min(w - x, 8);
-                    for (let p = 0; p < q; p++) {
-                        const f = Math.floor((d[i] + e * 5) / 16 + Math.pow(((img.data[j] * .299 + img.data[j + 1] * .587 + img.data[j + 2] * .114 - 255) * img.data[j + 3] + 65525) / 65525, 1 / this.gamma) * 255);
-                        j += 4;
-                        if (this.gradient) {
-                            d[i] = e * 3;
-                            e = f < this.threshold ? (b |= 128 >> p, f) : f - 255;
-                            if (i > 0) {
-                                d[i - 1] += e;
+            for (let z = 0; z < img.height; z += this.split) {
+                const h = Math.min(this.split, img.height - z);
+                const l = (w + 7 >> 3) * h + 10;
+                r += '\x1d8L' + $(l & 255, l >> 8 & 255, l >> 16 & 255, l >> 24 & 255, 48, 112, 48, 1, 1, 49, w & 255, w >> 8 & 255, h & 255, h >> 8 & 255);
+                for (let y = 0; y < h; y++) {
+                    let i = 0, e = 0;
+                    for (let x = 0; x < w; x += 8) {
+                        let b = 0;
+                        const q = Math.min(w - x, 8);
+                        for (let p = 0; p < q; p++) {
+                            const f = Math.floor((d[i] + e * 5) / 16 + Math.pow(((img.data[j] * .299 + img.data[j + 1] * .587 + img.data[j + 2] * .114 - 255) * img.data[j + 3] + 65525) / 65525, 1 / this.gamma) * 255);
+                            j += 4;
+                            if (this.gradient) {
+                                d[i] = e * 3;
+                                e = f < this.threshold ? (b |= 128 >> p, f) : f - 255;
+                                if (i > 0) {
+                                    d[i - 1] += e;
+                                }
+                                d[i++] += e * 7;
                             }
-                            d[i++] += e * 7;
-                        }
-                        else {
-                            if (f < this.threshold) {
-                                b |= 128 >> p;
+                            else {
+                                if (f < this.threshold) {
+                                    b |= 128 >> p;
+                                }
                             }
                         }
+                        r += $(b);
                     }
-                    r += $(b);
                 }
+                r += '\x1d(L' + $(2, 0, 48, 50);
             }
-            r += '\x1d(L' + $(2, 0, 48, 50);
             return r;
         }
     };
@@ -2279,39 +2291,43 @@ limitations under the License.
         lf: () => '\x0a',
         // insert commands:
         command: command => command,
+        // image split size
+        split: 3200,
         // print image: ESC GS S m xL xH yL yH n [d11 d12 ... d1k]
         image: function (image, align, left, width, right) {
             let r = this.area(left, width, right) + this.align(align);
             const img = PNG.sync.read(Buffer.from(image, 'base64'));
             const w = img.width;
-            const h = img.height;
             const d = Array(w).fill(0);
             const l = w + 7 >> 3;
-            r += '\x1b\x1dS' + $(1, l & 255, l >> 8 & 255, h & 255, h >> 8 & 255, 0);
             let j = 0;
-            for (let y = 0; y < h; y++) {
-                let i = 0, e = 0;
-                for (let x = 0; x < w; x += 8) {
-                    let b = 0;
-                    const q = Math.min(w - x, 8);
-                    for (let p = 0; p < q; p++) {
-                        const f = Math.floor((d[i] + e * 5) / 16 + Math.pow(((img.data[j] * .299 + img.data[j + 1] * .587 + img.data[j + 2] * .114 - 255) * img.data[j + 3] + 65525) / 65525, 1 / this.gamma) * 255);
-                        j += 4;
-                        if (this.gradient) {
-                            d[i] = e * 3;
-                            e = f < this.threshold ? (b |= 128 >> p, f) : f - 255;
-                            if (i > 0) {
-                                d[i - 1] += e;
+            for (let z = 0; z < img.height; z += this.split) {
+                const h = Math.min(this.split, img.height - z);
+                r += '\x1b\x1dS' + $(1, l & 255, l >> 8 & 255, h & 255, h >> 8 & 255, 0);
+                for (let y = 0; y < h; y++) {
+                    let i = 0, e = 0;
+                    for (let x = 0; x < w; x += 8) {
+                        let b = 0;
+                        const q = Math.min(w - x, 8);
+                        for (let p = 0; p < q; p++) {
+                            const f = Math.floor((d[i] + e * 5) / 16 + Math.pow(((img.data[j] * .299 + img.data[j + 1] * .587 + img.data[j + 2] * .114 - 255) * img.data[j + 3] + 65525) / 65525, 1 / this.gamma) * 255);
+                            j += 4;
+                            if (this.gradient) {
+                                d[i] = e * 3;
+                                e = f < this.threshold ? (b |= 128 >> p, f) : f - 255;
+                                if (i > 0) {
+                                    d[i - 1] += e;
+                                }
+                                d[i++] += e * 7;
                             }
-                            d[i++] += e * 7;
-                        }
-                        else {
-                            if (f < this.threshold) {
-                                b |= 128 >> p;
+                            else {
+                                if (f < this.threshold) {
+                                    b |= 128 >> p;
+                                }
                             }
                         }
+                        r += $(b);
                     }
-                    r += $(b);
                 }
             }
             return r;
