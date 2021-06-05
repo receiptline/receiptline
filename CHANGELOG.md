@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.5.3] - 2021-06-05
+### Added
+- Examples of cloud printing
+
 ## [1.5.2] - 2021-05-28
 ### Added
 - Command Emulator Star Line Mode

@@ -139,6 +139,10 @@ const svg = receiptline.transform(doc, display);
 
 Display digital receipts in the web browser and print paper receipts on the printer as needed.  
 
+### example/cloud/\*
+
+Print order slips from cloud server using Epson Server Direct Print or Star CloudPRNT.  
+
 ### example/nodejs/\*
 
 Enter markdown-like text from the web form, transform it to printer commands on the server, and print it out.  
