@@ -1,8 +1,6 @@
 # receiptline
 
-Printable digital receipts &#x1f9fe;  
-
-Transform markdown-like text to receipt printer commands or SVG images.  
+Markdown for receipts &#x1f9fe; Printable digital receipts &#x1f9fe; Generate receipt printer commands and SVG images.  
 
 ![English](screenshot_en.png)  
 ![Japanese](screenshot_ja.png)  
@@ -47,7 +45,7 @@ const doc = '{code:2012345678903;option:ean,hri}';
 // printer example
 const printer = {
     cpl: 42,
-    encoding: 'cp437',
+    encoding: 'multilingual',
     upsideDown: false,
     gamma: 1.8,
     command: 'escpos'
@@ -57,7 +55,7 @@ const command = receiptline.transform(doc, printer);
 // display example
 const display = {
     cpl: 42,
-    encoding: 'cp437'
+    encoding: 'multilingual'
 };
 const svg = receiptline.transform(doc, display);
 ```
@@ -82,6 +80,7 @@ const svg = receiptline.transform(doc, display);
 - `cpl`
   - characters per line (default: `48`)
 - `encoding`
+  - `multilingual`: Multilingual (including cp437, cp852, cp858, cp866, cp1252)
   - `cp437`: United States (default)
   - `cp852`: Central European
   - `cp858`: Western European

@@ -1,7 +1,7 @@
 {
   "name": "receiptline",
-  "version": "1.5.3",
-  "description": "Printable digital receipts - Transform markdown-like text to receipt printer commands or SVG images.",
+  "version": "1.6.0",
+  "description": "Markdown for receipts. Printable digital receipts. Generate receipt printer commands and SVG images.",
   "main": "lib/receiptline.js",
   "directories": {
     "example": "example",

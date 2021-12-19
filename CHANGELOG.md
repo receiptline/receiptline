@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.6.0] - 2021-12-19
+### Added
+- Multilingual encoding
+
 ## [1.5.3] - 2021-06-05
 ### Added
 - Examples of cloud printing
