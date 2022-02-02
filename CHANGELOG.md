@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [1.7.0] - 2022-02-03
+### Added
+- Custom command object
+- Multilingual encoding for Chinese and Korean models
+
 ## [1.6.0] - 2021-12-19
 ### Added
 - Multilingual encoding

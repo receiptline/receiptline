@@ -1,6 +1,9 @@
 # receiptline
 
-Markdown for receipts &#x1f9fe; Printable digital receipts &#x1f9fe; Generate receipt printer commands and SVG images.  
+Markdown for receipts. Printable digital receipts. &#x1f9fe;  
+Generate receipt printer commands and SVG images.  
+
+[ReceiptIO](https://github.com/receiptline/receiptio) - Simple and easy API and CLI using receiptline, supporting printer status.  
 
 ![English](screenshot_en.png)  
 ![Japanese](screenshot_ja.png)  
@@ -20,7 +23,7 @@ This reference implementation also provides the development tool "ReceiptLine De
 # Receipt Printers
 
 - Epson TM series
-- SII RP series
+- Seiko Instruments RP series
 - Star MC series
 - Citizen CT series
 - Fujitsu FP series
@@ -116,7 +119,7 @@ const svg = receiptline.transform(doc, display);
 - `command`
   - `svg`: SVG (default)
   - `escpos`: ESC/POS (Epson)
-  - `sii`: ESC/POS (SII)
+  - `sii`: ESC/POS (Seiko Instruments)
   - `citizen`: ESC/POS (Citizen)
   - `fit`: ESC/POS (Fujitsu)
   - `impact`: ESC/POS (TM-U220)
@@ -153,6 +156,10 @@ Enter markdown-like text from the web form, transform it to SVG images on the we
 ### example/data/\*
 
 The documents (markdown-like text) are the same as the examples in the OFSC ReceiptLine Specification.  
+
+### example/command/\*
+
+Customize the command object to output your own commands.  
 
 # Libraries
 
