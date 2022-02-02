@@ -113,6 +113,12 @@ const svg = receiptline.transform(doc, display);
 - `cutting` (for printer)
   - `false`: no paper cutting
   - `true`: paper cutting (default)
+- `beeper` (ESC/POS only)
+  - `false`: no beeper tone
+  - `true`: beeper on print (default)
+- `legacyImage` (ESC/POS only)
+  - `false`: uses newer `GS L` commands for image printing (default)
+  - `true`: uses obsolete `GS v 0 ` commands for image printing
 - `command`
   - `svg`: SVG (default)
   - `escpos`: ESC/POS (Epson)
