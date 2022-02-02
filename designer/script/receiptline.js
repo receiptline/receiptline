@@ -60,7 +60,7 @@ limitations under the License.
             gradient: 'gradient' in printer ? !!printer.gradient : true,
             gamma: printer.gamma || 1.8,
             threshold: printer.threshold || 128,
-            command: commands[printer.command] || commands.svg
+            command: (typeof printer.command !== 'object' ? commands[printer.command] : printer.command) || commands.svg
         };
         // append commands to start printing
         let result = ptr.command.open(ptr);
@@ -2697,33 +2697,35 @@ limitations under the License.
     };
 
     // command set
-    const commands = {
-        svg: Object.assign(Object.create(_base), _svg),
-        escpos: Object.assign(Object.create(_base), _escpos, _thermal),
-        sii: Object.assign(Object.create(_base), _escpos, _thermal, _sii),
-        citizen: Object.assign(Object.create(_base), _escpos, _thermal, _citizen),
-        fit: Object.assign(Object.create(_base), _escpos, _thermal, _fit),
-        impact: Object.assign(Object.create(_base), _escpos, _impact),
-        impactb: Object.assign(Object.create(_base), _escpos, _impact, _fontb),
-        starsbcs: Object.assign(Object.create(_base), _star, _sbcs),
-        starmbcs: Object.assign(Object.create(_base), _star, _mbcs),
-        starmbcs2: Object.assign(Object.create(_base), _star, _mbcs2),
-        starlinesbcs: Object.assign(Object.create(_base), _star, _line, _sbcs),
-        starlinembcs: Object.assign(Object.create(_base), _star, _line, _mbcs),
-        starlinembcs2: Object.assign(Object.create(_base), _star, _line, _mbcs2),
-        emustarlinesbcs: Object.assign(Object.create(_base), _star, _line, _emu, _sbcs),
-        emustarlinembcs: Object.assign(Object.create(_base), _star, _line, _emu, _mbcs),
-        emustarlinembcs2: Object.assign(Object.create(_base), _star, _line, _emu, _mbcs2),
-        stargraphic: Object.assign(Object.create(_base), _stargraphic)
+    const _commands = {
+        base: Object.assign({}, _base),
+        svg: Object.assign({}, _base, _svg),
+        escpos: Object.assign({}, _base, _escpos, _thermal),
+        sii: Object.assign({}, _base, _escpos, _thermal, _sii),
+        citizen: Object.assign({}, _base, _escpos, _thermal, _citizen),
+        fit: Object.assign({}, _base, _escpos, _thermal, _fit),
+        impact: Object.assign({}, _base, _escpos, _impact),
+        impactb: Object.assign({}, _base, _escpos, _impact, _fontb),
+        starsbcs: Object.assign({}, _base, _star, _sbcs),
+        starmbcs: Object.assign({}, _base, _star, _mbcs),
+        starmbcs2: Object.assign({}, _base, _star, _mbcs2),
+        starlinesbcs: Object.assign({}, _base, _star, _line, _sbcs),
+        starlinembcs: Object.assign({}, _base, _star, _line, _mbcs),
+        starlinembcs2: Object.assign({}, _base, _star, _line, _mbcs2),
+        emustarlinesbcs: Object.assign({}, _base, _star, _line, _emu, _sbcs),
+        emustarlinembcs: Object.assign({}, _base, _star, _line, _emu, _mbcs),
+        emustarlinembcs2: Object.assign({}, _base, _star, _line, _emu, _mbcs2),
+        stargraphic: Object.assign({}, _base, _stargraphic)
     };
+    const commands = Object.assign(Object.create(null), _commands);
 
     // web browser
     if (typeof window !== 'undefined') {
-        window.receiptline = { transform: transform };
+        window.receiptline = { transform: transform, commands: commands };
     }
     // Node.js
     if (typeof module !== 'undefined') {
-        module.exports = { transform: transform };
+        module.exports = { transform: transform, commands: commands };
     }
 
 })();
