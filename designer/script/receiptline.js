@@ -20,15 +20,17 @@ limitations under the License.
 
     let iconv = undefined;
     let PNG = undefined;
+    let stream = undefined;
+    let decoder = undefined;
     let qrcode = undefined;
     // Node.js
     if (typeof require !== 'undefined') {
         iconv = require('iconv-lite');
         PNG = require('pngjs').PNG;
+        stream = require('stream');
+        decoder = require('string_decoder');
         qrcode = require('./qrcode-generator/qrcode.js');
     }
-    // state variables
-    let state = undefined;
 
     /**
      * Function - transform
@@ -41,7 +43,7 @@ limitations under the License.
         // web browser
         qrcode = qrcode || window.qrcode;
         // initialize state variables
-        state = {
+        const state = {
             wrap: true,
             border: 1,
             width: [],
@@ -51,21 +53,15 @@ limitations under the License.
             rules: { left: 0, width: 0, right: 0, widths: [] }
         };
         // validate printer configuration
-        const ptr = {
-            cpl: printer.cpl || 48,
-            encoding: /^(cp(437|85[28]|86[0356]|1252|93[26]|949|950)|multilingual|shiftjis|gb18030|ksc5601|big5)$/.test(printer.encoding) ? printer.encoding : 'cp437',
-            upsideDown: !!printer.upsideDown,
-            spacing: !!printer.spacing,
-            cutting: 'cutting' in printer ? !!printer.cutting : true,
-            gradient: 'gradient' in printer ? !!printer.gradient : true,
-            gamma: printer.gamma || 1.8,
-            threshold: printer.threshold || 128,
-            command: (typeof printer.command !== 'object' ? commands[printer.command] : printer.command) || commands.svg
-        };
+        const ptr = parseOption(printer);
         // append commands to start printing
         let result = ptr.command.open(ptr);
+        // strip bom
+        if (doc[0] === '\ufeff') {
+            doc = doc.slice(1);
+        }
         // parse each line and generate commands
-        const res = doc.normalize().split(/\n|\r\n|\r/).map(line => createLine(parseLine(line), ptr));
+        const res = doc.normalize().split(/\n|\r\n|\r/).map(line => createLine(parseLine(line, state), ptr, state));
         // if rules is not finished
         switch (state.line) {
             case 'ready':
@@ -97,12 +93,130 @@ limitations under the License.
     }
 
     /**
+     * Function - createTransform
+     * Create transform stream that converts ReceiptLine document to printer commands or SVG images.
+     * @param {object} printer printer configuration
+     * @returns {stream.Transform} transform stream
+     */
+     function createTransform(printer) {
+        // initialize state variables
+        const state = {
+            wrap: true,
+            border: 1,
+            width: [],
+            align: 1,
+            option: { type: 'code128', width: 2, height: 72, hri: false, cell: 3, level: 'l' },
+            line: 'waiting',
+            rules: { left: 0, width: 0, right: 0, widths: [] }
+        };
+        // validate printer configuration
+        const ptr = parseOption(printer);
+        // create transform stream
+        const transform = new stream.Transform({
+            construct(callback) {
+                // initialize
+                this.bom = true;
+                this.decoder = new decoder.StringDecoder('utf8');
+                this.data = '';
+                this.encoding = null;
+                this._push = function (chunk) {
+                    if (chunk.length > 0) {
+                        if (!this.encoding) {
+                            this.encoding = /^<svg/.test(chunk) ? 'utf8' : 'binary';
+                        }
+                        this.push(chunk, this.encoding);
+                    }
+                };
+                this.buffer = [];
+                // append commands to start printing
+                this._push(ptr.command.open(ptr));
+                callback();
+            },
+            transform(chunk, encoding, callback) {
+                // append chunk
+                this.data += this.decoder.write(chunk);
+                // strip bom
+                if (this.bom) {
+                    if (this.data[0] === '\ufeff') {
+                        this.data = this.data.slice(1);
+                    }
+                    this.bom = false;
+                }
+                // parse each line and generate commands
+                const lines = this.data.split(/\n|\r\n|\r/);
+                while (lines.length > 1) {
+                    const s = createLine(parseLine(lines.shift().normalize(), state), ptr, state);
+                    ptr.upsideDown ? this.buffer.push(s) : this._push(s);
+                }
+                this.data = lines.shift();
+                callback();
+            },
+            flush(callback) {
+                // parse last line and generate commands
+                const s = createLine(parseLine(this.data.normalize(), state), ptr, state);
+                ptr.upsideDown ? this.buffer.push(s) : this._push(s);
+                // if rules is not finished
+                switch (state.line) {
+                    case 'ready':
+                        // set state to cancel rules
+                        state.line = 'waiting';
+                        break;
+                    case 'running':
+                    case 'horizontal':
+                        // append commands to stop rules
+                        const s = ptr.command.normal() +
+                            ptr.command.area(state.rules.left, state.rules.width, state.rules.right) +
+                            ptr.command.align(0) +
+                            ptr.command.vrstop(state.rules.widths) +
+                            ptr.command.vrlf(false);
+                        ptr.upsideDown ? this.buffer.push(s) : this._push(s);
+                        state.line = 'waiting';
+                        break;
+                    default:
+                        break;
+                }
+                // flip upside down
+                if (ptr.upsideDown) {
+                    this._push(this.buffer.reverse().join(''));
+                }
+                // append commands to end printing
+                this._push(ptr.command.close());
+                callback();
+            }
+        });
+        return transform;
+    }
+
+    /**
+     * Function - parseOption
+     * Validate printer configuration.
+     * @param {object} printer printer configuration
+     * @returns {object} validated printer configuration
+     */
+     function parseOption(printer) {
+        // validate printer configuration
+        const p = Object.assign({}, printer);
+        return {
+            cpl: p.cpl || 48,
+            encoding: /^(cp(437|85[28]|86[0356]|1252|93[26]|949|950)|multilingual|shiftjis|gb18030|ksc5601|big5)$/.test(p.encoding) ? p.encoding : 'cp437',
+            upsideDown: !!p.upsideDown,
+            spacing: !!p.spacing,
+            cutting: 'cutting' in p ? !!p.cutting : true,
+            gradient: 'gradient' in p ? !!p.gradient : true,
+            gamma: p.gamma || 1.8,
+            threshold: p.threshold || 128,
+            command: Object.assign({}, (typeof p.command !== 'object' ? commands[p.command] : p.command) || commands.svg)
+        };
+    }
+
+    /**
      * Function - parseLine
      * Parse lines
      * @param {string} columns line text without line breaks
+     * @param {object} state state variables
      * @returns {object} parsed line object
      */
-    function parseLine(columns) {
+    function parseLine(columns, state) {
         // extract columns
         const line = columns
             // trim whitespace
@@ -120,7 +234,149 @@ limitations under the License.
             // separate text with '|'
             .split('|')
             // parse columns
-            .map(parseColumn);
+            .map((column, index, array) => {
+                // parsed column object
+                let result = {};
+                // trim whitespace
+                const element = column.replace(/^[\t ]+|[\t ]+$/g, '');
+                // determin alignment from whitespaces around column text
+                result.align = 1 + /^[\t ]/.test(column) - /[\t ]$/.test(column);
+                // parse properties
+                if (/^\{[^{}]*\}$/.test(element)) {
+                    // extract members
+                    result.property = element
+                        // trim property delimiters
+                        .slice(1, -1)
+                        // convert escape character ('\;') to hexadecimal escape characters
+                        .replace(/\\;/g, '\\x3b')
+                        // separate property with ';'
+                        .split(';')
+                        // parse members
+                        .reduce((obj, member) => {
+                            // abbreviations
+                            const abbr = { a: 'align', b: 'border', c: 'code', i: 'image', o: 'option', t: 'text', w: 'width', x: 'command', _: 'comment' };
+                            // parse key-value pair
+                            if (!/^[\t ]*$/.test(member) &&
+                                member.replace(/^[\t ]*([A-Za-z_]\w*)[\t ]*:[\t ]*([^\t ].*?)[\t ]*$/,
+                                    (match, key, value) => obj[key.replace(/^[abciotwx_]$/, m => abbr[m])] = parseEscape(value.replace(/\\n/g, '\n'))) === member) {
+                                // invalid members
+                                result.error = element;
+                            }
+                            return obj;
+                        }, {});
+                    // if the column is single
+                    if (array.length === 1) {
+                        // parse text property
+                        if ('text' in result.property) {
+                            const c = result.property.text.toLowerCase();
+                            state.wrap = !/^nowrap$/.test(c);
+                        }
+                        // parse border property
+                        if ('border' in result.property) {
+                            const c = result.property.border.toLowerCase();
+                            const border = { 'line': -1, 'space': 1, 'none': 0 };
+                            const previous = state.border;
+                            state.border = /^(line|space|none)$/.test(c) ? border[c.toLowerCase()] : /^\d+$/.test(c) && Number(c) <= 2 ? Number(c) : 1;
+                            // start rules
+                            if (previous >= 0 && state.border < 0) {
+                                result.vr = '+';
+                            }
+                            // stop rules
+                            if (previous < 0 && state.border >= 0) {
+                                result.vr = '-';
+                            }
+                        }
+                        // parse width property
+                        if ('width' in result.property) {
+                            const width = result.property.width.toLowerCase().split(/[\t ]+|,/);
+                            state.width = width.find(c => /^auto$/.test(c)) ? [] : width.map(c => /^\*$/.test(c) ? -1 : /^\d+$/.test(c) ? Number(c) : 0);
+                        }
+                        // parse align property
+                        if ('align' in result.property) {
+                            const c = result.property.align.toLowerCase();
+                            const align = { 'left': 0, 'center': 1, 'right': 2 };
+                            state.align = /^(left|center|right)$/.test(c) ? align[c.toLowerCase()] : 1;
+                        }
+                        // parse option property
+                        if ('option' in result.property) {
+                            const option = result.property.option.toLowerCase().split(/[\t ]+|,/);
+                            state.option = {
+                                type: (option.find(c => /^(upc|ean|jan|code39|itf|codabar|nw7|code93|code128|qrcode)$/.test(c)) || 'code128'),
+                                width: Number(option.find(c => /^\d+$/.test(c) && Number(c) >= 2 && Number(c) <= 4) || '2'),
+                                height: Number(option.find(c => /^\d+$/.test(c) && Number(c) >= 24 && Number(c) <= 240) || '72'),
+                                hri: !!option.find(c => /^hri$/.test(c)),
+                                cell: Number(option.find(c => /^\d+$/.test(c) && Number(c) >= 3 && Number(c) <= 8) || '3'),
+                                level: (option.find(c => /^[lmqh]$/.test(c)) || 'l')
+                            };
+                        }
+                        // parse code property
+                        if ('code' in result.property) {
+                            result.code = Object.assign({ data: result.property.code }, state.option);
+                        }
+                        // parse image property
+                        if ('image' in result.property) {
+                            result.image = result.property.image;
+                        }
+                        // parse command property
+                        if ('command' in result.property) {
+                            result.command = result.property.command;
+                        }
+                        // parse comment property
+                        if ('comment' in result.property) {
+                            result.comment = result.property.comment;
+                        }
+                    }
+                }
+                // remove invalid property delimiter
+                else if (/[{}]/.test(element)) {
+                    result.error = element;
+                }
+                // parse horizontal rule of special character in text
+                else if (array.length === 1 && /^-+$|^=+$/.test(element)) {
+                    result.hr = element.slice(-1);
+                }
+                // parse text
+                else {
+                    result.text = element
+                        // remove control codes and hexadecimal control codes
+                        .replace(/[\x00-\x1f\x7f]|\\x[01][\dA-Fa-f]|\\x7[Ff]/g, '')
+                        // convert escape characters ('\-', '\=', '\_', '\"', \`', '\^', '\~') to hexadecimal escape characters
+                        .replace(/\\[-=_"`^~]/g, match => '\\x' + match.charCodeAt(1).toString(16))
+                        // convert escape character ('\n') to LF
+                        .replace(/\\n/g, '\n')
+                        // convert escape character ('~') to space
+                        .replace(/~/g, ' ')
+                        // separate text with '_', '"', '`', '^'(1 or more), '\n'
+                        .split(/([_"`\n]|\^+)/)
+                        // convert escape characters to normal characters
+                        .map(text => parseEscape(text));
+                }
+                // set current text wrapping
+                result.wrap = state.wrap;
+                // set current column border
+                result.border = state.border;
+                // set current column width
+                if (state.width.length === 0) {
+                    // set '*' for all columns when the width property is 'auto'
+                    result.width = -1;
+                }
+                else if ('text' in result) {
+                    // text: set column width
+                    result.width = index < state.width.length ? state.width[index] : 0;
+                }
+                else if (state.width.find(c => c < 0)) {
+                    // image, code, command: when the width property includes '*', set '*'
+                    result.width = -1;
+                }
+                else {
+                    // image, code, command: when the width property does not include '*', set the sum of column width and border width
+                    const w = state.width.filter(c => c > 0);
+                    result.width = w.length > 0 ? w.reduce((a, c) => a + c, result.border < 0 ? w.length + 1 : (w.length - 1) * result.border) : 0;
+                }
+                // set line alignment
+                result.alignment = state.align;
+                return result;
+            });
         // if the line is text and the width property is not 'auto'
         if (line.every(el => 'text' in el) && state.width.length > 0) {
             // if the line has fewer columns
@@ -130,158 +386,6 @@ limitations under the License.
             }
         }
         return line;
-    }
-
-    /**
-     * Function - parseColumn
-     * Parse columns
-     * @param {string} column column text without separators
-     * @param {number} index column index
-     * @param {Array<string>} array column array
-     * @returns {object} parsed column object
-     */
-    function parseColumn(column, index, array) {
-        // parsed column object
-        let result = {};
-        // trim whitespace
-        const element = column.replace(/^[\t ]+|[\t ]+$/g, '');
-        // determin alignment from whitespaces around column text
-        result.align = 1 + /^[\t ]/.test(column) - /[\t ]$/.test(column);
-        // parse properties
-        if (/^\{[^{}]*\}$/.test(element)) {
-            // extract members
-            result.property = element
-                // trim property delimiters
-                .slice(1, -1)
-                // convert escape character ('\;') to hexadecimal escape characters
-                .replace(/\\;/g, '\\x3b')
-                // separate property with ';'
-                .split(';')
-                // parse members
-                .reduce((obj, member) => {
-                    // abbreviations
-                    const abbr = { a: 'align', b: 'border', c: 'code', i: 'image', o: 'option', t: 'text', w: 'width', x: 'command', _: 'comment' };
-                    // parse key-value pair
-                    if (!/^[\t ]*$/.test(member) &&
-                        member.replace(/^[\t ]*([A-Za-z_]\w*)[\t ]*:[\t ]*([^\t ].*?)[\t ]*$/,
-                            (match, key, value) => obj[key.replace(/^[abciotwx_]$/, m => abbr[m])] = parseEscape(value.replace(/\\n/g, '\n'))) === member) {
-                        // invalid members
-                        result.error = element;
-                    }
-                    return obj;
-                }, {});
-            // if the column is single
-            if (array.length === 1) {
-                // parse text property
-                if ('text' in result.property) {
-                    const c = result.property.text.toLowerCase();
-                    state.wrap = !/^nowrap$/.test(c);
-                }
-                // parse border property
-                if ('border' in result.property) {
-                    const c = result.property.border.toLowerCase();
-                    const border = { 'line': -1, 'space': 1, 'none': 0 };
-                    const previous = state.border;
-                    state.border = /^(line|space|none)$/.test(c) ? border[c.toLowerCase()] : /^\d+$/.test(c) && Number(c) <= 2 ? Number(c) : 1;
-                    // start rules
-                    if (previous >= 0 && state.border < 0) {
-                        result.vr = '+';
-                    }
-                    // stop rules
-                    if (previous < 0 && state.border >= 0) {
-                        result.vr = '-';
-                    }
-                }
-                // parse width property
-                if ('width' in result.property) {
-                    const width = result.property.width.toLowerCase().split(/[\t ]+|,/);
-                    state.width = width.find(c => /^auto$/.test(c)) ? [] : width.map(c => /^\*$/.test(c) ? -1 : /^\d+$/.test(c) ? Number(c) : 0);
-                }
-                // parse align property
-                if ('align' in result.property) {
-                    const c = result.property.align.toLowerCase();
-                    const align = { 'left': 0, 'center': 1, 'right': 2 };
-                    state.align = /^(left|center|right)$/.test(c) ? align[c.toLowerCase()] : 1;
-                }
-                // parse option property
-                if ('option' in result.property) {
-                    const option = result.property.option.toLowerCase().split(/[\t ]+|,/);
-                    state.option = {
-                        type: (option.find(c => /^(upc|ean|jan|code39|itf|codabar|nw7|code93|code128|qrcode)$/.test(c)) || 'code128'),
-                        width: Number(option.find(c => /^\d+$/.test(c) && Number(c) >= 2 && Number(c) <= 4) || '2'),
-                        height: Number(option.find(c => /^\d+$/.test(c) && Number(c) >= 24 && Number(c) <= 240) || '72'),
-                        hri: !!option.find(c => /^hri$/.test(c)),
-                        cell: Number(option.find(c => /^\d+$/.test(c) && Number(c) >= 3 && Number(c) <= 8) || '3'),
-                        level: (option.find(c => /^[lmqh]$/.test(c)) || 'l')
-                    };
-                }
-                // parse code property
-                if ('code' in result.property) {
-                    result.code = Object.assign({ data: result.property.code }, state.option);
-                }
-                // parse image property
-                if ('image' in result.property) {
-                    result.image = result.property.image;
-                }
-                // parse command property
-                if ('command' in result.property) {
-                    result.command = result.property.command;
-                }
-                // parse comment property
-                if ('comment' in result.property) {
-                    result.comment = result.property.comment;
-                }
-            }
-        }
-        // remove invalid property delimiter
-        else if (/[{}]/.test(element)) {
-            result.error = element;
-        }
-        // parse horizontal rule of special character in text
-        else if (array.length === 1 && /^-+$|^=+$/.test(element)) {
-            result.hr = element.slice(-1);
-        }
-        // parse text
-        else {
-            result.text = element
-                // remove control codes and hexadecimal control codes
-                .replace(/[\x00-\x1f\x7f]|\\x[01][\dA-Fa-f]|\\x7[Ff]/g, '')
-                // convert escape characters ('\-', '\=', '\_', '\"', \`', '\^', '\~') to hexadecimal escape characters
-                .replace(/\\[-=_"`^~]/g, match => '\\x' + match.charCodeAt(1).toString(16))
-                // convert escape character ('\n') to LF
-                .replace(/\\n/g, '\n')
-                // convert escape character ('~') to space
-                .replace(/~/g, ' ')
-                // separate text with '_', '"', '`', '^'(1 or more), '\n'
-                .split(/([_"`\n]|\^+)/)
-                // convert escape characters to normal characters
-                .map(text => parseEscape(text));
-        }
-        // set current text wrapping
-        result.wrap = state.wrap;
-        // set current column border
-        result.border = state.border;
-        // set current column width
-        if (state.width.length === 0) {
-            // set '*' for all columns when the width property is 'auto'
-            result.width = -1;
-        }
-        else if ('text' in result) {
-            // text: set column width
-            result.width = index < state.width.length ? state.width[index] : 0;
-        }
-        else if (state.width.find(c => c < 0)) {
-            // image, code, command: when the width property includes '*', set '*'
-            result.width = -1;
-        }
-        else {
-            // image, code, command: when the width property does not include '*', set the sum of column width and border width
-            const w = state.width.filter(c => c > 0);
-            result.width = w.length > 0 ? w.reduce((a, c) => a + c, result.border < 0 ? w.length + 1 : (w.length - 1) * result.border) : 0;
-        }
-        // set line alignment
-        result.alignment = state.align;
-        return result;
     }
 
     /**
@@ -305,9 +409,10 @@ limitations under the License.
      * Generate commands from line objects
      * @param {object} line parsed line object
      * @param {object} printer printer configuration
+     * @param {object} state state variables
      * @returns {string} printer command fragment or SVG image fragment
      */
-    function createLine(line, printer) {
+    function createLine(line, printer, state) {
         const result = [];
         // text or property
         const text = line.every(el => 'text' in el);
@@ -2721,11 +2826,11 @@ limitations under the License.
 
     // web browser
     if (typeof window !== 'undefined') {
-        window.receiptline = { transform: transform, commands: commands };
+        window.receiptline = { transform: transform, createTransform: createTransform, commands: commands };
     }
     // Node.js
     if (typeof module !== 'undefined') {
-        module.exports = { transform: transform, commands: commands };
+        module.exports = { transform: transform, createTransform: createTransform, commands: commands };
     }
 
 })();
