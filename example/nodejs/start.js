@@ -34,7 +34,13 @@ catch (e) {
 if ('serial' in servers) {
     const serialport = require('serialport');
     const serial = net.createServer(conn => {
-        const port = new serialport(servers.serial.device, { autoOpen: false });
+        let port;
+        if ('SerialPort' in serialport) {
+            port = new serialport.SerialPort({ path: servers.serial.device, baudRate: 9600, autoOpen: false });
+        }
+        else {
+            port = new serialport(servers.serial.device, { autoOpen: false });
+        }
         port.on('error', err => {
             console.log(err);
             conn.destroy();
