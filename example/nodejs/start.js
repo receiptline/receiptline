@@ -22,9 +22,9 @@ const fs = require('fs');
 const net = require('net');
 const receiptline = require('receiptline');
 const servers = require('./servers.json');
-let convert;
+let puppeteer;
 try {
-    ({ convert } = require('convert-svg-to-png'));
+    puppeteer = require('puppeteer');
 }
 catch (e) {
     // nothing to do
@@ -120,18 +120,9 @@ if ('http' in servers) {
                                 const sock = net.connect(port, host);
                                 let drain = false;
                                 sock.on('connect', () => {
-                                    if (printer.asImage && convert !== undefined) {
-                                        const display = Object.assign({}, printer, { 'command': 'svg' });
-                                        const svg = receiptline.transform(text, display);
-                                        convert(svg).then(png => {
-                                            const image = `|{i:${png.toString('base64')}}`;
-                                            drain = sock.write(receiptline.transform(image, printer), 'binary');
-                                        });
-                                    }
-                                    else {
-                                        const command = receiptline.transform(text, printer);
+                                    transform(text, printer).then(command => {
                                         drain = sock.write(command, /^<svg/.test(command) ? 'utf8' : 'binary');
-                                    }
+                                    });
                                 });
                                 sock.on('data', data => {
                                     if (drain) {
@@ -172,3 +163,26 @@ if ('http' in servers) {
         console.log(`Server running at http://${servers.http.host}:${servers.http.port}/`);
     });
 }
+
+const transform = async (receiptmd, printer) => {
+    // convert receiptline to receiptline image
+    if (printer.asImage && puppeteer) {
+        receiptmd = `|{i:${await rasterize(receiptmd, printer, 'base64')}}`;
+    }
+    // convert receiptline to command
+    return receiptline.transform(receiptmd, printer);
+};
+
+const rasterize = async (receiptmd, printer, encoding) => {
+    // convert receiptline to png
+    const display = Object.assign({}, printer, { command: 'svg' });
+    const svg = receiptline.transform(receiptmd, display);
+    const w = Number(svg.match(/width="(\d+)px"/)[1]);
+    const h = Number(svg.match(/height="(\d+)px"/)[1]);
+    const browser = await puppeteer.launch({ defaultViewport: { width: w, height: h }});
+    const page = await browser.newPage();
+    await page.setContent(`<!DOCTYPE html><html><head><meta charset="utf-8"><style>*{margin:0}</style></head><body>${svg}</body></html>`);
+    const png = await page.screenshot({ encoding: encoding });
+    await browser.close();
+    return png;
+};
