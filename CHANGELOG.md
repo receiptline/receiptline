@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+## [1.8.0] - 2022-03-08
+### Added
+- Transform stream API
+- Support for Node SerialPort 10.x
+
+### Changed
+- convert-svg-to-png to puppeteer
+
+### Fixed
+- HTTP POST encoding to utf-8
+- A bug in the image upside down printing on StarPRNT command objects
+
 ## [1.7.0] - 2022-02-03
 ### Added
 - Custom command object

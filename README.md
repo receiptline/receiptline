@@ -65,7 +65,7 @@ const svg = receiptline.transform(doc, display);
 
 ## Method
 
-`receiptline.transform(doc, printer)`  
+`receiptline.transform(doc[, printer])`  
 
 ### Parameters
 
@@ -135,6 +135,34 @@ const svg = receiptline.transform(doc, display);
   - `emustarlinembcs2`: Command Emulator Star Line Mode (Chinsese, Korean)
   - `stargraphic`: Star Graphic Mode (TSP100LAN)
 
+# Transform stream API
+
+`receiptline.createTransform()` method is the stream version of the `receiptline.transform()`.  
+
+```javascript
+const fs = require('fs');
+const receiptline = require('receiptline');
+
+const source = fs.createReadStream('example.txt');
+const transform = receiptline.createTransform({ command: 'svg' });
+const destination = fs.createWriteStream('example.svg');
+
+source.pipe(transform).pipe(destination);
+```
+
+## Method
+
+`receiptline.createTransform([printer])`  
+
+### Parameters
+
+- `printer`
+  - an object of printer configuration
+
+### Return value
+
+- Transform stream &lt;stream.Transform&gt;
+
 # Examples
 
 ### example/receipt/\*
@@ -191,11 +219,17 @@ The ReceiptLine Designer provides more features.
 
 ## Setup
 
+1. Copy the following files to your working directory
+
+    - designer/*
+    - designer.js
+    - printers.json
+    - servers.json
+
 1. Start the server
 
     ```bash
-    $ cd node_modules/receiptline
-    $ npm start
+    $ node designer.js
     ```
 
 1. Open http://localhost:8080
@@ -229,11 +263,9 @@ The ReceiptLine Designer provides more features.
       - printer port (will be `9100`)
     - `asImage`
       - `false`: print with device font (default)
-      - `true`: print as image (Requires [convert-svg-to-png](https://www.npmjs.com/package/convert-svg-to-png))
+      - `true`: print as image (Requires [puppeteer](https://www.npmjs.com/package/puppeteer))
     - `cpl`, `encoding`, `gradient`, `gamma`, `threshold`, `upsideDown`, `spacing`, `cutting`, `command`
       - see the printer configuration above
-
-    *Please back up this json file as it will be initialized by updating the package.*  
 
 # Serial-LAN Converter
 
@@ -245,7 +277,6 @@ The serial-LAN converter enables test printing to USB / Bluetooth printers that 
 
     ```bash
     $ npm install serialport
-    $ cd node_modules/receiptline
     ```
 
 1. Configure servers.json
@@ -267,12 +298,10 @@ The serial-LAN converter enables test printing to USB / Bluetooth printers that 
     - `device`
       - the system path of the serial port
 
-    *Please back up this json file as it will be initialized by updating the package.*  
-
 1. Restart the server
 
     ```bash
-    $ npm start
+    $ node designer.js
     ```
 
 # Syntax
