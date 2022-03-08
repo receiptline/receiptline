@@ -71,6 +71,7 @@ if ('print' in servers) {
 // ReceiptLine Server
 if ('http' in servers) {
     const server = http.createServer((req, res) => {
+        req.setEncoding('utf8');
         let pathname = new URL(req.url, `http://${req.headers.host}`).pathname;
         switch (req.method) {
             case 'GET':
