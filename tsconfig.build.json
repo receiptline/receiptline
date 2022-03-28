@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "dist",
+  },
+  "exclude": [
+    "output/**/*", //this is where test output goes
+    "test/**/*",
+    "jest/**/*",
+    "lib/**/*",
+    "dist/**/*",
+    "jest.*"
+  ]
+}
