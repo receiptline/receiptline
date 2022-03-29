@@ -36,7 +36,7 @@ const encodings = [
     'big5',
 ];
 
-async function readStdin(){
+async function readStdin() {
     const buffers = [];
     for await (const chunk of process.stdin) buffers.push(chunk);
     const buffer = Buffer.concat(buffers);
