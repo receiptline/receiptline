@@ -12,7 +12,8 @@
   },
   "scripts": {
     "test": "node designer.js",
-    "start": "node designer.js"
+    "start": "node designer.js",
+    "format": "prettier --write '**/*.js'"
   },
   "repository": {
     "type": "git",
@@ -47,6 +48,7 @@
     "pngjs": "^5.0.0"
   },
   "devDependencies": {
+    "prettier": "^2.6.1",
     "qrcode-generator": "^1.4.4"
   }
 }
