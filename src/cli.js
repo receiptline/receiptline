@@ -13,7 +13,7 @@ limitations under the License.
 
 const {InvalidArgumentError, Command, Option} = require('commander');
 const {transform, commands} = require('../lib/receiptline.js');
-const {statSync, readFile, writeFile} = require('fs');
+const {statSync, readFileSync, writeFile, existsSync} = require('fs');
 const {basename, dirname} = require('path');
 
 const encodings = [
@@ -110,7 +110,10 @@ module.exports = {
                     .default('svg')
                     .choices(Object.getOwnPropertyNames(commands))
             )
-            .option('-o, --output <path>', 'output file')
+            .option(
+                '-o, --output <path>',
+                'output file (read stdin unless this option is not given)'
+            )
             .argument('[source]', 'source file');
         program.configureHelp({
             helpWidth: 100,
@@ -122,61 +125,60 @@ module.exports = {
         const args = program.args;
 
         const argn = args.length;
-        const doc = (() => {
-            if (argn === 0) {
-                var input = '';
-                process.stdin.resume();
-                process.stdin.setEncoding('utf8');
-                process.stdin.on('data', function (chunk) {
-                    input += chunk;
-                });
-                process.stdin.on('end', function () {
-                    return input;
-                });
-            } else if (argn === 1) {
-                const f = args[0];
-                if (statSync(f).isFile()) {
-                    readFile(f, 'utf-8', (err, input) => {
-                        if (err) {
-                            throw err;
-                        } else {
-                            return input;
-                        }
-                    });
-                } else {
-                    throw new InvalidArgumentError(
-                        `Invalid source ('${argn}' is not file)`
-                    );
-                }
+        var doc = '';
+        if (argn === 0) {
+            var input = '';
+            process.stdin.resume();
+            process.stdin.setEncoding('utf8');
+            process.stdin.on('data', function (chunk) {
+                input += chunk;
+            });
+            process.stdin.on('end', function () {
+                doc = input;
+            });
+        } else if (argn === 1) {
+            const f = args[0];
+            if (statSync(f).isFile()) {
+                doc = readFileSync(f, {encoding: 'utf-8'});
             } else {
                 throw new InvalidArgumentError(
-                    `Invalid source (expected 1, got ${argn})`
+                    `Invalid source ('${argn}' is not file)`
                 );
             }
-        })();
+        } else {
+            throw new InvalidArgumentError(
+                `Invalid source (expected 1, got ${argn})`
+            );
+        }
         const printer = {
             cpl: opts.cpl,
             encoding: opts.encoding,
-            upsideDown: opts.upsideDown,
-            spacing: opts.spacing,
-            cutting: opts.noCutting,
+            upsideDown: !!opts.upsideDown,
+            spacing: !!opts.spacing,
+            cutting: !opts.noCutting,
             gradient: opts.cutting,
             gamma: opts.gamma,
             threshold: opts.threshold,
             command: opts.printer,
         };
         const data = transform(doc, printer);
-
         if (opts.output === undefined) {
             console.log(data);
         } else {
             const outDir = dirname(opts.output);
             const outFile = basename(opts.output);
-            if (outDir !== '' && !statSync(outDir).isDirectory()) {
+            if (
+                outDir !== '.' &&
+                (!existsSync(outFile) || !statSync(outDir).isDirectory())
+            ) {
                 throw new InvalidArgumentError(
                     `Invarid parent directory of output file ('${outDir}' is not a directory)`
                 );
-            } else if (outFile !== '' && statSync(outFile).isDirectory()) {
+            } else if (
+                outFile !== '' &&
+                existsSync(outFile) &&
+                statSync(outFile).isDirectory()
+            ) {
                 throw new InvalidArgumentError(
                     `Invarid output file ('${outFile}' is a directory)`
                 );
