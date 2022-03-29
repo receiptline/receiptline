@@ -13,7 +13,7 @@ limitations under the License.
 
 const {InvalidArgumentError, Command, Option} = require('commander');
 const {transform, commands} = require('../lib/receiptline.js');
-const {statSync, readFileSync, writeFile, existsSync} = require('fs');
+const {statSync, readFileSync, writeFileSync, existsSync} = require('fs');
 const {basename, dirname} = require('path');
 
 const encodings = [
@@ -128,7 +128,7 @@ module.exports = {
         const argn = args.length;
         var doc = '';
         if (argn === 0) {
-        doc = readFileSync(process.stdin.fd, "utf8");
+            doc = readFileSync(process.stdin.fd, 'utf8');
         } else if (argn === 1) {
             const f = args[0];
             if (statSync(f).isFile()) {
@@ -176,13 +176,7 @@ module.exports = {
                     `Invarid output file ('${outFile}' is a directory)`
                 );
             } else {
-                writeFile(opts.output, data, {flag: 'w'}, err => {
-                    if (err) {
-                        throw err;
-                    } else {
-                        console.log(`wrote: '${opts.output}'`);
-                    }
-                });
+                writeFileSync(opts.output, data);
             }
         }
     },
