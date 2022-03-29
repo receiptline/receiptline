@@ -128,15 +128,7 @@ module.exports = {
         const argn = args.length;
         var doc = '';
         if (argn === 0) {
-            var input = '';
-            process.stdin.resume();
-            process.stdin.setEncoding('utf8');
-            process.stdin.on('data', function (chunk) {
-                input += chunk;
-            });
-            process.stdin.on('end', function () {
-                doc = input;
-            });
+        doc = readFileSync(process.stdin.fd, "utf8");
         } else if (argn === 1) {
             const f = args[0];
             if (statSync(f).isFile()) {
