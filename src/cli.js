@@ -117,7 +117,8 @@ module.exports = {
             .argument('[source]', 'source file');
         program.configureHelp({
             helpWidth: 100,
-            sortOptions: true,
+            sortOptions: false,
+            sortSubcommands: false,
         });
 
         program.parse();
