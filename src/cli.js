@@ -11,6 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+const {stringify} = require('@moneyforward/stream-util');
 const {InvalidArgumentError, Command, Option} = require('commander');
 const {transform, commands} = require('../lib/receiptline.js');
 const {statSync, readFileSync, writeFileSync, existsSync} = require('fs');
@@ -37,7 +38,7 @@ const encodings = [
 ];
 
 module.exports = {
-    cli: () => {
+    cli: async () => {
         const program = new Command('receiptline');
         program
             .description('receiptline CLI')
@@ -128,7 +129,7 @@ module.exports = {
         const argn = args.length;
         var doc = '';
         if (argn === 0) {
-            doc = readFileSync(process.stdin.fd, 'utf8');
+            doc = await stringify(process.stdin);
         } else if (argn === 1) {
             const f = args[0];
             if (statSync(f).isFile()) {
@@ -154,9 +155,9 @@ module.exports = {
             threshold: opts.threshold,
             command: opts.printer,
         };
-        const data = transform(doc, printer);
+        const result = transform(doc, printer);
         if (opts.output === undefined) {
-            console.log(data);
+            console.log(result);
         } else {
             const outDir = dirname(opts.output);
             const outFile = basename(opts.output);
@@ -176,7 +177,7 @@ module.exports = {
                     `Invarid output file ('${outFile}' is a directory)`
                 );
             } else {
-                writeFileSync(opts.output, data);
+                writeFileSync(opts.output, result);
             }
         }
     },
