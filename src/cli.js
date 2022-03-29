@@ -36,6 +36,11 @@ const encodings = [
     'big5',
 ];
 
+/**
+ * Function - readStdin
+ * Read text from stdin
+ * @returns {string} contents of stdin
+ */
 async function readStdin() {
     const buffers = [];
     for await (const chunk of process.stdin) buffers.push(chunk);
@@ -43,11 +48,36 @@ async function readStdin() {
     return buffer.toString();
 }
 
+/**
+/**
+ * Function - checkRange
+ * (Helper function for CLI) Generate a function
+ * to parse a numeric argument and check the range
+ * @param {string} name name of argument
+ * @param {function(string): number} f function of parsing string as number
+ * @param {number} min min of valid range
+ * @param {number} max max of valid range
+ * @returns {function(string, number): number} parser and checker for cmd arguments
+ */
+function checkRange(name, f, min, max) {
+    return (v, _) => {
+        let i = f(v);
+        if (min <= i && i <= max) {
+            return i;
+        } else {
+            throw new InvalidArgumentError(
+                `Invalid ${name} (expected ${min}<=${name[0]}<=${max}, got ${i})`
+            );
+        }
+    };
+}
+
 module.exports = {
     cli: async () => {
+        // setup cli parser
         const program = new Command('receiptline');
         program
-            .description('receiptline CLI')
+            .description('Receiptline CLI')
             .version(
                 'receiptline version 1.8.0\n' +
                     '(C) 2019-, Open Foodservice System Consortium\n' +
@@ -58,16 +88,7 @@ module.exports = {
             .option(
                 '-c, --cpl <number>',
                 'characters per line (24-48)',
-                (v, _) => {
-                    let i = parseInt(v);
-                    if (24 <= i && i <= 48) {
-                        return i;
-                    } else {
-                        throw new InvalidArgumentError(
-                            `Invalid cpl (expected 24<=c<=48, got ${i})`
-                        );
-                    }
-                },
+                checkRange('cpl', parseInt, 24, 48),
                 48
             )
             .addOption(
@@ -82,31 +103,13 @@ module.exports = {
             .option(
                 '-g, --gamma <number>',
                 'image gamma correction (0.1-10.0)',
-                (v, _) => {
-                    let f = parseFloat(v);
-                    if (0.1 <= f && f <= 10.0) {
-                        return f;
-                    } else {
-                        throw new InvalidArgumentError(
-                            `Invalid gamma (expected 0.1<=g<=10.0, got ${f})`
-                        );
-                    }
-                },
+                checkRange('gamma', parseFloat, 0.1, 10.0),
                 1.8
             )
             .option(
                 '-b, --threshold <number>',
                 'image thresholding (0-255)',
-                (v, _) => {
-                    let i = parseInt(v);
-                    if (0 <= i && i <= 255) {
-                        return i;
-                    } else {
-                        throw new InvalidArgumentError(
-                            `Invalid threshold (expected 0<=t<=255, got ${i})`
-                        );
-                    }
-                },
+                checkRange('threshold', parseInt, 0, 255),
                 128
             )
             .addOption(
@@ -128,14 +131,15 @@ module.exports = {
             sortSubcommands: false,
         });
 
+        // parse cmd arguments
         program.parse();
         const opts = program.opts();
         const args = program.args;
-
         const argn = args.length;
+
+        // receive input
         var doc = '';
         if (argn === 0) {
-            // doc = await stringify(process.stdin);
             doc = await readStdin();
         } else if (argn === 1) {
             const f = args[0];
@@ -151,6 +155,8 @@ module.exports = {
                 `Invalid source (expected 1, got ${argn})`
             );
         }
+
+        // setup printer
         const printer = {
             cpl: opts.cpl,
             encoding: opts.encoding,
@@ -162,10 +168,15 @@ module.exports = {
             threshold: opts.threshold,
             command: opts.printer,
         };
+
+        // get result of transformming
         const result = transform(doc, printer);
+
         if (opts.output === undefined) {
+            // print result to stdout when not being specified
             console.log(result);
         } else {
+            // print result to specified file
             const outDir = dirname(opts.output);
             const outFile = basename(opts.output);
             if (
