@@ -3,7 +3,6 @@
   "version": "1.8.0",
   "description": "Markdown for receipts. Printable digital receipts. Generate receipt printer commands and SVG images.",
   "main": "lib/receiptline.js",
-  "type": "module",
   "bin": {
     "receiptline": "./bin/receiptline.js"
   },
