@@ -11,7 +11,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-const {stringify} = require('@moneyforward/stream-util');
 const {InvalidArgumentError, Command, Option} = require('commander');
 const {transform, commands} = require('../lib/receiptline.js');
 const {statSync, readFileSync, writeFileSync, existsSync} = require('fs');
@@ -36,6 +35,13 @@ const encodings = [
     'cp950',
     'big5',
 ];
+
+async function readStdin(){
+    const buffers = [];
+    for await (const chunk of process.stdin) buffers.push(chunk);
+    const buffer = Buffer.concat(buffers);
+    return buffer.toString();
+}
 
 module.exports = {
     cli: async () => {
@@ -129,7 +135,8 @@ module.exports = {
         const argn = args.length;
         var doc = '';
         if (argn === 0) {
-            doc = await stringify(process.stdin);
+            // doc = await stringify(process.stdin);
+            doc = await readStdin();
         } else if (argn === 1) {
             const f = args[0];
             if (statSync(f).isFile()) {
