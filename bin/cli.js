@@ -158,7 +158,7 @@ function checkRange(name, f, min, max) {
     // receive input
     var doc = '';
     if (argn === 0) {
-        doc = readStdin();
+        doc = await readStdin();
     } else if (argn === 1) {
         const f = args[0];
         if (statSync(f).isFile()) {
