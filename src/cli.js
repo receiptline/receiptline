@@ -15,6 +15,7 @@ const {InvalidArgumentError, Command, Option} = require('commander');
 const {transform, commands} = require('../lib/receiptline.js');
 const {statSync, readFileSync, writeFileSync, existsSync} = require('fs');
 const {basename, dirname} = require('path');
+const sharp = require('sharp');
 
 const encodings = [
     'multilingual',
@@ -36,6 +37,24 @@ const encodings = [
     'big5',
 ];
 
+const sharpFormats = [
+    'heic',
+    'heif',
+    'avif',
+    'jpeg',
+    'jpg',
+    'png',
+    'raw',
+    'tiff',
+    'tif',
+    'webp',
+    'gif',
+    'jp2',
+    'jpx',
+    'j2k',
+    'j2c',
+];
+
 /**
  * Function - readStdin
  * Read text from stdin
@@ -48,7 +67,6 @@ async function readStdin() {
     return buffer.toString();
 }
 
-/**
 /**
  * Function - checkRange
  * (Helper function for CLI) Generate a function
@@ -118,7 +136,11 @@ module.exports = {
                     'printer control language'
                 )
                     .default('svg')
-                    .choices(Object.getOwnPropertyNames(commands))
+                    .choices(
+                        Object.getOwnPropertyNames(commands).concat(
+                            sharpFormats
+                        )
+                    )
             )
             .option(
                 '-o, --output <path>',
@@ -136,11 +158,12 @@ module.exports = {
         const opts = program.opts();
         const args = program.args;
         const argn = args.length;
+        const needSharp = sharpFormats.includes(opts.printer);
 
         // receive input
         var doc = '';
         if (argn === 0) {
-            doc = await readStdin();
+            doc = readStdin();
         } else if (argn === 1) {
             const f = args[0];
             if (statSync(f).isFile()) {
@@ -166,15 +189,21 @@ module.exports = {
             gradient: opts.cutting,
             gamma: opts.gamma,
             threshold: opts.threshold,
-            command: opts.printer,
+            command: needSharp ? 'svg' : opts.printer,
         };
 
         // get result of transformming
-        const result = transform(doc, printer);
+        var result = transform(doc, printer);
+        if (needSharp) {
+            // convert svg into image
+            result = await sharp(Buffer.from(result))
+                .toFormat(opts.printer)
+                .toBuffer();
+        }
 
         if (opts.output === undefined) {
             // print result to stdout when not being specified
-            console.log(result);
+            console.log(result.toString());
         } else {
             // print result to specified file
             const outDir = dirname(opts.output);
