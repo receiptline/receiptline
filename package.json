@@ -45,7 +45,8 @@
   "dependencies": {
     "commander": "^9.1.0",
     "iconv-lite": "^0.6.0",
-    "pngjs": "^5.0.0"
+    "pngjs": "^5.0.0",
+    "sharp": "^0.30.3"
   },
   "devDependencies": {
     "prettier": "^2.6.1",
