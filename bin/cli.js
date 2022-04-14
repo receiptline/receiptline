@@ -16,7 +16,19 @@ const {InvalidArgumentError, Command, Option} = require('commander');
 const {transform, commands} = require('../lib/receiptline.js');
 const {statSync, readFileSync, writeFileSync, existsSync} = require('fs');
 const {basename, dirname} = require('path');
-const sharp = require('sharp');
+
+const isSharpInstalled = () => {
+    try {
+        const sharp = require('sharp');
+        return true;
+    } catch (e) {
+        if (e.code === 'MODULE_NOT_FOUND') {
+            return false;
+        } else {
+            throw e;
+        }
+    }
+};
 
 const encodings = [
     'multilingual',
@@ -134,7 +146,15 @@ function checkRange(name, f, min, max) {
             new Option('-p, --printer <command>', 'printer control language')
                 .default('svg')
                 .choices(
-                    Object.getOwnPropertyNames(commands).concat(sharpFormats)
+                    (() => {
+                        if (isSharpInstalled) {
+                            return Object.getOwnPropertyNames(commands).concat(
+                                sharpFormats
+                            );
+                        } else {
+                            return Object.getOwnPropertyNames(commands);
+                        }
+                    })()
                 )
         )
         .option(
