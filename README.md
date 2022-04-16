@@ -3,7 +3,7 @@
 Markdown for receipts. Printable digital receipts. &#x1f9fe;  
 Generate receipt printer commands and SVG images.  
 
-[ReceiptIO](https://github.com/receiptline/receiptio) - Simple and easy API and CLI using receiptline, supporting printer status.  
+[ReceiptIO](https://www.npmjs.com/package/receiptio) - Simple and easy API and CLI using receiptline, supporting printer status.  
 
 ![English](screenshot_en.png)  
 ![Japanese](screenshot_ja.png)  
@@ -27,6 +27,8 @@ This reference implementation also provides the development tool "ReceiptLine De
 - Star MC series
 - Citizen CT series
 - Fujitsu FP series
+
+Epson TM series (South Asia model) and Star MC series (StarPRNT model) can print with device font of Thai characters.  
 
 ![Printers](readme_printer.jpg)  
 
@@ -100,6 +102,7 @@ const svg = receiptline.transform(doc, display);
   - `ksc5601`: Korean
   - `cp950`: Traditional Chinese
   - `big5`: Traditional Chinese
+  - `tis620`: Thai
 - `gradient` (for printer)
   - `false`: image processing for text, barcodes, and 2D codes
   - `true`: image processing for photos (default)
@@ -124,7 +127,7 @@ const svg = receiptline.transform(doc, display);
   - `fit`: ESC/POS (Fujitsu)
   - `impact`: ESC/POS (TM-U220)
   - `impactb`: ESC/POS (TM-U220 Font B)
-  - `starsbcs`: StarPRNT (SBCS)
+  - `starsbcs`: StarPRNT (SBCS, Thai)
   - `starmbcs`: StarPRNT (Japanese)
   - `starmbcs2`: StarPRNT (Chinese, Korean)
   - `starlinesbcs`: Star Line Mode (SBCS)
@@ -244,7 +247,7 @@ The ReceiptLine Designer provides more features.
         "port": 19100,
         "asImage": false,
         "cpl": 48,
-        "encoding": "cp932",
+        "encoding": "shiftjis",
         "gradient": true,
         "gamma": 1.8,
         "threshold": 128,
@@ -263,7 +266,7 @@ The ReceiptLine Designer provides more features.
       - printer port (will be `9100`)
     - `asImage`
       - `false`: print with device font (default)
-      - `true`: print as image (Requires [puppeteer](https://www.npmjs.com/package/puppeteer))
+      - `true`: print as image (Requires [puppeteer](https://www.npmjs.com/package/puppeteer) or [sharp](https://www.npmjs.com/package/sharp))
     - `cpl`, `encoding`, `gradient`, `gamma`, `threshold`, `upsideDown`, `spacing`, `cutting`, `command`
       - see the printer configuration above
 
@@ -517,6 +520,7 @@ Escape special characters.
   - Image position and size ratio
   - Barcodes and 2D codes
 - Star Graphic Mode printing only supports images, line feeds, and paper cuts.
+- [sharp](https://www.npmjs.com/package/sharp) is not support web fonts and minimizes the area of "invert" character decoration.
 
 # Author
 
