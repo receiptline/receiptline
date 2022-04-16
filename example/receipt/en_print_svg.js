@@ -19,7 +19,19 @@ limitations under the License.
 const http = require('http');
 const net = require('net');
 const receiptline = require('receiptline');
-const { convert } = require('convert-svg-to-png');
+const puppeteer = require('puppeteer');
+
+// Convert SVG to PNG
+const convert = async svg => {
+    const w = Number(svg.match(/width="(\d+)px"/)[1]);
+    const h = Number(svg.match(/height="(\d+)px"/)[1]);
+    const browser = await puppeteer.launch({ defaultViewport: { width: w, height: h }});
+    const page = await browser.newPage();
+    await page.setContent(`<!DOCTYPE html><html><head><meta charset="utf-8"><style>*{margin:0;background:transparent}</style></head><body>${svg}</body></html>`);
+    const png = await page.screenshot({ omitBackground: true });
+    await browser.close();
+    return png;
+};
 
 // ReceiptLine
 const text = `{image:iVBORw0KGgoAAAANSUhEUgAAAQAAAAA8AgMAAAD004yXAAAACVBMVEVwAJsAAAD///+esS7BAAAAAXRSTlMAQObYZgAAAZtJREFUSMftlkGOwyAMRW0J76kE97GlZu9KcP+rzCekKak6bWdGmrZS6KIG/7yAbQhEe+tN6qUpDZ1KPHT8SnhpeaP6FlA2wicBsgOeBpTF6gDfZHgj9Jt1sAMeAYYE/RFQngYMuX49gD8fMObjkwB+++h+DeB3x/qdvfD/AP4QwPXX+ceAUdV6Y7K/3Vr7rWhv73ZN9XVHzOUdlm6v9ay3pM1eLT+Ppv63BWjz8jJU0vpUWgGs5yfihrN451G+lq7i2bkF8Bagw3Qv0hEQKGTPPjnGxJtZrSIcJy5ciJ3JStbarjrgwOtVK7Z1iLFOOgOSR3WstTqMqCcVFlITDnhhNhMKzJNIA3iEBr1uaAfArA7bSWdAkRrIsJSMrwXbJBowEhogwe9F+NilC8D1oIyg43fA+1WwKpoktXUmsiOCjxFMR+gEBfwcaJ7qDBBWNTVSxKsZZhwkUgkppEiJ1VOIQdCFtAmNBQg9QWj9POQWFW4Bh0HVipRIHlpEUVzUAmslpgQpVcS0SklcrBqf03u/UvVhLd8H5Hffil/ia4Io3warBgAAAABJRU5ErkJggg==}
@@ -38,7 +50,7 @@ CHIDORI                | 2|    172.80
 CASH               |           200.00
 CHANGE             |            14.20
 {code:20210207210001; option:48,hri}`;
-const svg = receiptline.transform(text, { cpl: 42, encoding: 'cp437', spacing: true });
+const svg = receiptline.transform(text, { cpl: 42, encoding: 'multilingual', spacing: true });
 
 // HTML
 const html = `<!DOCTYPE html>
@@ -76,7 +88,12 @@ const printer = {
 const server = http.createServer(async (req, res) => {
     switch (req.method) {
         case 'GET':
-            if (new URL(req.url, `http://${req.headers.host}`).pathname === '/print') {
+            const path = new URL(req.url, `http://${req.headers.host}`).pathname;
+            if (path === '/') {
+                res.writeHead(200, {'Content-Type': 'text/html'});
+                res.end(html);
+            }
+            else if (path === '/print') {
                 const png = await convert(svg);
                 const socket = net.connect(printer.port, printer.host, () => {
                     socket.end(receiptline.transform(`|{i:${png.toString('base64')}}`, printer), 'binary');
@@ -84,10 +101,16 @@ const server = http.createServer(async (req, res) => {
                 socket.on('error', err => {
                     console.log(err.message);
                 });
+                res.writeHead(200, {'Content-Type': 'text/html'});
+                res.end();
             }
-            res.end(html);
+            else {
+                res.writeHead(404);
+                res.end();
+            }
             break;
         default:
+            res.writeHead(404);
             res.end();
             break;
     }
