@@ -72,16 +72,19 @@ function initialize() {
     const em = document.getElementById('em');
     const iv = document.getElementById('iv');
     const wh = document.getElementById('wh');
+    const lang = document.getElementById('lang');
     const linewidth = document.getElementById('linewidth');
     const linespace = document.getElementById('linespace');
     const dots = document.getElementById('dots');
     const cpl = document.getElementById('cpl');
     const printerid = document.getElementById('printerid');
     const send = document.getElementById('send');
-    const main = document.getElementById('main');
     const edit = document.getElementById('edit');
     const paper = document.getElementById('paper');
     const charWidth = 12;
+    const encoding = {
+        '-': 'multilingual', 'ja': 'shiftjis', 'zh-Hans': 'gb18030', 'zh-Hant': 'big5', 'ko': 'ksc5601', 'th': 'tis620'
+    };
 
     // register file button event listener
     load.onclick = event => {
@@ -140,24 +143,9 @@ function initialize() {
         }
         // save svg file
         if (savesvg.checked) {
-            const lang = window.navigator.language;
-            let encoding = 'cp437';
-            switch (lang.slice(0, 2)) {
-                case 'ja':
-                    encoding = 'cp932';
-                    break;
-                case 'zh':
-                    encoding = /^zh-(tw|hk)/i.test(lang) ? 'cp950' : 'cp936';
-                    break;
-                case 'ko':
-                    encoding = 'cp949';
-                    break;
-                default:
-                    break;
-            }
             const printer = {
                 cpl: Number(cpl.textContent),
-                encoding: encoding,
+                encoding: encoding[lang.value],
                 spacing: linespace.checked
             };
             const svg = receiptline.transform(edit.value, printer);
@@ -320,6 +308,27 @@ function initialize() {
     // register scale up button event listener
     wh.onclick = event => insertText(edit, '^');
 
+    // register language selectbox event listener
+    const language = window.navigator.language;
+    switch (language.slice(0, 2)) {
+        case 'ja':
+            lang.value = 'ja';
+            break;
+        case 'zh':
+            lang.value = /^zh-(tw|hk|mo)/i.test(language) ? 'zh-Hant' : 'zh-Hans';
+            break;
+        case 'ko':
+            lang.value = 'ko';
+            break;
+        case 'th':
+            lang.value = 'th';
+            break;
+        default:
+            lang.value = '-';
+            break;
+    }
+    lang.onchange = event => edit.oninput();
+
     // register width slidebar event listener
     linewidth.oninput = event => {
         paper.style.width = linewidth.value + 'px';
@@ -334,25 +343,9 @@ function initialize() {
 
     // register input event listener (immediately invoked)
     (edit.oninput = event => {
-        const lang = window.navigator.language;
-        main.lang = lang;
-        let encoding = 'cp437';
-        switch (lang.slice(0, 2)) {
-            case 'ja':
-                encoding = 'cp932';
-                break;
-            case 'zh':
-                encoding = /^zh-(tw|hk)/i.test(lang) ? 'cp950' : 'cp936';
-                break;
-            case 'ko':
-                encoding = 'cp949';
-                break;
-            default:
-                break;
-        }
         const printer = {
             cpl: Number(cpl.textContent),
-            encoding: encoding,
+            encoding: encoding[lang.value],
             spacing: linespace.checked
         };
         const svg = receiptline.transform(edit.value, printer);
