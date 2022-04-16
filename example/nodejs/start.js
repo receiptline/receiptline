@@ -29,6 +29,13 @@ try {
 catch (e) {
     // nothing to do
 }
+let sharp;
+try {
+    sharp = require('sharp');
+}
+catch (e) {
+    // nothing to do
+}
 
 // Serial-LAN Converter
 if ('serial' in servers) {
@@ -166,7 +173,7 @@ if ('http' in servers) {
 
 const transform = async (receiptmd, printer) => {
     // convert receiptline to receiptline image
-    if (printer.asImage && puppeteer) {
+    if (printer.asImage && (puppeteer || sharp)) {
         receiptmd = `|{i:${await rasterize(receiptmd, printer, 'base64')}}`;
     }
     // convert receiptline to command
@@ -175,14 +182,55 @@ const transform = async (receiptmd, printer) => {
 
 const rasterize = async (receiptmd, printer, encoding) => {
     // convert receiptline to png
-    const display = Object.assign({}, printer, { command: 'svg' });
-    const svg = receiptline.transform(receiptmd, display);
-    const w = Number(svg.match(/width="(\d+)px"/)[1]);
-    const h = Number(svg.match(/height="(\d+)px"/)[1]);
-    const browser = await puppeteer.launch({ defaultViewport: { width: w, height: h }});
-    const page = await browser.newPage();
-    await page.setContent(`<!DOCTYPE html><html><head><meta charset="utf-8"><style>*{margin:0}</style></head><body>${svg}</body></html>`);
-    const png = await page.screenshot({ encoding: encoding });
-    await browser.close();
-    return png;
+    if (puppeteer) {
+        const display = Object.assign({}, printer, { command: 'svg' });
+        const svg = receiptline.transform(receiptmd, display);
+        const w = Number(svg.match(/width="(\d+)px"/)[1]);
+        const h = Number(svg.match(/height="(\d+)px"/)[1]);
+        const browser = await puppeteer.launch({ defaultViewport: { width: w, height: h }});
+        const page = await browser.newPage();
+        await page.setContent(`<!DOCTYPE html><html><head><meta charset="utf-8"><style>*{margin:0;background:transparent}</style></head><body>${svg}</body></html>`);
+        const png = await page.screenshot({ encoding: encoding, omitBackground: true });
+        await browser.close();
+        return png;
+    }
+    else if (sharp) {
+        const display = Object.assign({}, printer, { command: svgsharp });
+        const svg = receiptline.transform(receiptmd, display);
+        return (await sharp(Buffer.from(svg)).toFormat('png').toBuffer()).toString(encoding);
+    }
+    else {
+        return '';
+    }
 };
+
+const svgsharp = Object.assign({}, receiptline.commands.svg, {
+    // print text:
+    text: function (text, encoding) {
+        let p = this.textPosition;
+        const attr = Object.keys(this.textAttributes).reduce((a, key) => a + ` ${key}="${this.textAttributes[key]}"`, '');
+        this.textElement += this.arrayFrom(text, encoding).reduce((a, c) => {
+            const w = this.measureText(c, encoding);
+            const q = w * this.textScale;
+            const r = (p + q / 2) * this.charWidth / this.textScale;
+            p += q;
+            const s = w * this.charWidth / 2;
+            const t = attr.replace('scale(1,2)', `translate(${s}),scale(1,2)`).replace('scale(2,1)', `translate(${-s}),scale(2,1)`);
+            return a + `<text x="${r}"${t}>${c.replace(/[ &<>]/g, r => ({' ': '&#xa0;', '&': '&amp;', '<': '&lt;', '>': '&gt;'}[r]))}</text>`;
+        }, '');
+        this.textPosition += this.measureText(text, encoding) * this.textScale;
+        return '';
+    },
+    // feed new line:
+    lf: function () {
+        const h = this.lineHeight * this.charWidth * 2;
+        if (this.textElement.length > 0) {
+            this.svgContent += `<g transform="translate(${this.lineMargin * this.charWidth},${this.svgHeight + h * 5 / 6})">${this.textElement}</g>`;
+        }
+        this.svgHeight += Math.max(h, this.feedMinimum);
+        this.lineHeight = 1;
+        this.textElement = '';
+        this.textPosition = 0;
+        return '';
+    }
+});
