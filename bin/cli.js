@@ -13,10 +13,10 @@ limitations under the License.
 */
 
 const {InvalidArgumentError, Command, Option} = require('commander');
-const {transform, commands} = require('../lib/receiptline.js');
+const {transform, commands, supportedEncodings} = require('../lib/receiptline.js');
 const {statSync, readFileSync, writeFileSync, existsSync} = require('fs');
 const {basename, dirname} = require('path');
-var sharp = null
+var sharp = null;
 try {
     sharp = require('sharp');
 } catch (e) {
@@ -26,27 +26,6 @@ try {
         throw e;
     }
 }
-
-const encodings = [
-    'multilingual',
-    'cp437',
-    'cp852',
-    'cp858',
-    'cp860',
-    'cp863',
-    'cp865',
-    'cp866',
-    'cp1252',
-    'cp932',
-    'shiftjis',
-    'cp936',
-    'gb18030',
-    'cp949',
-    'ksc5601',
-    'cp950',
-    'big5',
-    'tis620',
-];
 
 const sharpFormats = [
     'heic',
@@ -122,7 +101,7 @@ function checkRange(name, f, min, max) {
         .addOption(
             new Option('-e, --encoding <encoding>', 'encoding')
                 .default('cp437')
-                .choices(encodings)
+                .choices(supportedEncodings)
         )
         .option('-u, --upside-down', 'upside down')
         .option('-s, --spacing', 'line spacing')
