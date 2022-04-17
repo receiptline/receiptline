@@ -13,9 +13,23 @@ limitations under the License.
 */
 
 const {InvalidArgumentError, Command, Option} = require('commander');
-const {transform, commands, supportedEncodings} = require('../lib/receiptline.js');
+const {
+    transform,
+    commands,
+    supportedEncodings,
+} = require('../lib/receiptline.js');
 const {statSync, readFileSync, writeFileSync, existsSync} = require('fs');
 const {basename, dirname} = require('path');
+var puppeteer = null;
+try {
+    puppeteer = require('puppeteer');
+} catch (e) {
+    if (e.code === 'MODULE_NOT_FOUND') {
+        // pass
+    } else {
+        throw e;
+    }
+}
 var sharp = null;
 try {
     sharp = require('sharp');
@@ -44,6 +58,8 @@ const sharpFormats = [
     'j2k',
     'j2c',
 ];
+
+const puppeteerFormats = ['png', 'jpeg'];
 
 /**
  * Function - readStdin
@@ -128,6 +144,10 @@ function checkRange(name, f, min, max) {
                             return Object.getOwnPropertyNames(commands).concat(
                                 sharpFormats
                             );
+                        } else if (puppeteer) {
+                            return Object.getOwnPropertyNames(commands).concat(
+                                puppeteerFormats
+                            );
                         } else {
                             return Object.getOwnPropertyNames(commands);
                         }
@@ -150,7 +170,8 @@ function checkRange(name, f, min, max) {
     const opts = program.opts();
     const args = program.args;
     const argn = args.length;
-    const needSharp = sharpFormats.includes(opts.printer);
+    const needSharp = sharp && sharpFormats.includes(opts.printer);
+    const needPuppeteer = puppeteer && puppeteerFormats.includes(opts.printer);
 
     // receive input
     var doc = '';
@@ -181,7 +202,7 @@ function checkRange(name, f, min, max) {
         gradient: opts.cutting,
         gamma: opts.gamma,
         threshold: opts.threshold,
-        command: needSharp ? 'svg' : opts.printer,
+        command: needSharp || needPuppeteer ? 'svg' : opts.printer,
     };
 
     // get result of transformming
@@ -191,6 +212,24 @@ function checkRange(name, f, min, max) {
         result = await sharp(Buffer.from(result))
             .toFormat(opts.printer)
             .toBuffer();
+    } else if (needPuppeteer) {
+        // convert svg into image
+        const browser = await puppeteer.launch({
+            defaultViewport: {
+                width: Number(svg.match(/width="(\d+)px"/)[1]),
+                height: Number(svg.match(/height="(\d+)px"/)[1]),
+            },
+        });
+        const page = await browser.newPage();
+        await page.setContent(
+            `<!DOCTYPE html><html><head><meta charset="utf-8"><style>*{margin:0;background:transparent}</style></head><body>${result}</body></html>`
+        );
+        result = await page.screenshot({
+            encoding: 'binary',
+            omitBackground: true,
+            type: opts.printer,
+        });
+        await browser.close();
     }
 
     if (opts.output === undefined) {
