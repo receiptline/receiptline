@@ -16,19 +16,16 @@ const {InvalidArgumentError, Command, Option} = require('commander');
 const {transform, commands} = require('../lib/receiptline.js');
 const {statSync, readFileSync, writeFileSync, existsSync} = require('fs');
 const {basename, dirname} = require('path');
-
-const isSharpInstalled = () => {
-    try {
-        const sharp = require('sharp');
-        return true;
-    } catch (e) {
-        if (e.code === 'MODULE_NOT_FOUND') {
-            return false;
-        } else {
-            throw e;
-        }
+var sharp = null
+try {
+    sharp = require('sharp');
+} catch (e) {
+    if (e.code === 'MODULE_NOT_FOUND') {
+        // pass
+    } else {
+        throw e;
     }
-};
+}
 
 const encodings = [
     'multilingual',
@@ -148,7 +145,7 @@ function checkRange(name, f, min, max) {
                 .default('svg')
                 .choices(
                     (() => {
-                        if (isSharpInstalled) {
+                        if (sharp) {
                             return Object.getOwnPropertyNames(commands).concat(
                                 sharpFormats
                             );
