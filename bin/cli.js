@@ -216,8 +216,8 @@ function checkRange(name, f, min, max) {
         // convert svg into image
         const browser = await puppeteer.launch({
             defaultViewport: {
-                width: Number(svg.match(/width="(\d+)px"/)[1]),
-                height: Number(svg.match(/height="(\d+)px"/)[1]),
+                width: Number(result.match(/width="(\d+)px"/)[1]),
+                height: Number(result.match(/height="(\d+)px"/)[1]),
             },
         });
         const page = await browser.newPage();
