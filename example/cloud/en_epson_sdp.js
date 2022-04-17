@@ -22,7 +22,7 @@ const app = express();
 
 const printer = {
     cpl: 48,
-    encoding: 'cp437',
+    encoding: 'multilingual',
     upsideDown: true,
     spacing: true,
     command: 'escpos'

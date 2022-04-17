@@ -1,6 +1,13 @@
 # Changelog
 
 ## [Unreleased]
+### Added
+- TypeScript typings
+
+## [1.9.0] - 2022-04-16
+### Added
+- Support for image processing module "sharp"
+- Thai character support
 
 ## [1.8.0] - 2022-03-08
 ### Added

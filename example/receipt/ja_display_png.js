@@ -19,7 +19,19 @@ limitations under the License.
 const http = require('http');
 const net = require('net');
 const receiptline = require('receiptline');
-const { convert } = require('convert-svg-to-png');
+const puppeteer = require('puppeteer');
+
+// Convert SVG to PNG
+const convert = async svg => {
+    const w = Number(svg.match(/width="(\d+)px"/)[1]);
+    const h = Number(svg.match(/height="(\d+)px"/)[1]);
+    const browser = await puppeteer.launch({ defaultViewport: { width: w, height: h }});
+    const page = await browser.newPage();
+    await page.setContent(`<!DOCTYPE html><html><head><meta charset="utf-8"><style>*{margin:0;background:transparent}</style></head><body>${svg}</body></html>`);
+    const png = await page.screenshot({ omitBackground: true });
+    await browser.close();
+    return png;
+};
 
 // ReceiptLine
 const text = `{image:iVBORw0KGgoAAAANSUhEUgAAAQAAAAA8AgMAAAD004yXAAAACVBMVEVwAJsAAAD///+esS7BAAAAAXRSTlMAQObYZgAAAZtJREFUSMftlkGOwyAMRW0J76kE97GlZu9KcP+rzCekKak6bWdGmrZS6KIG/7yAbQhEe+tN6qUpDZ1KPHT8SnhpeaP6FlA2wicBsgOeBpTF6gDfZHgj9Jt1sAMeAYYE/RFQngYMuX49gD8fMObjkwB+++h+DeB3x/qdvfD/AP4QwPXX+ceAUdV6Y7K/3Vr7rWhv73ZN9XVHzOUdlm6v9ay3pM1eLT+Ppv63BWjz8jJU0vpUWgGs5yfihrN451G+lq7i2bkF8Bagw3Qv0hEQKGTPPjnGxJtZrSIcJy5ciJ3JStbarjrgwOtVK7Z1iLFOOgOSR3WstTqMqCcVFlITDnhhNhMKzJNIA3iEBr1uaAfArA7bSWdAkRrIsJSMrwXbJBowEhogwe9F+NilC8D1oIyg43fA+1WwKpoktXUmsiOCjxFMR+gEBfwcaJ7qDBBWNTVSxKsZZhwkUgkppEiJ1VOIQdCFtAmNBQg9QWj9POQWFW4Bh0HVipRIHlpEUVzUAmslpgQpVcS0SklcrBqf03u/UvVhLd8H5Hffil/ia4Io3warBgAAAABJRU5ErkJggg==}
@@ -38,7 +50,7 @@ const text = `{image:iVBORw0KGgoAAAANSUhEUgAAAQAAAAA8AgMAAAD004yXAAAACVBMVEVwAJs
 現　　金          |           ¥20,000
 お 釣 り          |            ¥1,420
 {code:20210207210001; option:48,hri}`;
-const svg = receiptline.transform(text, { cpl: 35, encoding: 'cp932', spacing: true });
+const svg = receiptline.transform(text, { cpl: 35, encoding: 'shiftjis', spacing: true });
 
 // HTML
 const html = `<!DOCTYPE html>
@@ -68,7 +80,7 @@ const printer = {
     "host": "127.0.0.1",
     "port": 9100,
     "cpl": 35,
-    "encoding": "cp932",
+    "encoding": "shiftjis",
     "spacing": true,
     "command": "escpos"
 };
@@ -77,18 +89,29 @@ const printer = {
 const server = http.createServer(async (req, res) => {
     switch (req.method) {
         case 'GET':
-            if (new URL(req.url, `http://${req.headers.host}`).pathname === '/print') {
+            const path = new URL(req.url, `http://${req.headers.host}`).pathname;
+            if (path === '/') {
+                const png = await convert(svg);
+                res.writeHead(200, {'Content-Type': 'text/html'});
+                res.end(html.replace(/<svg.*\/svg>/, `<img src="data:image/png;base64,${png.toString('base64')}">`));
+            }
+            else if (path === '/print') {
                 const socket = net.connect(printer.port, printer.host, () => {
                     socket.end(receiptline.transform(text, printer), 'binary');
                 });
                 socket.on('error', err => {
                     console.log(err.message);
                 });
+                res.writeHead(200, {'Content-Type': 'text/html'});
+                res.end();
             }
-            const png = await convert(svg);
-            res.end(html.replace(/<svg.*\/svg>/, `<img src="data:image/png;base64,${png.toString('base64')}">`));
+            else {
+                res.writeHead(404);
+                res.end();
+            }
             break;
         default:
+            res.writeHead(404);
             res.end();
             break;
     }

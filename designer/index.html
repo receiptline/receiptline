@@ -120,6 +120,14 @@ limitations under the License.
             </button>
         </div>
         <div>
+            <select id="lang">
+                <option value="-">(default)</option>
+                <option value="ja">ja</option>
+                <option value="zh-Hans">zh-Hans</option>
+                <option value="zh-Hant">zh-Hant</option>
+                <option value="ko">ko</option>
+                <option value="th">th</option>
+            </select>
             <label for="linewidth">Width</label>
             <input id="linewidth" type="range" value="576" min="288" max="576" step="12">
             <span id="dots">576</span> dots / <span id="cpl">48</span> cpl
@@ -132,7 +140,7 @@ limitations under the License.
         </div>
     </header>
     <hr>
-    <main id="main">
+    <main>
         <textarea id="edit" rows="24" cols="80" placeholder="ReceiptLine Text" autofocus="autofocus"></textarea>
         <section>
             <div id="paper" class="receipt"></div>
@@ -480,6 +488,6 @@ limitations under the License.
             </div>
         </div>
     </div>
-    <footer>ReceiptLine Designer Version 1.8.0 © 2019 Open Foodservice System Consortium</footer>
+    <footer>ReceiptLine Designer Version 1.9.0 © 2019 Open Foodservice System Consortium</footer>
 </body>
 </html>

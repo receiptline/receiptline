@@ -198,7 +198,7 @@ limitations under the License.
         const p = Object.assign({}, printer);
         return {
             cpl: p.cpl || 48,
-            encoding: /^(cp(437|85[28]|86[0356]|1252|93[26]|949|950)|multilingual|shiftjis|gb18030|ksc5601|big5)$/.test(p.encoding) ? p.encoding : 'cp437',
+            encoding: /^(cp(437|85[28]|86[0356]|1252|93[26]|949|950)|multilingual|shiftjis|gb18030|ksc5601|big5|tis620)$/.test(p.encoding) ? p.encoding : 'cp437',
             upsideDown: !!p.upsideDown,
             spacing: !!p.spacing,
             cutting: 'cutting' in p ? !!p.cutting : true,
@@ -688,7 +688,7 @@ limitations under the License.
             // process text
             if (i % 2 === 0) {
                 // if text is not empty
-                let t = Array.from(text);
+                let t = printer.command.arrayFrom(text, printer.encoding);
                 while (t.length > 0) {
                     // measure character width
                     let w = 0;
@@ -782,13 +782,16 @@ limitations under the License.
          * @param {string} encoding codepage
          * @returns {number} string width
          */
-        measureText: function (text, encoding) {
+        measureText: (text, encoding) => {
             let r = 0;
             const t = Array.from(text);
             switch (encoding) {
                 case 'cp932':
                 case 'shiftjis':
-                    r = t.map(c => c.codePointAt(0)).reduce((a, d) => a + (d < 0x80 || d === 0xa5 || d === 0x203e || (d > 0xff60 && d < 0xffa0) ? 1 : 2), 0);
+                    r = t.reduce((a, c) => {
+                        const d = c.codePointAt(0);
+                        return a + (d < 0x80 || d === 0xa5 || d === 0x203e || (d > 0xff60 && d < 0xffa0) ? 1 : 2);
+                    }, 0);
                     break;
                 case 'cp936':
                 case 'gb18030':
@@ -796,13 +799,138 @@ limitations under the License.
                 case 'ksc5601':
                 case 'cp950':
                 case 'big5':
-                    r = t.map(c => c.codePointAt(0)).reduce((a, d) => a + (d < 0x80 ? 1 : 2), 0);
+                    r = t.reduce((a, c) => a + (c.codePointAt(0) < 0x80 ? 1 : 2), 0);
+                    break;
+                case 'tis620':
+                    const a = t.reduce((a, c) => {
+                        const d = c.codePointAt(0);
+                        if (a.consonant) {
+                            if (d === 0xe31 || d >= 0xe34 && d <= 0xe3a || d === 0xe47) {
+                                if (a.vowel) {
+                                    a.length += 2;
+                                    a.consonant = a.vowel = a.tone = false;
+                                }
+                                else {
+                                    a.vowel = true;
+                                }
+                            }
+                            else if (d >= 0xe48 && d <= 0xe4b) {
+                                if (a.tone) {
+                                    a.length += 2;
+                                    a.consonant = a.vowel = a.tone = false;
+                                }
+                                else {
+                                    a.tone = true;
+                                }
+                            }
+                            else if (d === 0xe33 || d >= 0xe4c && d <= 0xe4e) {
+                                if (a.vowel || a.tone) {
+                                    a.length += 2;
+                                    a.consonant = a.vowel = a.tone = false;
+                                }
+                                else {
+                                    a.length += d === 0xe33 ? 2 : 1;
+                                    a.consonant = false;
+                                }
+                            }
+                            else if (d >= 0xe01 && d <= 0xe2e) {
+                                a.length++;
+                                a.vowel = a.tone = false;
+                            }
+                            else {
+                                a.length += 2;
+                                a.consonant = a.vowel = a.tone = false;
+                            }
+                        }
+                        else if (d >= 0xe01 && d <= 0xe2e) {
+                            a.consonant = true;
+                        }
+                        else {
+                            a.length++;
+                        }
+                        return a;
+                    }, { length: 0, consonant: false, vowel: false, tone: false });
+                    if (a.consonant) {
+                        a.length++;
+                        a.consonant = a.vowel = a.tone = false;
+                    }
+                    r = a.length;
                     break;
                 default:
                     r = t.length;
                     break;
             }
             return r;
+        },
+
+        /**
+         * Function - arrayFrom
+         * Create character array from string (supporting Thai combining characters)
+         * @param {string} text string
+         * @param {string} encoding codepage
+         * @returns {Array} array instance
+         */
+        arrayFrom: (text, encoding) => {
+            const t = Array.from(text);
+            if (encoding === 'tis620') {
+                const a = t.reduce((a, c) => {
+                    const d = c.codePointAt(0);
+                    if (a.consonant) {
+                        if (d === 0xe31 || d >= 0xe34 && d <= 0xe3a || d === 0xe47) {
+                            if (a.vowel) {
+                                a.result.push(a.consonant + a.vowel + a.tone, c);
+                                a.consonant = a.vowel = a.tone = '';
+                            }
+                            else {
+                                a.vowel = c;
+                            }
+                        }
+                        else if (d >= 0xe48 && d <= 0xe4b) {
+                            if (a.tone) {
+                                a.result.push(a.consonant + a.vowel + a.tone, c);
+                                a.consonant = a.vowel = a.tone = '';
+                            }
+                            else {
+                                a.tone = c;
+                            }
+                        }
+                        else if (d === 0xe33 || d >= 0xe4c && d <= 0xe4e) {
+                            if (a.vowel || a.tone) {
+                                a.result.push(a.consonant + a.vowel + a.tone, c);
+                                a.consonant = a.vowel = a.tone = '';
+                            }
+                            else {
+                                a.result.push(a.consonant + c);
+                                a.consonant = '';
+                            }
+                        }
+                        else if (d >= 0xe01 && d <= 0xe2e) {
+                            a.result.push(a.consonant + a.vowel + a.tone);
+                            a.consonant = c;
+                            a.vowel = a.tone = '';
+                        }
+                        else {
+                            a.result.push(a.consonant + a.vowel + a.tone, c);
+                            a.consonant = a.vowel = a.tone = '';
+                        }
+                    }
+                    else if (d >= 0xe01 && d <= 0xe2e) {
+                        a.consonant = c;
+                    }
+                    else {
+                        a.result.push(c);
+                    }
+                    return a;
+                }, { result: [], consonant: '', vowel: '', tone: '' });
+                if (a.consonant) {
+                    a.result.push(a.consonant + a.vowel + a.tone);
+                    a.consonant = a.vowel = a.tone = '';
+                }
+                return a.result;
+            }
+            else {
+                return t;
+            }
         },
 
         /**
@@ -1066,6 +1194,12 @@ limitations under the License.
                     p.size -= 2;
                     p.lang = 'zh-Hant';
                     break;
+                case 'tis620':
+                    p.font = `'Sarabun', monospace`;
+                    p.size -= 4;
+                    p.style = '@import url("https://fonts.googleapis.com/css2?family=Sarabun&display=swap");';
+                    p.lang = 'th';
+                    break;
                 default:
                     p.font = `'Courier Prime', 'Courier New', 'Courier', monospace`;
                     p.size -= 2;
@@ -1185,14 +1319,14 @@ limitations under the License.
         // print text:
         text: function (text, encoding) {
             let p = this.textPosition;
-            this.textAttributes.x = Array.from(text).map(c => {
+            const tspan = this.arrayFrom(text, encoding).reduce((a, c) => {
                 const q = this.measureText(c, encoding) * this.textScale;
                 const r = (p + q / 2) * this.charWidth / this.textScale;
                 p += q;
-                return r;
-            }).join();
+                return a + `<tspan x="${r}">${c.replace(/[ &<>]/g, r => ({' ': '&#xa0;', '&': '&amp;', '<': '&lt;', '>': '&gt;'}[r]))}</tspan>`;
+            }, '');
             const attr = Object.keys(this.textAttributes).reduce((a, key) => a + ` ${key}="${this.textAttributes[key]}"`, '');
-            this.textElement += `<text${attr}>${text.replace(/[ &<>]/g, r => ({' ': '&#xa0;', '&': '&amp;', '<': '&lt;', '>': '&gt;'}[r]))}</text>`;
+            this.textElement += `<text${attr}>${tspan}</text>`;
             this.textPosition += this.measureText(text, encoding) * this.textScale;
             return '';
         },
@@ -1293,7 +1427,8 @@ limitations under the License.
                 // draw human readable interpretation
                 if (symbol.hri) {
                     const m = (width - bar.hri.length * this.charWidth) / 2;
-                    path += `<text x="${bar.hri.split('').map((c, i) => m + this.charWidth * i).join()}" y="${height}">${bar.hri.replace(/[ &<>]/g, r => ({' ': '&#xa0;', '&': '&amp;', '<': '&lt;', '>': '&gt;'}[r]))}</text>`;
+                    const tspan = bar.hri.split('').reduce((a, c, i) => a + `<tspan x="${m + this.charWidth * i}">${c.replace(/[ &<>]/g, r => ({' ': '&#xa0;', '&': '&amp;', '<': '&lt;', '>': '&gt;'}[r]))}</tspan>`, '');
+                    path += `<text y="${height}">${tspan}</text>`;
                 }
                 const margin = this.lineMargin * this.charWidth + (this.lineWidth * this.charWidth - width) * this.lineAlign / 2;
                 this.svgContent += `<g transform="translate(${margin},${this.svgHeight})">${path}</g>`;
@@ -1334,7 +1469,7 @@ limitations under the License.
                 // calculate check digit and append stop character
                 d.push(d.reduce((a, c, i) => a + c * i) % 103, this.c128.stop);
                 // generate modules
-                r.module = '0' + d.map(c => this.c128.element[c]).join('');
+                r.module = '0' + d.reduce((a, c) => a + this.c128.element[c], '');
                 r.length = d.length * 11 + 2;
             }
             return r;
@@ -1417,14 +1552,14 @@ limitations under the License.
                 // generate HRI
                 r.hri = s.replace(/[\x00- \x7f]/g, ' ');
                 // calculate check digit
-                const d = s.split('').map(c => this.c93.escape[c.charCodeAt(0)]).join('').split('').map(c => this.c93.code[c]);
+                const d = s.split('').reduce((a, c) => a + this.c93.escape[c.charCodeAt(0)], '').split('').map(c => this.c93.code[c]);
                 d.push(d.reduceRight((a, c, i) => a + c * ((d.length - 1 - i) % 20 + 1)) % 47);
                 d.push(d.reduceRight((a, c, i) => a + c * ((d.length - 1 - i) % 15 + 1)) % 47);
                 // append start character and stop character
                 d.unshift(this.c93.start);
                 d.push(this.c93.stop);
                 // generate modules
-                r.module = '0' + d.map(c => this.c93.element[c]).join('');
+                r.module = '0' + d.reduce((a, c) => a + this.c93.element[c], '');
                 r.length = d.length * 9 + 1;
             }
             return r;
@@ -1444,7 +1579,7 @@ limitations under the License.
                 // generate HRI
                 r.hri = s;
                 // generate modules
-                r.module = '0' + s.toUpperCase().split('').map(c => this.nw7[c]).join('2');
+                r.module = '0' + s.toUpperCase().split('').reduce((a, c) => a + this.nw7[c] + '2', '').slice(0, -1);
                 r.length = s.length * 25 - ((s + '$').match(/[\d\-$]/g).length - 1) * 3 - 2;
             }
             return r;
@@ -1468,7 +1603,7 @@ limitations under the License.
                 while (i < d.length) {
                     const b = this.i25.element[d[i++]];
                     const s = this.i25.element[d[i++]];
-                    x += b.split('').map((c, j) => c + s[j]).join('');
+                    x += b.split('').reduce((a, c, j) => a + c + s[j], '');
                 }
                 x += this.i25.stop;
                 r.module = '0' + x;
@@ -1498,7 +1633,7 @@ limitations under the License.
                 // generate HRI
                 r.hri = s;
                 // generate modules
-                r.module = '0' + s.split('').map(c => this.c39[c]).join('2');
+                r.module = '0' + s.split('').reduce((a, c) => a + this.c39[c] + '2', '').slice(0, -1);
                 r.length = s.length * 29 - 2;
             }
             return r;
@@ -1653,7 +1788,7 @@ limitations under the License.
             cp932: '\x1bt\x01\x1cC1\x1bR\x08', cp936: '\x1bt\x00\x1c&',
             cp949: '\x1bt\x00\x1c&\x1bR\x0d', cp950: '\x1bt\x00\x1c&',
             shiftjis: '\x1bt\x01\x1cC1\x1bR\x08', gb18030: '\x1bt\x00\x1c&',
-            ksc5601: '\x1bt\x00\x1c&\x1bR\x0d', big5: '\x1bt\x00\x1c&'
+            ksc5601: '\x1bt\x00\x1c&\x1bR\x0d', big5: '\x1bt\x00\x1c&', tis620: '\x1bt\x15'
         },
         // convert to multiple codepage characters: (ESC t n)
         multiconv: text => {
@@ -1696,7 +1831,7 @@ limitations under the License.
             this.gradient = printer.gradient;
             this.gamma = printer.gamma;
             this.threshold = printer.threshold;
-            return '\x1b@\x1da\x00\x1bM0\x1c(A' + $(2, 0, 48, 0) + '\x1b \x00\x1cS\x00\x00' + (this.spacing ? '\x1b2' : '\x1b3\x00') + '\x1b{' + $(this.upsideDown) + '\x1c.';
+            return '\x1b@\x1da\x00\x1bM' + (printer.encoding === 'tis620' ? 'a' : '0') + '\x1c(A' + $(2, 0, 48, 0) + '\x1b \x00\x1cS\x00\x00' + (this.spacing ? '\x1b2' : '\x1b3\x00') + '\x1b{' + $(this.upsideDown) + '\x1c.';
         },
         // finish printing: GS r n
         close: function () {
@@ -1734,7 +1869,7 @@ limitations under the License.
         vrhr: function (widths1, widths2, dl, dr) {
             const r1 = ' '.repeat(Math.max(-dl, 0)) + widths1.reduce((a, w) => a + '\x95'.repeat(w) + '\x90', dl > 0 ? '\x9e' : '\x9a').slice(0, -1) + (dr < 0 ? '\x9f' : '\x9b') + ' '.repeat(Math.max(dr, 0));
             const r2 = ' '.repeat(Math.max(dl, 0)) + widths2.reduce((a, w) => a + '\x95'.repeat(w) + '\x91', dl < 0 ? '\x9c' : '\x98').slice(0, -1) + (dr > 0 ? '\x9d' : '\x99') + ' '.repeat(Math.max(-dr, 0));
-            return '\x1cC0\x1c.\x1bt\x01' + r2.split('').map((c, i) => this.vrtable[c][r1[i]]).join('');
+            return '\x1cC0\x1c.\x1bt\x01' + r2.split('').reduce((a, c, i) => a + this.vrtable[c][r1[i]], '');
         },
         // set line spacing and feed new line: (ESC 2) (ESC 3 n)
         vrlf: function (vr) {
@@ -1754,7 +1889,14 @@ limitations under the License.
         normal: () => '\x1b-0\x1c-0\x1bE0\x1dB0\x1d!\x00',
         // print text:
         text: function (text, encoding) {
-            return encoding === 'multilingual' ? this.multiconv(text) : this.codepage[encoding] + iconv.encode(text, encoding).toString('binary')
+            switch (encoding) {
+                case 'multilingual':
+                    return this.multiconv(text);
+                case 'tis620':
+                    return this.codepage[encoding] + this.arrayFrom(text, encoding).reduce((a, c) => a + '\x00' + iconv.encode(c, encoding).toString('binary'), '');
+                default:
+                    return this.codepage[encoding] + iconv.encode(text, encoding).toString('binary');
+            }
         },
         // feed new line: LF
         lf: () => '\x0a',
@@ -1881,7 +2023,7 @@ limitations under the License.
                 else {
                     // end
                 }
-                r = d.map(c => $(c)).join('');
+                r = d.reduce((a, c) => a + $(c), '');
             }
             return r;
         },
@@ -2021,9 +2163,9 @@ limitations under the License.
             let r = '';
             let s = data.replace(/((?!^[\x00-\x7f]+$).)*/, '');
             if (s.length > 0) {
-                const d = s.split('').map(c => this.c93.escape[c.charCodeAt(0)]).join('').split('').map(c => this.c93.code[c]);
+                const d = s.split('').reduce((a, c) => a + this.c93.escape[c.charCodeAt(0)], '').split('').map(c => this.c93.code[c]);
                 d.push(this.c93.stop);
-                r = d.map(c => $(c)).join('');
+                r = d.reduce((a, c) => a + $(c), '');
             }
             return r;
         },
@@ -2054,7 +2196,7 @@ limitations under the License.
                     // end
                 }
                 d.push(this.c128.stop);
-                r = d.map(c => $(c)).join('');
+                r = d.reduce((a, c) => a + $(c), '');
             }
             return r;
         },
@@ -2253,7 +2395,7 @@ limitations under the License.
         vrhr: function (widths1, widths2, dl, dr) {
             const r1 = ' '.repeat(Math.max(-dl, 0)) + widths1.reduce((a, w) => a + '\x95'.repeat(w) + '\x90', dl > 0 ? '\x9e' : '\x9a').slice(0, -1) + (dr < 0 ? '\x9f' : '\x9b') + ' '.repeat(Math.max(dr, 0));
             const r2 = ' '.repeat(Math.max(dl, 0)) + widths2.reduce((a, w) => a + '\x95'.repeat(w) + '\x91', dl < 0 ? '\x9c' : '\x98').slice(0, -1) + (dr > 0 ? '\x9d' : '\x99') + ' '.repeat(Math.max(-dr, 0));
-            return '\x1b!' + $(this.font) + ' '.repeat(this.margin) + '\x1bt\x01' + r2.split('').map((c, i) => this.vrtable[c][r1[i]]).join('');
+            return '\x1b!' + $(this.font) + ' '.repeat(this.margin) + '\x1bt\x01' + r2.split('').reduce((a, c, i) => a + this.vrtable[c][r1[i]], '');
         },
         // set line spacing and feed new line: (ESC 2) (ESC 3 n)
         vrlf: function (vr) {
@@ -2361,7 +2503,7 @@ limitations under the License.
                             }
                         }
                     }
-                    r += '\x1b*\x00' + $(w & 255, w >> 8 & 255) + b.map(c => $(c)).join('') + '\x1bJ' + $(h * 2);
+                    r += '\x1b*\x00' + $(w & 255, w >> 8 & 255) + b.reduce((a, c) => a + $(c), '') + '\x1bJ' + $(h * 2);
                 }
             }
             return r;
@@ -2386,7 +2528,7 @@ limitations under the License.
         gradient: true,
         gamma: 1.8,
         threshold: 128,
-        // start printing: ESC @ ESC RS a n ESC RS F n ESC SP n ESC s n1 n2 (ESC z n) (ESC 0) (SI) (DC2)
+        // start printing: ESC @ ESC RS a n (ESC RS R n) ESC RS F n ESC SP n ESC s n1 n2 (ESC z n) (ESC 0) (SI) (DC2)
         open: function (printer) {
             this.upsideDown = printer.upsideDown;
             this.spacing = printer.spacing;
@@ -2394,7 +2536,7 @@ limitations under the License.
             this.gradient = printer.gradient;
             this.gamma = printer.gamma;
             this.threshold = printer.threshold;
-            return '\x1b@\x1b\x1ea\x00\x1b\x1eF\x00\x1b 0\x1bs00' + (this.spacing ? '\x1bz1' : '\x1b0') + (this.upsideDown ? '\x0f' : '\x12');
+            return '\x1b@\x1b\x1ea\x00' + (printer.encoding === 'tis620' ? '\x1b\x1eR\x01': '') + '\x1b\x1eF\x00\x1b 0\x1bs00' + (this.spacing ? '\x1bz1' : '\x1b0') + (this.upsideDown ? '\x0f' : '\x12');
         },
         // finish printing: ESC GS ETX s n1 n2
         close: function () {
@@ -2439,7 +2581,7 @@ limitations under the License.
             cp437: '\x1b\x1dt\x01', cp852: '\x1b\x1dt\x05', cp858: '\x1b\x1dt\x04', cp860: '\x1b\x1dt\x06',
             cp863: '\x1b\x1dt\x08', cp865: '\x1b\x1dt\x09', cp866: '\x1b\x1dt\x0a', cp1252: '\x1b\x1dt\x20',
             cp932: '\x1b$1\x1bR8', cp936: '', cp949: '\x1bRD', cp950: '',
-            shiftjis: '\x1b$1\x1bR8', gb18030: '', ksc5601: '\x1bRD', big5: ''
+            shiftjis: '\x1b$1\x1bR8', gb18030: '', ksc5601: '\x1bRD', big5: '', tis620: '\x1b\x1dt\x61'
         },
         // convert to multiple codepage characters: (ESC GS t n)
         multiconv: text => {
@@ -2659,7 +2801,7 @@ limitations under the License.
         vrhr: function (widths1, widths2, dl, dr) {
             const r1 = ' '.repeat(Math.max(-dl, 0)) + widths1.reduce((a, w) => a + '\xc4'.repeat(w) + '\xc1', '\xc0').slice(0, -1) + '\xd9' + ' '.repeat(Math.max(dr, 0));
             const r2 = ' '.repeat(Math.max(dl, 0)) + widths2.reduce((a, w) => a + '\xc4'.repeat(w) + '\xc2', '\xda').slice(0, -1) + '\xbf' + ' '.repeat(Math.max(-dr, 0));
-            return '\x1b\x1dt\x01' + r2.split('').map((c, i) => this.vrtable[c][r1[i]]).join('');
+            return '\x1b\x1dt\x01' + r2.split('').reduce((a, c, i) => a + this.vrtable[c][r1[i]], '');
         },
         // ruled line composition
         vrtable: {
@@ -2689,7 +2831,7 @@ limitations under the License.
         vrhr: function (widths1, widths2, dl, dr) {
             const r1 = ' '.repeat(Math.max(-dl, 0)) + widths1.reduce((a, w) => a + '\x95'.repeat(w) + '\x90', dl > 0 ? '\x9e' : '\x9a').slice(0, -1) + (dr < 0 ? '\x9f' : '\x9b') + ' '.repeat(Math.max(dr, 0));
             const r2 = ' '.repeat(Math.max(dl, 0)) + widths2.reduce((a, w) => a + '\x95'.repeat(w) + '\x91', dl < 0 ? '\x9c' : '\x98').slice(0, -1) + (dr > 0 ? '\x9d' : '\x99') + ' '.repeat(Math.max(-dr, 0));
-            return '\x1b$0' + r2.split('').map((c, i) => this.vrtable[c][r1[i]]).join('');
+            return '\x1b$0' + r2.split('').reduce((a, c, i) => a + this.vrtable[c][r1[i]], '');
         },
         // ruled line composition
         vrtable: {
@@ -2721,7 +2863,7 @@ limitations under the License.
         vrhr: function (widths1, widths2, dl, dr) {
             const r1 = ' '.repeat(Math.max(-dl, 0)) + widths1.reduce((a, w) => a + '-'.repeat(w) + '+', '+') + ' '.repeat(Math.max(dr, 0));
             const r2 = ' '.repeat(Math.max(dl, 0)) + widths2.reduce((a, w) => a + '-'.repeat(w) + '+', '+') + ' '.repeat(Math.max(-dr, 0));
-            return r2.split('').map((c, i) => this.vrtable[c][r1[i]]).join('');
+            return r2.split('').reduce((a, c, i) => a + this.vrtable[c][r1[i]], '');
         },
         // ruled line composition
         vrtable: {

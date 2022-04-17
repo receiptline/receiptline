@@ -37,7 +37,7 @@ CHIDORI                | 2|    172.80
 CASH               |           200.00
 CHANGE             |            14.20
 {code:20210207210001; option:48,hri}`;
-const svg = receiptline.transform(text, { cpl: 42, encoding: 'cp437', spacing: true });
+const svg = receiptline.transform(text, { cpl: 42, encoding: 'multilingual', spacing: true });
 
 // HTML
 const html = `<!DOCTYPE html>
@@ -67,7 +67,7 @@ const printer = {
     "host": "127.0.0.1",
     "port": 9100,
     "cpl": 42,
-    "encoding": "cp437",
+    "encoding": "multilingual",
     "spacing": true,
     "command": "escpos"
 };
@@ -76,17 +76,28 @@ const printer = {
 const server = http.createServer((req, res) => {
     switch (req.method) {
         case 'GET':
-            if (new URL(req.url, `http://${req.headers.host}`).pathname === '/print') {
+            const path = new URL(req.url, `http://${req.headers.host}`).pathname;
+            if (path === '/') {
+                res.writeHead(200, {'Content-Type': 'text/html'});
+                res.end(html);
+            }
+            else if (path === '/print') {
                 const socket = net.connect(printer.port, printer.host, () => {
                     socket.end(receiptline.transform(text, printer), 'binary');
                 });
                 socket.on('error', err => {
                     console.log(err.message);
                 });
+                res.writeHead(200, {'Content-Type': 'text/html'});
+                res.end();
             }
-            res.end(html);
+            else {
+                res.writeHead(404);
+                res.end();
+            }
             break;
         default:
+            res.writeHead(404);
             res.end();
             break;
     }
