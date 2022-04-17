@@ -50,8 +50,5 @@
   "devDependencies": {
     "prettier": "^2.6.1",
     "qrcode-generator": "^1.4.4"
-  },
-  "optionalDependencies": {
-    "sharp": "^0.30.3"
   }
 }
