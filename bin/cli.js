@@ -48,6 +48,7 @@ const encodings = [
     'ksc5601',
     'cp950',
     'big5',
+    'tis620',
 ];
 
 const sharpFormats = [
