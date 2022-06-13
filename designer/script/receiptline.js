@@ -240,7 +240,7 @@ limitations under the License.
                 // trim whitespace
                 const element = column.replace(/^[\t ]+|[\t ]+$/g, '');
                 // determin alignment from whitespaces around column text
-                result.align = 1 + /^[\t ]/.test(column) - /[\t ]$/.test(column);
+                result.align = 1 + Number(/^[\t ]/.test(column)) - Number(/[\t ]$/.test(column));
                 // parse properties
                 if (/^\{[^{}]*\}$/.test(element)) {
                     // extract members
@@ -1352,6 +1352,7 @@ limitations under the License.
             png.replace(/^\x89PNG\x0d\x0a\x1a\x0a\x00\x00\x00\x0dIHDR(.{4})(.{4})/, (match, w, h) => {
                 imgWidth = w.charCodeAt(0) << 24 | w.charCodeAt(1) << 16 | w.charCodeAt(2) << 8 | w.charCodeAt(3);
                 imgHeight = h.charCodeAt(0) << 24 | h.charCodeAt(1) << 16 | h.charCodeAt(2) << 8 | h.charCodeAt(3);
+                return '';
             });
             const imgData = `<image xlink:href="data:image/png;base64,${image}" x="0" y="0" width="${imgWidth}" height="${imgHeight}"/>`;
             this.align(align);
@@ -1580,7 +1581,7 @@ limitations under the License.
                 r.hri = s;
                 // generate modules
                 r.module = '0' + s.toUpperCase().split('').reduce((a, c) => a + this.nw7[c] + '2', '').slice(0, -1);
-                r.length = s.length * 25 - ((s + '$').match(/[\d\-$]/g).length - 1) * 3 - 2;
+                r.length = s.length * 25 - (s.match(/[\d\-$]/g) || []).length * 3 - 2;
             }
             return r;
         },
@@ -1956,7 +1957,7 @@ limitations under the License.
         // print barcode: GS w n GS h n GS H n GS k m n d1 ... dn
         barcode: function (symbol, encoding) {
             let d = iconv.encode(symbol.data, encoding === 'multilingual' ? 'ascii' : encoding).toString('binary');
-            const b = this.bartype[symbol.type] + (/upc|[ej]an/.test(symbol.type) && symbol.data.length < 9);
+            const b = this.bartype[symbol.type] + Number(/upc|[ej]an/.test(symbol.type) && symbol.data.length < 9);
             switch (b) {
                 case this.bartype.upc + 1:
                     d = this.upce(d);
@@ -2130,7 +2131,7 @@ limitations under the License.
         // print barcode: GS w n GS h n GS H n GS k m n d1 ... dn
         barcode: function (symbol, encoding) {
             let d = iconv.encode(symbol.data, encoding === 'multilingual' ? 'ascii' : encoding).toString('binary');
-            const b = this.bartype[symbol.type] + (/upc|[ej]an/.test(symbol.type) && symbol.data.length < 9);
+            const b = this.bartype[symbol.type] + Number(/upc|[ej]an/.test(symbol.type) && symbol.data.length < 9);
             switch (b) {
                 case this.bartype.upc + 1:
                     d = this.upce(d);
@@ -2671,7 +2672,7 @@ limitations under the License.
         // print barcode: ESC b n1 n2 n3 n4 d1 ... dk RS
         barcode: function (symbol, encoding) {
             let d = iconv.encode(symbol.data, encoding === 'multilingual' ? 'ascii' : encoding).toString('binary');
-            const b = this.bartype[symbol.type] - (/upc|[ej]an/.test(symbol.type) && symbol.data.length < 9);
+            const b = this.bartype[symbol.type] - Number(/upc|[ej]an/.test(symbol.type) && symbol.data.length < 9);
             switch (b) {
                 case this.bartype.upc - 1:
                     d = this.upce(d);
