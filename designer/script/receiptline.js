@@ -33,10 +33,9 @@ limitations under the License.
     }
 
     /**
-     * Function - transform
      * Transform ReceiptLine document to printer commands or SVG images.
      * @param {string} doc ReceiptLine document
-     * @param {object} printer printer configuration
+     * @param {object} [printer] printer configuration
      * @returns {string} printer command or SVG image
      */
     function transform(doc, printer) {
@@ -93,12 +92,11 @@ limitations under the License.
     }
 
     /**
-     * Function - createTransform
      * Create transform stream that converts ReceiptLine document to printer commands or SVG images.
-     * @param {object} printer printer configuration
+     * @param {object} [printer] printer configuration
      * @returns {stream.Transform} transform stream
      */
-     function createTransform(printer) {
+    function createTransform(printer) {
         // initialize state variables
         const state = {
             wrap: true,
@@ -188,12 +186,11 @@ limitations under the License.
     }
 
     /**
-     * Function - parseOption
      * Validate printer configuration.
      * @param {object} printer printer configuration
      * @returns {object} validated printer configuration
      */
-     function parseOption(printer) {
+    function parseOption(printer) {
         // validate printer configuration
         const p = Object.assign({}, printer);
         return {
@@ -210,8 +207,7 @@ limitations under the License.
     }
 
     /**
-     * Function - parseLine
-     * Parse lines
+     * Parse lines.
      * @param {string} columns line text without line breaks
      * @param {object} state state variables
      * @returns {object} parsed line object
@@ -389,8 +385,7 @@ limitations under the License.
     }
 
     /**
-     * Function - parseEscape
-     * Parse escape characters
+     * Parse escape characters.
      * @param {string} chars string containing escape characters
      * @returns {string} unescaped string
      */
@@ -405,8 +400,7 @@ limitations under the License.
     }
 
     /**
-     * Function - createLine
-     * Generate commands from line objects
+     * Generate commands from line objects.
      * @param {object} line parsed line object
      * @param {object} printer printer configuration
      * @param {object} state state variables
@@ -664,11 +658,10 @@ limitations under the License.
     }
 
     /**
-     * Function - wrapText
-     * Wrap text
+     * Wrap text.
      * @param {object} column parsed column object
      * @param {object} printer printer configuration
-     * @returns {Array<object>} wrapped text, text position, and text height
+     * @returns {object[]} wrapped text, text position, and text height
      */
     function wrapText(column, printer) {
         const result = [];
@@ -771,13 +764,14 @@ limitations under the License.
     // Command base object
     //
     const _base = {
-
-        // character width (dots per character)
+        /**
+         * Character width.
+         * @type {number} character width (dots per character)
+         */
         charWidth: 12,
 
         /**
-         * Function - measureText
-         * Measure character width
+         * Measure text width.
          * @param {string} text string to measure
          * @param {string} encoding codepage
          * @returns {number} string width
@@ -864,11 +858,10 @@ limitations under the License.
         },
 
         /**
-         * Function - arrayFrom
-         * Create character array from string (supporting Thai combining characters)
+         * Create character array from string (supporting Thai combining characters).
          * @param {string} text string
          * @param {string} encoding codepage
-         * @returns {Array} array instance
+         * @returns {string[]} array instance
          */
         arrayFrom: (text, encoding) => {
             const t = Array.from(text);
@@ -934,23 +927,20 @@ limitations under the License.
         },
 
         /**
-         * Function - open
-         * Start printing
+         * Start printing.
          * @param {object} printer printer configuration
          * @returns {string} commands
          */
         open: printer => '',
 
         /**
-         * Function - close
-         * Finish printing
+         * Finish printing.
          * @returns {string} commands
          */
         close: () => '',
 
         /**
-         * Function - area
-         * Set print area
+         * Set print area.
          * @param {number} left left margin (unit: characters)
          * @param {number} width print area (unit: characters)
          * @param {number} right right margin (unit: characters)
@@ -959,67 +949,59 @@ limitations under the License.
         area: (left, width, right) => '',
 
         /**
-         * Function - align
-         * Set line alignment
+         * Set line alignment.
          * @param {number} align line alignment (0: left, 1: center, 2: right)
          * @returns {string} commands
          */
         align: align => '',
 
         /**
-         * Function - absolute
-         * Set absolute print position
+         * Set absolute print position.
          * @param {number} position absolute position (unit: characters)
          * @returns {string} commands
          */
         absolute: position => '',
 
         /**
-         * Function - relative
-         * Set relative print position
+         * Set relative print position.
          * @param {number} position relative position (unit: characters)
          * @returns {string} commands
          */
         relative: position => '',
 
         /**
-         * Function - hr
-         * Print horizontal rule
+         * Print horizontal rule.
          * @param {number} width line width (unit: characters)
          * @returns {string} commands
          */
         hr: width => '',
 
         /**
-         * Function - vr
-         * Print vertical rules
-         * @param {Array<number>} widths vertical line spacing
+         * Print vertical rules.
+         * @param {number[]} widths vertical line spacing
          * @param {number} height text height (1-6)
          * @returns {string} commands
          */
         vr: (widths, height) => '',
 
         /**
-         * Function - vrstart
-         * Start rules
-         * @param {Array<number>} widths vertical line spacing
+         * Start rules.
+         * @param {number[]} widths vertical line spacing
          * @returns {string} commands
          */
         vrstart: widths => '',
 
         /**
-         * Function - vrstop
-         * Stop rules
-         * @param {Array<number>} widths vertical line spacing
+         * Stop rules.
+         * @param {number[]} widths vertical line spacing
          * @returns {string} commands
          */
         vrstop: widths => '',
 
         /**
-         * Function - vrhr
-         * Print vertical and horizontal rules
-         * @param {Array<number>} widths1 vertical line spacing (stop)
-         * @param {Array<number>} widths2 vertical line spacing (start)
+         * Print vertical and horizontal rules.
+         * @param {number[]} widths1 vertical line spacing (stop)
+         * @param {number[]} widths2 vertical line spacing (start)
          * @param {number} dl difference in left position
          * @param {number} dr difference in right position
          * @returns {string} commands
@@ -1027,83 +1009,72 @@ limitations under the License.
         vrhr: (widths1, widths2, dl, dr) => '',
 
         /**
-         * Function - vrlf
-         * Set line spacing and feed new line
+         * Set line spacing and feed new line.
          * @param {boolean} vr whether vertical ruled lines are printed
          * @returns {string} commands
          */
         vrlf: vr => '',
 
         /**
-         * Function - cut
-         * Cut paper
+         * Cut paper.
          * @returns {string} commands
          */
         cut: () => '',
 
         /**
-         * Function - ul
-         * Underline text
+         * Underline text.
          * @returns {string} commands
          */
         ul: () => '',
 
         /**
-         * Function - em
-         * Emphasize text
+         * Emphasize text.
          * @returns {string} commands
          */
         em: () => '',
 
         /**
-         * Function - iv
-         * Invert text
+         * Invert text.
          * @returns {string} commands
          */
         iv: () => '',
 
         /**
-         * Function - wh
-         * Scale up text
-         * @param {number} width number of special character '^' (1-7)
+         * Scale up text.
+         * @param {number} wh number of special character '^' (1-7)
          * @returns {string} commands
          */
         wh: wh => '',
 
         /**
-         * Function - normal
-         * Cancel text decoration
+         * Cancel text decoration.
          * @returns {string} commands
          */
         normal: () => '',
 
         /**
-         * Function - text
-         * Print text
+         * Print text.
          * @param {string} text string to print
          * @param {string} encoding codepage
-         * @returns {number} commands
+         * @returns {string} commands
          */
         text: (text, encoding) => '',
 
         /**
-         * Function - lf
-         * Feed new line
+         * Feed new line.
          * @returns {string} commands
          */
         lf: () => '',
 
         /**
-         * Function - command
-         * insert commands
+         * Insert commands.
          * @param {string} command commands to insert
          * @returns {string} commands
          */
         command: command => '',
 
         /**
-         * Function - image
-         * Print image
+         * Print image.
          * @param {string} image image data (base64 png format)
          * @param {number} align line alignment (0: left, 1: center, 2: right)
          * @param {number} left left margin (unit: characters)
@@ -1114,20 +1085,18 @@ limitations under the License.
         image: (image, align, left, width, right) => '',
 
         /**
-         * Function - qrcode
-         * Print QR Code
+         * Print QR Code.
          * @param {object} symbol QR Code information (data, type, cell, level)
          * @param {string} encoding codepage
-         * @returns {number} commands
+         * @returns {string} commands
          */
         qrcode: (symbol, encoding) => '',
 
         /**
-         * Function - barcode
-         * Print barcode
+         * Print barcode.
          * @param {object} symbol barcode information (data, type, width, height, hri)
          * @param {string} encoding codepage
-         * @returns {number} commands
+         * @returns {string} commands
          */
         barcode: (symbol, encoding) => ''
     };
