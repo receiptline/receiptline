@@ -3,6 +3,9 @@
 Markdown for receipts. Printable digital receipts. &#x1f9fe;  
 Generate receipt printer commands and SVG images.  
 
+"ReceiptLine" is a coined word from "Receipt" and "Streamline".  
+Make it more efficient by making it simpler!  
+
 [ReceiptIO](https://www.npmjs.com/package/receiptio) - Simple and easy API and CLI using receiptline, supporting printer status.  
 
 ![English](screenshot_en.png)  

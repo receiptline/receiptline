@@ -1,8 +1,12 @@
 # Changelog
 
-## [Unreleased]
+## [1.10.0] - 2022-06-13
 ### Added
 - TypeScript typings
+
+### Fixed
+- JSDoc annotations
+- Type conversion
 
 ## [1.9.0] - 2022-04-16
 ### Added
