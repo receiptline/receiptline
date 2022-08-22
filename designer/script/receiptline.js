@@ -1450,7 +1450,7 @@ limitations under the License.
                 d.push(x);
             }
             s = s.replace(/^((?!\d{4,})[\x00-_])+/, m => (m.split('').forEach(c => d.push((c.charCodeAt(0) + 64) % 96)), ''));
-            s = s.replace(/^\d(?=\d{4}(\d{2})*)/, m => (d.push((m.charCodeAt(0) + 64) % 96), ''));
+            s = s.replace(/^\d(?=(\d\d){2,}(\D|$))/, m => (d.push((m.charCodeAt(0) + 64) % 96), ''));
             const t = s.slice(1);
             const p = t.search(/[^ -_]/);
             if (/^\d{4,}/.test(s)) {
@@ -1473,7 +1473,7 @@ limitations under the License.
                 d.push(x);
             }
             s = s.replace(/^((?!\d{4,})[ -\x7f])+/, m => (m.split('').forEach(c => d.push(c.charCodeAt(0) - 32)), ''));
-            s = s.replace(/^\d(?=\d{4}(\d{2})*)/, m => (d.push(m.charCodeAt(0) - 32), ''));
+            s = s.replace(/^\d(?=(\d\d){2,}(\D|$))/, m => (d.push(m.charCodeAt(0) - 32), ''));
             const t = s.slice(1);
             const p = t.search(/[^ -_]/);
             if (/^\d{4,}/.test(s)) {
@@ -2003,7 +2003,7 @@ limitations under the License.
                 d.push(this.c128.special, x);
             }
             s = s.replace(/^((?!\d{4,})[\x00-_])+/, m => (m.split('').forEach(c => d.push(c.charCodeAt(0))), ''));
-            s = s.replace(/^\d(?=\d{4}(\d{2})*)/, m => (d.push(m.charCodeAt(0)), ''));
+            s = s.replace(/^\d(?=(\d\d){2,}(\D|$))/, m => (d.push(m.charCodeAt(0)), ''));
             const t = s.slice(1);
             const p = t.search(/[^ -_]/);
             if (/^\d{4,}/.test(s)) {
@@ -2026,7 +2026,7 @@ limitations under the License.
                 d.push(this.c128.special, x);
             }
             s = s.replace(/^((?!\d{4,})[ -\x7f])+/, m => (m.split('').forEach(c => d.push(c.charCodeAt(0))), ''));
-            s = s.replace(/^\d(?=\d{4}(\d{2})*)/, m => (d.push(m.charCodeAt(0)), ''));
+            s = s.replace(/^\d(?=(\d\d){2,}(\D|$))/, m => (d.push(m.charCodeAt(0)), ''));
             const t = s.slice(1);
             const p = t.search(/[^ -_]/);
             if (/^\d{4,}/.test(s)) {
@@ -2176,7 +2176,7 @@ limitations under the License.
                 d.push(x);
             }
             s = s.replace(/^((?!\d{4,})[\x00-_])+/, m => (m.split('').forEach(c => d.push((c.charCodeAt(0) + 64) % 96)), ''));
-            s = s.replace(/^\d(?=\d{4}(\d{2})*)/, m => (d.push((m.charCodeAt(0) + 64) % 96), ''));
+            s = s.replace(/^\d(?=(\d\d){2,}(\D|$))/, m => (d.push((m.charCodeAt(0) + 64) % 96), ''));
             const t = s.slice(1);
             const p = t.search(/[^ -_]/);
             if (/^\d{4,}/.test(s)) {
@@ -2199,7 +2199,7 @@ limitations under the License.
                 d.push(x);
             }
             s = s.replace(/^((?!\d{4,})[ -\x7f])+/, m => (m.split('').forEach(c => d.push(c.charCodeAt(0) - 32)), ''));
-            s = s.replace(/^\d(?=\d{4}(\d{2})*)/, m => (d.push(m.charCodeAt(0) - 32), ''));
+            s = s.replace(/^\d(?=(\d\d){2,}(\D|$))/, m => (d.push(m.charCodeAt(0) - 32), ''));
             const t = s.slice(1);
             const p = t.search(/[^ -_]/);
             if (/^\d{4,}/.test(s)) {
