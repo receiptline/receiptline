@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.10.1] - 2022-08-22
+### Fixed
+- Code128 symbol width to be minimized
+- Empty string in barcode / 2D code
+
 ## [1.10.0] - 2022-06-13
 ### Added
 - TypeScript typings
