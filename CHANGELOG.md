@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.10.2] - 2022-09-02
+### Fixed
+- Codabar (NW-7) start/stop characters on Citizen command object
+
 ## [1.10.1] - 2022-08-22
 ### Fixed
 - Code128 symbol width to be minimized
