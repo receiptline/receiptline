@@ -1793,6 +1793,10 @@ limitations under the License.
     // ESC/POS Thermal
     //
     const _thermal = {
+        alignment: 0,
+        left: 0,
+        width: 48,
+        right: 0,
         // start printing: ESC @ GS a n ESC M n FS ( A pL pH fn m ESC SP n FS S n1 n2 (ESC 2) (ESC 3 n) ESC { n FS .
         open: function (printer) {
             this.upsideDown = printer.upsideDown;
@@ -1801,6 +1805,10 @@ limitations under the License.
             this.gradient = printer.gradient;
             this.gamma = printer.gamma;
             this.threshold = printer.threshold;
+            this.alignment = 0;
+            this.left = 0;
+            this.width = printer.cpl;
+            this.right = 0;
             return '\x1b@\x1da\x00\x1bM' + (printer.encoding === 'tis620' ? 'a' : '0') + '\x1c(A' + $(2, 0, 48, 0) + '\x1b \x00\x1cS\x00\x00' + (this.spacing ? '\x1b2' : '\x1b3\x00') + '\x1b{' + $(this.upsideDown) + '\x1c.';
         },
         // finish printing: GS r n
@@ -1809,12 +1817,18 @@ limitations under the License.
         },
         // set print area: GS L nL nH GS W nL nH
         area: function (left, width, right) {
+            this.left = left;
+            this.width = width;
+            this.right = right;
             const m = left * this.charWidth;
             const w = width * this.charWidth;
             return '\x1dL' + $(m & 255, m >> 8 & 255) + '\x1dW' + $(w & 255, w >> 8 & 255);
         },
         // set line alignment: ESC a n
-        align: align => '\x1ba' + $(align),
+        align: function (align) {
+            this.alignment = align;
+            return '\x1ba' + $(align);
+        },
         // set absolute print position: ESC $ nL nH
         absolute: function (position) {
             const p = position * this.charWidth;
@@ -1916,8 +1930,48 @@ limitations under the License.
         },
         // print QR Code: GS ( k pL pH cn fn n1 n2 GS ( k pL pH cn fn n GS ( k pL pH cn fn n GS ( k pL pH cn fn m d1 ... dk GS ( k pL pH cn fn m
         qrcode: function (symbol, encoding) {
-            const d = iconv.encode(symbol.data, encoding === 'multilingual' ? 'ascii' : encoding).toString('binary').slice(0, 7089);
-            return d.length > 0 ? '\x1d(k' + $(4, 0, 49, 65, 50, 0) + '\x1d(k' + $(3, 0, 49, 67, symbol.cell) + '\x1d(k' + $(3, 0, 49, 69, this.qrlevel[symbol.level]) + '\x1d(k' + $(d.length + 3 & 255, d.length + 3 >> 8 & 255, 49, 80, 48) + d + '\x1d(k' + $(3, 0, 49, 81, 48) : '';
+            if (typeof qrcode !== 'undefined') {
+                let r = '';
+                if (symbol.data.length > 0) {
+                    const qr = qrcode(0, symbol.level.toUpperCase());
+                    qr.addData(symbol.data);
+                    qr.make();
+                    let img = qr.createASCII(2, 0);
+                    if (this.upsideDown) {
+                        img = img.split('').reverse().join('');
+                    }
+                    img = img.split('\n');
+                    const w = img.length * symbol.cell;
+                    const h = w;
+                    if (this.upsideDown) {
+                        r += this.area(this.right, this.width, this.left) + this.align(2 - this.alignment);
+                    }
+                    const l = (w + 7 >> 3) * h + 10;
+                    r += '\x1d8L' + $(l & 255, l >> 8 & 255, l >> 16 & 255, l >> 24 & 255, 48, 112, 48, 1, 1, 49, w & 255, w >> 8 & 255, h & 255, h >> 8 & 255);
+                    for (let i = 0; i < img.length; i++) {
+                        let d = '';
+                        for (let j = 0; j < w; j += 8) {
+                            let b = 0;
+                            const q = Math.min(w - j, 8);
+                            for (let p = 0; p < q; p++) {
+                                if (img[i][Math.floor((j + p) / symbol.cell) * 2] === ' ') {
+                                    b |= 128 >> p;
+                                }
+                            }
+                            d += $(b);
+                        }
+                        for (let k = 0; k < symbol.cell; k++) {
+                            r += d;
+                        }
+                    }
+                    r += '\x1d(L' + $(2, 0, 48, 50);
+                }
+                return r;
+            }
+            else {
+                const d = iconv.encode(symbol.data, encoding === 'multilingual' ? 'ascii' : encoding).toString('binary').slice(0, 7089);
+                return d.length > 0 ? '\x1d(k' + $(4, 0, 49, 65, 50, 0) + '\x1d(k' + $(3, 0, 49, 67, symbol.cell) + '\x1d(k' + $(3, 0, 49, 69, this.qrlevel[symbol.level]) + '\x1d(k' + $(d.length + 3 & 255, d.length + 3 >> 8 & 255, 49, 80, 48) + d + '\x1d(k' + $(3, 0, 49, 81, 48) : '';
+            }
         },
         // QR Code error correction level:
         qrlevel: {
@@ -2090,8 +2144,48 @@ limitations under the License.
         split: 1662,
         // print QR Code: DC2 ; n GS p 1 model e v mode nl nh dk
         qrcode: function (symbol, encoding) {
-            const d = iconv.encode(symbol.data, encoding === 'multilingual' ? 'ascii' : encoding).toString('binary').slice(0, 7089);
-            return d.length > 0 ? '\x12;' + $(symbol.cell) + '\x1dp' + $(1, 2, this.qrlevel[symbol.level], 0, 77, d.length & 255, d.length >> 8 & 255) + d : '';
+            if (typeof qrcode !== 'undefined') {
+                let r = '';
+                if (symbol.data.length > 0) {
+                    const qr = qrcode(0, symbol.level.toUpperCase());
+                    qr.addData(symbol.data);
+                    qr.make();
+                    let img = qr.createASCII(2, 0);
+                    if (this.upsideDown) {
+                        img = img.split('').reverse().join('');
+                    }
+                    img = img.split('\n');
+                    const w = img.length * symbol.cell;
+                    const h = w;
+                    if (this.upsideDown) {
+                        r += this.area(this.right, this.width, this.left) + this.align(2 - this.alignment);
+                    }
+                    const l = (w + 7 >> 3) * h + 10;
+                    r += '\x1d8L' + $(l & 255, l >> 8 & 255, l >> 16 & 255, l >> 24 & 255, 48, 112, 48, 1, 1, 49, w & 255, w >> 8 & 255, h & 255, h >> 8 & 255);
+                    for (let i = 0; i < img.length; i++) {
+                        let d = '';
+                        for (let j = 0; j < w; j += 8) {
+                            let b = 0;
+                            const q = Math.min(w - j, 8);
+                            for (let p = 0; p < q; p++) {
+                                if (img[i][Math.floor((j + p) / symbol.cell) * 2] === ' ') {
+                                    b |= 128 >> p;
+                                }
+                            }
+                            d += $(b);
+                        }
+                        for (let k = 0; k < symbol.cell; k++) {
+                            r += d;
+                        }
+                    }
+                    r += '\x1d(L' + $(2, 0, 48, 50);
+                }
+                return r;
+            }
+            else {
+                const d = iconv.encode(symbol.data, encoding === 'multilingual' ? 'ascii' : encoding).toString('binary').slice(0, 7089);
+                return d.length > 0 ? '\x12;' + $(symbol.cell) + '\x1dp' + $(1, 2, this.qrlevel[symbol.level], 0, 77, d.length & 255, d.length >> 8 & 255) + d : '';
+            }
         },
         // QR Code error correction levels:
         qrlevel: {
@@ -2310,6 +2404,47 @@ limitations under the License.
                 r += '\x1d(L' + $(2, 0, 48, 50);
             }
             return r;
+        },
+        // print QR Code: GS ( k pL pH cn fn n1 n2 GS ( k pL pH cn fn n GS ( k pL pH cn fn n GS ( k pL pH cn fn m d1 ... dk GS ( k pL pH cn fn m
+        qrcode: function (symbol, encoding) {
+            if (typeof qrcode !== 'undefined') {
+                let r = '';
+                if (symbol.data.length > 0) {
+                    const qr = qrcode(0, symbol.level.toUpperCase());
+                    qr.addData(symbol.data);
+                    qr.make();
+                    const img = qr.createASCII(2, 0).split('\n');
+                    const w = img.length * symbol.cell;
+                    const h = w;
+                    if (this.upsideDown && this.alignment === 2) {
+                        r += this.area(this.right, this.width, this.left);
+                    }
+                    const l = (w + 7 >> 3) * h + 10;
+                    r += '\x1d8L' + $(l & 255, l >> 8 & 255, l >> 16 & 255, l >> 24 & 255, 48, 112, 48, 1, 1, 49, w & 255, w >> 8 & 255, h & 255, h >> 8 & 255);
+                    for (let i = 0; i < img.length; i++) {
+                        let d = '';
+                        for (let j = 0; j < w; j += 8) {
+                            let b = 0;
+                            const q = Math.min(w - j, 8);
+                            for (let p = 0; p < q; p++) {
+                                if (img[i][Math.floor((j + p) / symbol.cell) * 2] === ' ') {
+                                    b |= 128 >> p;
+                                }
+                            }
+                            d += $(b);
+                        }
+                        for (let k = 0; k < symbol.cell; k++) {
+                            r += d;
+                        }
+                    }
+                    r += '\x1d(L' + $(2, 0, 48, 50);
+                }
+                return r;
+            }
+            else {
+                const d = iconv.encode(symbol.data, encoding === 'multilingual' ? 'ascii' : encoding).toString('binary').slice(0, 7089);
+                return d.length > 0 ? '\x1d(k' + $(4, 0, 49, 65, 50, 0) + '\x1d(k' + $(3, 0, 49, 67, symbol.cell) + '\x1d(k' + $(3, 0, 49, 69, this.qrlevel[symbol.level]) + '\x1d(k' + $(d.length + 3 & 255, d.length + 3 >> 8 & 255, 49, 80, 48) + d + '\x1d(k' + $(3, 0, 49, 81, 48) : '';
+            }
         }
     };
 
@@ -2644,7 +2779,7 @@ limitations under the License.
                         r += $(b);
                     }
                 }
-            s.push(r);
+                s.push(r);
             }
             if (this.upsideDown) {
                 s.reverse();
@@ -2653,8 +2788,40 @@ limitations under the License.
         },
         // print QR Code: ESC GS y S 0 n ESC GS y S 1 n ESC GS y S 2 n ESC GS y D 1 m nL nH d1 d2 ... dk ESC GS y P
         qrcode: function (symbol, encoding) {
-            const d = iconv.encode(symbol.data, encoding === 'multilingual' ? 'ascii' : encoding).toString('binary').slice(0, 7089);
-            return d.length > 0 ? '\x1b\x1dyS0' + $(2) + '\x1b\x1dyS1' + $(this.qrlevel[symbol.level]) + '\x1b\x1dyS2' + $(symbol.cell) + '\x1b\x1dyD1' + $(0, d.length & 255, d.length >> 8 & 255) + d + '\x1b\x1dyP' : '';
+            if (typeof qrcode !== 'undefined') {
+                let r = '';
+                if (symbol.data.length > 0) {
+                    const qr = qrcode(0, symbol.level.toUpperCase());
+                    qr.addData(symbol.data);
+                    qr.make();
+                    const img = qr.createASCII(2, 0).split('\n');
+                    const w = img.length * symbol.cell;
+                    const h = w;
+                    const l = w + 7 >> 3;
+                    r += '\x1b\x1dS' + $(1, l & 255, l >> 8 & 255, h & 255, h >> 8 & 255, 0);
+                    for (let i = 0; i < img.length; i++) {
+                        let d = '';
+                        for (let j = 0; j < w; j += 8) {
+                            let b = 0;
+                            const q = Math.min(w - j, 8);
+                            for (let p = 0; p < q; p++) {
+                                if (img[i][Math.floor((j + p) / symbol.cell) * 2] === ' ') {
+                                    b |= 128 >> p;
+                                }
+                            }
+                            d += $(b);
+                        }
+                        for (let k = 0; k < symbol.cell; k++) {
+                            r += d;
+                        }
+                    }
+                }
+                return r;
+            }
+            else {
+                const d = iconv.encode(symbol.data, encoding === 'multilingual' ? 'ascii' : encoding).toString('binary').slice(0, 7089);
+                return d.length > 0 ? '\x1b\x1dyS0' + $(2) + '\x1b\x1dyS1' + $(this.qrlevel[symbol.level]) + '\x1b\x1dyS2' + $(symbol.cell) + '\x1b\x1dyD1' + $(0, d.length & 255, d.length >> 8 & 255) + d + '\x1b\x1dyP' : '';
+            }
         },
         // QR Code error correction levels:
         qrlevel: {
@@ -2762,6 +2929,58 @@ limitations under the License.
                 s.reverse();
             }
             return '\x1b0' + this.area(left, width, right) + this.align(align) + s.join('') + (this.spacing ? '\x1bz1' : '\x1b0');
+        },
+        // print QR Code: ESC GS y S 0 n ESC GS y S 1 n ESC GS y S 2 n ESC GS y D 1 m nL nH d1 d2 ... dk ESC GS y P
+        qrcode: function (symbol, encoding) {
+            if (typeof qrcode !== 'undefined') {
+                let r = '';
+                if (symbol.data.length > 0) {
+                    const qr = qrcode(0, symbol.level.toUpperCase());
+                    qr.addData(symbol.data);
+                    qr.make();
+                    const img = qr.createASCII(2, 0).split('\n');
+                    const w = img.length * symbol.cell;
+                    const l = w + 7 >> 3;
+                    r += '\x1b0';
+                    const s = [];
+                    for (let i = 0; i < img.length; i++) {
+                        let d = '';
+                        for (let j = 0; j < w; j += 8) {
+                            let b = 0;
+                            const q = Math.min(w - j, 8);
+                            for (let p = 0; p < q; p++) {
+                                if (img[i][Math.floor((j + p) / symbol.cell) * 2] === ' ') {
+                                    b |= 128 >> p;
+                                }
+                            }
+                            d += $(b);
+                        }
+                        for (let k = 0; k < symbol.cell; k++) {
+                            s.push(d);
+                        }
+                    }
+                    while (s.length % 24) {
+                        const d = '\x00'.repeat(l);
+                        s.push(d);
+                    }
+                    if (this.upsideDown) {
+                        s.reverse();
+                    }
+                    for (let k = 0; k < s.length; k += 24) {
+                        const a = s.slice(k, k + 24);
+                        if (this.upsideDown) {
+                            a.reverse();
+                        }
+                        r += '\x1bk' + $(l & 255, l >> 8 & 255) + a.join('') + '\x0a';
+                    }
+                    r += (this.spacing ? '\x1bz1' : '\x1b0');
+                }
+                return r;
+            }
+            else {
+                const d = iconv.encode(symbol.data, encoding === 'multilingual' ? 'ascii' : encoding).toString('binary').slice(0, 7089);
+                return '\x1b\x1dyS0' + $(2) + '\x1b\x1dyS1' + $(this.qrlevel[symbol.level]) + '\x1b\x1dyS2' + $(symbol.cell) + '\x1b\x1dyD1' + $(0, d.length & 255, d.length >> 8 & 255) + d + '\x1b\x1dyP';
+            }
         }
     };
 
