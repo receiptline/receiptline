@@ -1848,7 +1848,7 @@ limitations under the License.
         // cut paper: GS V m n
         cut: () => '\x1dVB\x00',
         // underline text: ESC - n FS - n
-        ul: () => '\x1b-1\x1c-1',
+        ul: () => '\x1b-2\x1c-2',
         // emphasize text: ESC E n
         em: () => '\x1bE1',
         // invert text: GS B n
