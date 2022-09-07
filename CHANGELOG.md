@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.11.0] - 2022-09-07
+### Changed
+- QR code for printing to the same image as for display
+- Underline on command object of escpos family
+
 ## [1.10.2] - 2022-09-02
 ### Fixed
 - Codabar (NW-7) start/stop characters on Citizen command object

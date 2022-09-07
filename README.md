@@ -514,7 +514,6 @@ Escape special characters.
 
 - Communication with the printer, status event processing, and error handling are out of scope.
 - SVG images depend on the font family installed on the computer and may not display properly.
-- The QR code for display is encoded in UTF-8, while the QR code for printing is encoded in ASCII or Shift_JIS.
 - Impact printer has some limitations for printing.
   - Characters larger than 2x size
   - Inverted characters (**will be printed in red**)
