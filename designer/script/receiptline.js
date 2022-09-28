@@ -2859,7 +2859,8 @@ limitations under the License.
                 default:
                     break;
             }
-            return d.length > 0 ? '\x1bb' + $(b, symbol.hri ? 50 : 49, symbol.width + 47, symbol.height) + d + '\x1e' : '';
+            const u = symbol.type === 'itf' ? [ 49, 56, 50 ][symbol.width - 2] : symbol.width + (/^(code39|codabar|nw7)$/.test(symbol.type) ? 50 : 47);
+            return d.length > 0 ? '\x1bb' + $(b, symbol.hri ? 50 : 49, u, symbol.height) + d + '\x1e' : '';
         },
         // barcode types:
         bartype: {
