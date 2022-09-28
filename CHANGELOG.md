@@ -1,5 +1,16 @@
 # Changelog
 
+## [Unreleased]
+### Added
+- Landscape orientation
+- Image method with reduced parameters to command objects
+- Barcode generator
+
+## [1.11.1] - 2022-09-28
+### Fixed
+- UPC / EAN barcodes for escpos family to automatically correct check digit errors
+- CODE39 / ITF / Codabar (NW-7) barcode width for star family
+
 ## [1.11.0] - 2022-09-07
 ### Changed
 - QR code for printing to the same image as for display
