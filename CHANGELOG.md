@@ -3,8 +3,13 @@
 ## [Unreleased]
 ### Added
 - Landscape orientation
+- Generic escpos
 - Image method with reduced parameters to command objects
 - Barcode generator
+
+## [1.11.2] - 2022-10-08
+### Fixed
+- A bug in the image upside down printing on Fujitsu command object
 
 ## [1.11.1] - 2022-09-28
 ### Fixed
