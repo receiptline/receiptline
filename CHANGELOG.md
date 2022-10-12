@@ -7,6 +7,10 @@
 - Image method with reduced parameters to command objects
 - Barcode generator
 
+## [1.11.3] - 2022-10-12
+### Fixed
+- Text placement of barcodes for display
+
 ## [1.11.2] - 2022-10-08
 ### Fixed
 - A bug in the image upside down printing on Fujitsu command object
