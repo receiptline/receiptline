@@ -1383,7 +1383,7 @@ limitations under the License.
             }
             if ('module' in bar) {
                 const width = x * bar.length;
-                const height = h + this.charWidth * (symbol.hri ? 2 : 0);
+                const height = h + (symbol.hri ? this.charWidth * 2 + 2 : 0);
                 // draw barcode
                 let path = `<path d="`;
                 bar.module.split('').reduce((p, c, i) => {
@@ -1396,7 +1396,7 @@ limitations under the License.
                 path += '" fill="#000"/>';
                 // draw human readable interpretation
                 if (symbol.hri) {
-                    const m = (width - bar.hri.length * this.charWidth) / 2;
+                    const m = (width - (bar.hri.length - 1) * this.charWidth) / 2;
                     const tspan = bar.hri.split('').reduce((a, c, i) => a + `<tspan x="${m + this.charWidth * i}">${c.replace(/[ &<>]/g, r => ({' ': '&#xa0;', '&': '&amp;', '<': '&lt;', '>': '&gt;'}[r]))}</tspan>`, '');
                     path += `<text y="${height}">${tspan}</text>`;
                 }
