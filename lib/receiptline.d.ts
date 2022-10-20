@@ -114,7 +114,35 @@ declare module 'receiptline' {
         height: number;
         /** human readable interpretation */
         hri: boolean;
+        /** quiet zone for barcode generator */
+        quietZone?: boolean;
     };
+    /**
+     * Barcode form
+     */
+    type BarcodeForm = {
+        /** barcode length */
+        length: number;
+        /** barcode height */
+        height: number;
+        /** widths (quiet zone, bar, space, ... , bar, quiet zone) */
+        widths: number[];
+        /** human readable interpretation */
+        hri: boolean;
+        /** barcode text */
+        text: string;
+    };
+    /**
+     * Barcode generator
+     */
+    interface BarcodeGenerator {
+        /**
+         * Generate barcode.
+         * @param {Barcode} symbol barcode information (data, type, width, height, hri, quietZone)
+         * @returns {BarcodeForm} barcode form
+         */
+        generate(symbol: Barcode): BarcodeForm;
+    }
     /**
      * Base command set
      */
@@ -318,4 +346,9 @@ declare module 'receiptline' {
      * @type {Commands} commands
      */
     export const commands: Commands;
+    /**
+     * Barcode generator.
+     * @type {BarcodeGenerator} barcode generator
+     */
+    export const barcode: BarcodeGenerator;
 }
