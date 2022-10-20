@@ -4,8 +4,14 @@
 ### Added
 - Landscape orientation
 - Generic escpos
+
+## [1.12.0] - 2022-10-20
+### Added
 - Image method with reduced parameters to command objects
 - Barcode generator
+
+### Changed
+- CODE39 / ITF / Codabar (NW-7) barcode width for display
 
 ## [1.11.3] - 2022-10-12
 ### Fixed
