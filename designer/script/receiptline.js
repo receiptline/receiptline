@@ -1344,46 +1344,40 @@ limitations under the License.
         // print barcode:
         barcode: function (symbol, encoding) {
             let bar = {};
-            const data = symbol.data;
             const h = symbol.height;
-            let x = symbol.width;
             switch (symbol.type) {
                 case 'upc':
-                    bar = data.length < 9 ? this.upce(data) : this.upca(data);
+                    bar = symbol.data.length < 9 ? this.upce(symbol) : this.upca(symbol);
                     break;
                 case 'ean':
                 case 'jan':
-                    bar = data.length < 9 ? this.ean8(data) : this.ean13(data);
+                    bar = symbol.data.length < 9 ? this.ean8(symbol) : this.ean13(symbol);
                     break;
                 case 'code39':
-                    bar = this.code39(data);
-                    x = Math.floor((x + 1) / 2);
+                    bar = this.code39(symbol);
                     break;
                 case 'itf':
-                    bar = this.itf(data);
-                    x = Math.floor((x + 1) / 2);
+                    bar = this.itf(symbol);
                     break;
                 case 'codabar':
                 case 'nw7':
-                    bar = this.codabar(data);
-                    x = Math.floor((x + 1) / 2);
+                    bar = this.codabar(symbol);
                     break;
                 case 'code93':
-                    bar = this.code93(data);
+                    bar = this.code93(symbol);
                     break;
                 case 'code128':
-                    bar = this.code128(data);
+                    bar = this.code128(symbol);
                     break;
                 default:
                     break;
             }
             if ('module' in bar) {
-                const width = x * bar.length;
+                const width = bar.length;
                 const height = h + (symbol.hri ? this.charWidth * 2 + 2 : 0);
                 // draw barcode
                 let path = `<path d="`;
-                bar.module.split('').reduce((p, c, i) => {
-                    const w = x * parseInt(c, 16);
+                bar.module.reduce((p, w, i) => {
                     if (i % 2 === 1) {
                         path += `M${p},${0}h${w}v${h}h${-w}z`;
                     }
@@ -1408,9 +1402,9 @@ limitations under the License.
             starta: 103, startb: 104, startc: 105, atob: 100, atoc: 99, btoa: 101, btoc: 99, ctoa: 101, ctob: 100, shift: 98, stop: 106
         },
         // generate CODE128 data (minimize symbol width):
-        code128: function (data) {
+        code128: function (symbol) {
             const r = {};
-            let s = data.replace(/((?!^[\x00-\x7f]+$).)*/, '');
+            let s = symbol.data.replace(/((?!^[\x00-\x7f]+$).)*/, '');
             if (s.length > 0) {
                 // generate HRI
                 r.hri = s.replace(/[\x00- \x7f]/g, ' ');
@@ -1435,8 +1429,9 @@ limitations under the License.
                 // calculate check digit and append stop character
                 d.push(d.reduce((a, c, i) => a + c * i) % 103, this.c128.stop);
                 // generate modules
-                r.module = '0' + d.reduce((a, c) => a + this.c128.element[c], '');
-                r.length = d.length * 11 + 2;
+                const m = d.reduce((a, c) => a + this.c128.element[c], '0');
+                r.module = m.split('').map(c => parseInt(c, 16) * symbol.width);
+                r.length = symbol.width * (d.length * 11 + 2);
             }
             return r;
         },
@@ -1511,9 +1506,9 @@ limitations under the License.
             start: 47, stop: 48
         },
         // generate CODE93 data:
-        code93: function (data) {
+        code93: function (symbol) {
             const r = {};
-            let s = data.replace(/((?!^[\x00-\x7f]+$).)*/, '');
+            let s = symbol.data.replace(/((?!^[\x00-\x7f]+$).)*/, '');
             if (s.length > 0) {
                 // generate HRI
                 r.hri = s.replace(/[\x00- \x7f]/g, ' ');
@@ -1525,8 +1520,9 @@ limitations under the License.
                 d.unshift(this.c93.start);
                 d.push(this.c93.stop);
                 // generate modules
-                r.module = '0' + d.reduce((a, c) => a + this.c93.element[c], '');
-                r.length = d.length * 9 + 1;
+                const m = d.reduce((a, c) => a + this.c93.element[c], '0');
+                r.module = m.split('').map(c => parseInt(c, 16) * symbol.width);
+                r.length = symbol.width * (d.length * 9 + 1);
             }
             return r;
         },
@@ -1538,15 +1534,17 @@ limitations under the License.
             '+': '2252525', 'A': '2255252', 'B': '2525225', 'C': '2225255', 'D': '2225552'
         },
         // generate Codabar(NW-7) data:
-        codabar: function (data) {
+        codabar: function (symbol) {
             const r = {};
-            let s = data.replace(/((?!^[A-D][0-9\-$:/.+]+[A-D]$).)*/i, '');
+            let s = symbol.data.replace(/((?!^[A-D][0-9\-$:/.+]+[A-D]$).)*/i, '');
             if (s.length > 0) {
                 // generate HRI
                 r.hri = s;
                 // generate modules
-                r.module = '0' + s.toUpperCase().split('').reduce((a, c) => a + this.nw7[c] + '2', '').slice(0, -1);
-                r.length = s.length * 25 - (s.match(/[\d\-$]/g) || []).length * 3 - 2;
+                const m = s.toUpperCase().split('').reduce((a, c) => a + this.nw7[c] + '2', '0').slice(0, -1);
+                r.module = m.split('').map(c => parseInt(c, 16) * symbol.width + 1 >> 1);
+                const w = [ 25, 39, 50, 3, 5, 6 ];
+                r.length = s.length * w[symbol.width - 2] - (s.match(/[\d\-$]/g) || []).length * w[symbol.width + 1] - symbol.width;
             }
             return r;
         },
@@ -1556,24 +1554,25 @@ limitations under the License.
             start: '2222', stop: '522'
         },
         // generate Interleaved 2 of 5 data:
-        itf: function (data) {
+        itf: function (symbol) {
             const r = {};
-            let s = data.replace(/((?!^(\d{2})+$).)*/, '');
+            let s = symbol.data.replace(/((?!^(\d{2})+$).)*/, '');
             if (s.length > 0) {
                 // generate HRI
                 r.hri = s;
                 // generate modules
-                const d = data.replace(/((?!^(\d{2})+$).)*/, '', '').split('').map(c => Number(c));
-                let x = this.i25.start;
+                const d = symbol.data.replace(/((?!^(\d{2})+$).)*/, '', '').split('').map(c => Number(c));
+                let m = '0' + this.i25.start;
                 let i = 0;
                 while (i < d.length) {
                     const b = this.i25.element[d[i++]];
                     const s = this.i25.element[d[i++]];
-                    x += b.split('').reduce((a, c, j) => a + c + s[j], '');
+                    m += b.split('').reduce((a, c, j) => a + c + s[j], '');
                 }
-                x += this.i25.stop;
-                r.module = '0' + x;
-                r.length = s.length * 16 + 17;
+                m += this.i25.stop;
+                r.module = m.split('').map(c => parseInt(c, 16) * symbol.width + 1 >> 1);
+                const w = [ 16, 25, 32, 17, 26, 34 ];
+                r.length = s.length * w[symbol.width - 2] + w[symbol.width + 1];
             }
             return r;
         },
@@ -1590,17 +1589,19 @@ limitations under the License.
             '/': '252522252', '+': '252225252', '%': '222525252', '*': '252252522'
         },
         // generate CODE39 data:
-        code39: function (data) {
+        code39: function (symbol) {
             const r = {};
-            let s = data.replace(/((?!^\*?[0-9A-Z\-. $/+%]+\*?$).)*/, '');
+            let s = symbol.data.replace(/((?!^\*?[0-9A-Z\-. $/+%]+\*?$).)*/, '');
             if (s.length > 0) {
                 // append start character and stop character
                 s = s.replace(/^\*?([^*]+)\*?$/, '*$1*');
                 // generate HRI
                 r.hri = s;
                 // generate modules
-                r.module = '0' + s.split('').reduce((a, c) => a + this.c39[c] + '2', '').slice(0, -1);
-                r.length = s.length * 29 - 2;
+                const m = s.split('').reduce((a, c) => a + this.c39[c] + '2', '0').slice(0, -1);
+                r.module = m.split('').map(c => parseInt(c, 16) * symbol.width + 1 >> 1);
+                const w = [ 29, 45, 58 ];
+                r.length = s.length * w[symbol.width - 2] - symbol.width;
             }
             return r;
         },
@@ -1614,17 +1615,19 @@ limitations under the License.
             e: 'bbbaaa,bbabaa,bbaaba,bbaaab,babbaa,baabba,baaabb,bababa,babaab,baabab'.split(',')
         },
         // generate UPC-A data:
-        upca: function (data) {
-            const r = this.ean13('0' + data);
+        upca: function (symbol) {
+            const s = Object.assign({}, symbol);
+            s.data = '0' + symbol.data;
+            const r = this.ean13(s);
             if ('module' in r) {
                 r.hri = r.hri.slice(1);
             }
             return r;
         },
         // generate UPC-E data:
-        upce: function (data) {
+        upce: function (symbol) {
             const r = {};
-            const d = data.replace(/((?!^0\d{6,7}$).)*/, '').split('').map(c => Number(c));
+            const d = symbol.data.replace(/((?!^0\d{6,7}$).)*/, '').split('').map(c => Number(c));
             if (d.length > 0) {
                 // calculate check digit
                 d[7] = 0;
@@ -1632,11 +1635,11 @@ limitations under the License.
                 // generate HRI
                 r.hri = d.join('');
                 // generate modules
-                let m = this.ean.g[0];
+                let m = '0' + this.ean.g[0];
                 for (let i = 1; i < 7; i++) m += this.ean[this.ean.e[d[7]][i - 1]][d[i]];
                 m += this.ean.g[2];
-                r.module = '0' + m;
-                r.length = 51;
+                r.module = m.split('').map(c => parseInt(c, 16) * symbol.width);
+                r.length = symbol.width * 51;
             }
             return r;
         },
@@ -1661,9 +1664,9 @@ limitations under the License.
             return a;
         },
         // generate EAN-13(JAN-13) data:
-        ean13: function (data) {
+        ean13: function (symbol) {
             const r = {};
-            const d = data.replace(/((?!^\d{12,13}$).)*/, '').split('').map(c => Number(c));
+            const d = symbol.data.replace(/((?!^\d{12,13}$).)*/, '').split('').map(c => Number(c));
             if (d.length > 0) {
                 // calculate check digit
                 d[12] = 0;
@@ -1671,20 +1674,20 @@ limitations under the License.
                 // generate HRI
                 r.hri = d.join('');
                 // generate modules
-                let m = this.ean.g[0];
+                let m = '0' + this.ean.g[0];
                 for (let i = 1; i < 7; i++) m += this.ean[this.ean.p[d[0]][i - 1]][d[i]];
                 m += this.ean.g[1];
                 for (let i = 7; i < 13; i++) m += this.ean.c[d[i]];
                 m += this.ean.g[0];
-                r.module = '0' + m;
-                r.length = 95;
+                r.module = m.split('').map(c => parseInt(c, 16) * symbol.width);
+                r.length = symbol.width * 95;
             }
             return r;
         },
         // generate EAN-8(JAN-8) data:
-        ean8: function (data) {
+        ean8: function (symbol) {
             const r = {};
-            const d = data.replace(/((?!^\d{7,8}$).)*/, '').split('').map(c => Number(c));
+            const d = symbol.data.replace(/((?!^\d{7,8}$).)*/, '').split('').map(c => Number(c));
             if (d.length > 0) {
                 // calculate check digit
                 d[7] = 0;
@@ -1692,13 +1695,13 @@ limitations under the License.
                 // generate HRI
                 r.hri = d.join('');
                 // generate modules
-                let m = this.ean.g[0];
+                let m = '0' + this.ean.g[0];
                 for (let i = 0; i < 4; i++) m += this.ean.a[d[i]];
                 m += this.ean.g[1];
                 for (let i = 4; i < 8; i++) m += this.ean.c[d[i]];
                 m += this.ean.g[0];
-                r.module = '0' + m;
-                r.length = 67;
+                r.module = m.split('').map(c => parseInt(c, 16) * symbol.width);
+                r.length = symbol.width * 67;
             }
             return r;
         }
