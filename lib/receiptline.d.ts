@@ -267,6 +267,13 @@ declare module 'receiptline' {
         /**
          * Print image.
          * @param {string} image image data (base64 png format)
+         * @returns {string} commands
+         */
+        image(image: string): string;
+        /**
+         * Print image.
+         * @deprecated since v1.12.0
+         * @param {string} image image data (base64 png format)
          * @param {number} align line alignment (0: left, 1: center, 2: right)
          * @param {number} left left margin (unit: characters)
          * @param {number} width print area (unit: characters)

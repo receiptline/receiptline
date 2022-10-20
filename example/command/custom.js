@@ -16,7 +16,6 @@ limitations under the License.
 
 // QR Code is a registered trademark of DENSO WAVE INCORPORATED.
 
-const fs = require('fs');
 const receiptline = require('receiptline');
 const { PNG } = require('pngjs');
 
@@ -27,8 +26,12 @@ const custom = Object.assign({}, receiptline.commands.escpos, {
     // image split size
     split: 2048,
     // print image: GS v 0 m xL xH yL yH d1 ... dk
-    image: function (image, align, left, width, right) {
-        let r = this.upsideDown ? this.area(right, width, left) + this.align(2 - align) : this.area(left, width, right) + this.align(align);
+    image: function (image) {
+        const align = arguments[1] || this.alignment;
+        const left = arguments[2] || this.left;
+        const width = arguments[3] || this.width;
+        const right = arguments[4] || this.right;
+        let r = this.upsideDown ? this.area(right, width, left) + this.align(2 - align) : '';
         const img = PNG.sync.read(Buffer.from(image, 'base64'));
         const w = img.width;
         const d = Array(w).fill(0);
