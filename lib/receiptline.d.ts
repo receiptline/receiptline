@@ -68,6 +68,8 @@ declare module 'receiptline' {
         impact: BaseCommand;
         /** ESC/POS (TM-U220 Font B) */
         impactb: BaseCommand;
+        /** ESC/POS (Generic) */
+        generic: BaseCommand;
         /** StarPRNT (SBCS, Thai) */
         starsbcs: BaseCommand;
         /** StarPRNT (Japanese) */
