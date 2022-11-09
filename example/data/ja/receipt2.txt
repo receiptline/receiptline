@@ -1,0 +1,20 @@
+2022年11月 9日 | No. 1234
+^^^領 収 証
+
+|_                            様
+{border:line}
+^^^¥12,080-
+{border:space}
+|~~但し、飲食代、商品代（軽減対象）として
+上記、正に領収いたしました。
+|内訳
+{width:4,3,4,8,4,7;align:left}
+-
+|税率|  8%|対象|  ¥1,000|税額|    ¥80|
+|税率| 10%|対象| ¥10,000|税額| ¥1,000|
+-
+{width:auto;align:center}
+| {image:iVBORw0KGgoAAAANSUhEUgAAAIAAAAAkAgMAAAA83dqgAAAACVBMVEUAANoAAAD///+MbpPZAAAAAXRSTlMAQObYZgAAAGRJREFUOMtjYBgF1AOhIBDACKFYwZSDKJiCyENkQiAyARAZh1DSFAAJ1hDWEDBPNABirQPCCVRXALEcmwKIDMyROBWwElIAdQFuN5CnABKSEAWsuIMapwJYbCIrYECOzVFAHwAAyWJE7DRDbywAAAAASUVORK5CYII=}
+| 市ヶ谷駅前店
+| 東京都千代田区九段1-Y-X
+| 登録番号 T0123456789012

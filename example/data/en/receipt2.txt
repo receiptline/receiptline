@@ -1,0 +1,20 @@
+Nov. 9, 2022 | No. 1234
+^^^RECEIPT
+
+|_TO:                           _
+{border:line}
+^^^120.80
+{border:space}
+|NOTE: Meals, Goods (reduced tax rate)
+Received the amount above.
+|TAX:
+{width:4,3,7,7,3,6;align:left}
+-
+|Rate|  8%|Taxable|  10.00|Tax|  0.80
+|Rate| 10%|Taxable| 100.00|Tax| 10.00
+-
+{width:auto;align:center}
+| {image:iVBORw0KGgoAAAANSUhEUgAAAIAAAAAkAgMAAAA83dqgAAAACVBMVEUAANoAAAD///+MbpPZAAAAAXRSTlMAQObYZgAAAGRJREFUOMtjYBgF1AOhIBDACKFYwZSDKJiCyENkQiAyARAZh1DSFAAJ1hDWEDBPNABirQPCCVRXALEcmwKIDMyROBWwElIAdQFuN5CnABKSEAWsuIMapwJYbCIrYECOzVFAHwAAyWJE7DRDbywAAAAASUVORK5CYII=}
+| Ichigaya Terminal
+| 1-Y-X Kudan, Chiyoda-ku
+| Registration Number T0123456789012
