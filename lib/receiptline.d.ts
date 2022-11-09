@@ -45,6 +45,8 @@ declare module 'receiptline' {
         cutting?: boolean;
         /** command set (default: svg) */
         command?: keyof Commands | BaseCommand;
+        /** extra properties */
+        [propName: string]: any;
     };
     /**
      * Commands
