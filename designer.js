@@ -128,7 +128,7 @@ if ('http' in servers) {
                                 let drain = false;
                                 sock.on('connect', () => {
                                     transform(text, printer).then(command => {
-                                        drain = sock.write(command, /^<svg/.test(command) ? 'utf8' : 'binary');
+                                        drain = sock.write(command, /^(svg|text)$/.test(printer.command) ? 'utf8' : 'binary');
                                     });
                                 });
                                 sock.on('data', data => {
