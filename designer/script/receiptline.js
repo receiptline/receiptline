@@ -116,12 +116,9 @@ limitations under the License.
                 this.bom = true;
                 this.decoder = new decoder.StringDecoder('utf8');
                 this.data = '';
-                this.encoding = null;
+                this.encoding = /^(svg|text)$/.test(printer.command) ? 'utf8' : 'binary';
                 this._push = function (chunk) {
                     if (chunk.length > 0) {
-                        if (!this.encoding) {
-                            this.encoding = /^<svg/.test(chunk) ? 'utf8' : 'binary';
-                        }
                         this.push(chunk, this.encoding);
                     }
                 };
@@ -193,17 +190,16 @@ limitations under the License.
     function parseOption(printer) {
         // validate printer configuration
         const p = Object.assign({}, printer);
-        return {
-            cpl: p.cpl || 48,
-            encoding: /^(cp(437|85[28]|86[0356]|1252|93[26]|949|950)|multilingual|shiftjis|gb18030|ksc5601|big5|tis620)$/.test(p.encoding) ? p.encoding : 'cp437',
-            upsideDown: !!p.upsideDown,
-            spacing: !!p.spacing,
-            cutting: 'cutting' in p ? !!p.cutting : true,
-            gradient: 'gradient' in p ? !!p.gradient : true,
-            gamma: p.gamma || 1.8,
-            threshold: p.threshold || 128,
-            command: Object.assign({}, (typeof p.command !== 'object' ? commands[p.command] : p.command) || commands.svg)
-        };
+        p.cpl = p.cpl || 48;
+        p.encoding = /^(cp(437|85[28]|86[0356]|1252|93[26]|949|950)|multilingual|shiftjis|gb18030|ksc5601|big5|tis620)$/.test(p.encoding) ? p.encoding : 'cp437';
+        p.upsideDown = !!p.upsideDown;
+        p.spacing = !!p.spacing;
+        p.cutting = 'cutting' in p ? !!p.cutting : true;
+        p.gradient = 'gradient' in p ? !!p.gradient : true;
+        p.gamma = p.gamma || 1.8;
+        p.threshold = p.threshold || 128;
+        p.command = Object.assign({}, (typeof p.command !== 'object' ? commands[p.command] : p.command) || commands.svg);
+        return p;
     }
 
     /**
@@ -3241,16 +3237,263 @@ limitations under the License.
         }
     };
 
+    //
+    // Plain Text
+    //
+    const _text = {
+        margin: 0,
+        width: 48,
+        position: 0,
+        scale: 1,
+        buffer: [],
+        // start printing:
+        open: function (printer) {
+            this.margin = 0;
+            this.width = printer.cpl;
+            this.position = 0;
+            this.scale = 1;
+            this.buffer = [];
+            return '';
+        },
+        // set print area:
+        area: function (left, width, right) {
+            this.margin = left;
+            this.width = width;
+            return '';
+        },
+        // set absolute print position:
+        absolute: function (position) {
+            this.position = position;
+            return '';
+        },
+        // set relative print position:
+        relative: function (position) {
+            this.position += Math.round(position);
+            return '';
+        },
+        // print horizontal rule:
+        hr: function (width) {
+            return ' '.repeat(this.margin) + '-'.repeat(width);
+        },
+        // print vertical rules:
+        vr: function (widths, height) {
+            this.buffer.push({ data: '|', index: this.position, length: 1 });
+            widths.forEach(w => {
+                this.position += w + 1;
+                this.buffer.push({ data: '|', index: this.position, length: 1 });
+            });
+            return '';
+        },
+        // start rules:
+        vrstart: function (widths) {
+            return ' '.repeat(this.margin) + widths.reduce((a, w) => a + '-'.repeat(w) + '+', '+');
+        },
+        // stop rules:
+        vrstop: function (widths) {
+            return ' '.repeat(this.margin) + widths.reduce((a, w) => a + '-'.repeat(w) + '+', '+');
+        },
+        // print vertical and horizontal rules:
+        vrhr: function (widths1, widths2, dl, dr) {
+            const r1 = ' '.repeat(Math.max(-dl, 0)) + widths1.reduce((a, w) => a + '-'.repeat(w) + '+', '+') + ' '.repeat(Math.max(dr, 0));
+            const r2 = ' '.repeat(Math.max(dl, 0)) + widths2.reduce((a, w) => a + '-'.repeat(w) + '+', '+') + ' '.repeat(Math.max(-dr, 0));
+            return ' '.repeat(this.margin) + r2.split('').reduce((a, c, i) => a + this.vrtable[c][r1[i]], '');
+        },
+        // ruled line composition
+        vrtable: {
+            ' ' : { ' ' : ' ', '+' : '+', '-' : '-' },
+            '+' : { ' ' : '+', '+' : '+', '-' : '+' },
+            '-' : { ' ' : '-', '+' : '+', '-' : '-' }
+        },
+        // set line spacing and feed new line:
+        vrlf: function(vr) {
+            return this.lf();
+        },
+        // scale up text:
+        wh: function (wh) {
+            const w = wh < 2 ? wh + 1 : wh - 1;
+            this.scale = w;
+            return '';
+        },
+        // cancel text decoration:
+        normal: function () {
+            this.scale = 1;
+            return '';
+        },
+        // print text:
+        text: function (text, encoding) {
+            const d = this.arrayFrom(text, encoding).reduce((a, c) => a + c + ' '.repeat(this.measureText(c, encoding) * (this.scale - 1)), '');
+            const l = this.measureText(text, encoding) * this.scale;
+            this.buffer.push({ data: d, index: this.position, length: l });
+            this.position += l;
+            return '';
+        },
+        // feed new line:
+        lf: function () {
+            let r = '';
+            if (this.buffer.length > 0) {
+                let p = 0;
+                r += this.buffer.sort((a, b) => a.index - b.index).reduce((a, c) => {
+                    const s = a + ' '.repeat(c.index - p) + c.data;
+                    p = c.index + c.length;
+                    return s;
+                }, ' '.repeat(this.margin));
+            }
+            r += '\n';
+            this.position = 0;
+            this.buffer = [];
+            return r;
+        }
+    };
+
+    //
+    // ESC/POS Generic
+    //
+    const _generic = {
+        // start printing: ESC @ GS a n ESC M n ESC SP n FS S n1 n2 (ESC 2) (ESC 3 n) ESC { n FS .
+        open: function (printer) {
+            this.upsideDown = printer.upsideDown;
+            this.spacing = printer.spacing;
+            this.cutting = printer.cutting;
+            this.gradient = printer.gradient;
+            this.gamma = printer.gamma;
+            this.threshold = printer.threshold;
+            this.alignment = 0;
+            this.left = 0;
+            this.width = printer.cpl;
+            this.right = 0;
+            return '\x1b@\x1da\x00\x1bM\x00\x1b \x00\x1cS\x00\x00' + (this.spacing ? '\x1b2' : '\x1b3\x00') + '\x1b{' + $(this.upsideDown) + '\x1c.';
+        },
+        // finish printing: GS r n
+        close: function () {
+            return (this.cutting ? this.cut() : '') + '\x1dr\x01';
+        },
+        // print horizontal rule: FS C n FS . ESC t n ...
+        hr: width => '\x1cC\x00\x1c.\x1bt\x01' + '\x95'.repeat(width),
+        // print vertical rules: GS ! n FS C n FS . ESC t n ...
+        vr: function (widths, height) {
+            return widths.reduce((a, w) => a + this.relative(w) + '\x96', '\x1d!' + $(height - 1) + '\x1cC\x00\x1c.\x1bt\x01\x96');
+        },
+        // start rules: FS C n FS . ESC t n ...
+        vrstart: widths => '\x1cC\x00\x1c.\x1bt\x01' + widths.reduce((a, w) => a + '\x95'.repeat(w) + '\x91', '\x9c').slice(0, -1) + '\x9d',
+        // stop rules: FS C n FS . ESC t n ...
+        vrstop: widths => '\x1cC\x00\x1c.\x1bt\x01' + widths.reduce((a, w) => a + '\x95'.repeat(w) + '\x90', '\x9e').slice(0, -1) + '\x9f',
+        // print vertical and horizontal rules: FS C n FS . ESC t n ...
+        vrhr: function (widths1, widths2, dl, dr) {
+            const r1 = ' '.repeat(Math.max(-dl, 0)) + widths1.reduce((a, w) => a + '\x95'.repeat(w) + '\x90', dl > 0 ? '\x9e' : '\x9a').slice(0, -1) + (dr < 0 ? '\x9f' : '\x9b') + ' '.repeat(Math.max(dr, 0));
+            const r2 = ' '.repeat(Math.max(dl, 0)) + widths2.reduce((a, w) => a + '\x95'.repeat(w) + '\x91', dl < 0 ? '\x9c' : '\x98').slice(0, -1) + (dr > 0 ? '\x9d' : '\x99') + ' '.repeat(Math.max(-dr, 0));
+            return '\x1cC\x00\x1c.\x1bt\x01' + r2.split('').reduce((a, c, i) => a + this.vrtable[c][r1[i]], '');
+        },
+        // underline text: ESC - n FS - n
+        ul: () => '\x1b-\x02\x1c-\x02',
+        // emphasize text: ESC E n
+        em: () => '\x1bE\x01',
+        // invert text: GS B n
+        iv: () => '\x1dB\x01',
+        // scale up text: GS ! n
+        wh: wh => '\x1d!' + (wh < 3 ? $((wh & 1) << 4 | wh >> 1 & 1) : $(wh - 2 << 4 | wh - 2)),
+        // cancel text decoration: ESC - n FS - n ESC E n GS B n GS ! n
+        normal: () => '\x1b-\x00\x1c-\x00\x1bE\x00\x1dB\x00\x1d!\x00',
+        // image split size
+        split: 2048,
+        // print image: GS v 0 m xL xH yL yH d1 ... dk
+        image: function (image) {
+            const align = arguments[1] || this.alignment;
+            const left = arguments[2] || this.left;
+            const width = arguments[3] || this.width;
+            const right = arguments[4] || this.right;
+            let r = this.upsideDown ? this.area(right, width, left) + this.align(2 - align) : '';
+            const img = PNG.sync.read(Buffer.from(image, 'base64'));
+            const w = img.width;
+            const d = Array(w).fill(0);
+            let j = this.upsideDown ? img.data.length - 4 : 0;
+            for (let z = 0; z < img.height; z += this.split) {
+                const h = Math.min(this.split, img.height - z);
+                const l = w + 7 >> 3;
+                r += '\x1dv0' + $(0, l & 255, l >> 8 & 255, h & 255, h >> 8 & 255);
+                for (let y = 0; y < h; y++) {
+                    let i = 0, e = 0;
+                    for (let x = 0; x < w; x += 8) {
+                        let b = 0;
+                        const q = Math.min(w - x, 8);
+                        for (let p = 0; p < q; p++) {
+                            const f = Math.floor((d[i] + e * 5) / 16 + Math.pow(((img.data[j] * .299 + img.data[j + 1] * .587 + img.data[j + 2] * .114 - 255) * img.data[j + 3] + 65525) / 65525, 1 / this.gamma) * 255);
+                            j += this.upsideDown ? -4 : 4;
+                            if (this.gradient) {
+                                d[i] = e * 3;
+                                e = f < this.threshold ? (b |= 128 >> p, f) : f - 255;
+                                if (i > 0) {
+                                    d[i - 1] += e;
+                                }
+                                d[i++] += e * 7;
+                            }
+                            else {
+                                if (f < this.threshold) {
+                                    b |= 128 >> p;
+                                }
+                            }
+                        }
+                        r += $(b);
+                    }
+                }
+            }
+            return r;
+        },
+        // print QR Code: GS ( k pL pH cn fn n1 n2 GS ( k pL pH cn fn n GS ( k pL pH cn fn n GS ( k pL pH cn fn m d1 ... dk GS ( k pL pH cn fn m
+        qrcode: function (symbol, encoding) {
+            if (typeof qrcode !== 'undefined') {
+                let r = this.upsideDown ? this.area(this.right, this.width, this.left) + this.align(2 - this.alignment) : '';
+                if (symbol.data.length > 0) {
+                    const qr = qrcode(0, symbol.level.toUpperCase());
+                    qr.addData(symbol.data);
+                    qr.make();
+                    let img = qr.createASCII(2, 0);
+                    if (this.upsideDown) {
+                        img = img.split('').reverse().join('');
+                    }
+                    img = img.split('\n');
+                    const w = img.length * symbol.cell;
+                    const h = w;
+                    const l = w + 7 >> 3;
+                    r += '\x1dv0' + $(0, l & 255, l >> 8 & 255, h & 255, h >> 8 & 255);
+                    for (let i = 0; i < img.length; i++) {
+                        let d = '';
+                        for (let j = 0; j < w; j += 8) {
+                            let b = 0;
+                            const q = Math.min(w - j, 8);
+                            for (let p = 0; p < q; p++) {
+                                if (img[i][Math.floor((j + p) / symbol.cell) * 2] === ' ') {
+                                    b |= 128 >> p;
+                                }
+                            }
+                            d += $(b);
+                        }
+                        for (let k = 0; k < symbol.cell; k++) {
+                            r += d;
+                        }
+                    }
+                }
+                return r;
+            }
+            else {
+                const d = iconv.encode(symbol.data, encoding === 'multilingual' ? 'ascii' : encoding).toString('binary').slice(0, 7089);
+                return d.length > 0 ? '\x1d(k' + $(4, 0, 49, 65, 50, 0) + '\x1d(k' + $(3, 0, 49, 67, symbol.cell) + '\x1d(k' + $(3, 0, 49, 69, this.qrlevel[symbol.level]) + '\x1d(k' + $(d.length + 3 & 255, d.length + 3 >> 8 & 255, 49, 80, 48) + d + '\x1d(k' + $(3, 0, 49, 81, 48) : '';
+            }
+        }
+    }
+
     // command set
     const _commands = {
         base: Object.assign({}, _base),
         svg: Object.assign({}, _base, _svg),
+        text: Object.assign({}, _base, _text),
         escpos: Object.assign({}, _base, _escpos, _thermal),
+        epson: Object.assign({}, _base, _escpos, _thermal),
         sii: Object.assign({}, _base, _escpos, _thermal, _sii),
         citizen: Object.assign({}, _base, _escpos, _thermal, _citizen),
         fit: Object.assign({}, _base, _escpos, _thermal, _fit),
         impact: Object.assign({}, _base, _escpos, _impact),
         impactb: Object.assign({}, _base, _escpos, _impact, _fontb),
+        generic: Object.assign({}, _base, _escpos, _thermal, _generic),
         starsbcs: Object.assign({}, _base, _star, _sbcs),
         starmbcs: Object.assign({}, _base, _star, _mbcs),
         starmbcs2: Object.assign({}, _base, _star, _mbcs2),

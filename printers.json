@@ -43,6 +43,22 @@
         "cutting": true,
         "command": "escpos"
     },
+    "tm_landscape": {
+        "host": "127.0.0.1",
+        "port": 19100,
+        "asImage": false,
+        "cpl": 84,
+        "encoding": "shiftjis",
+        "gradient": true,
+        "gamma": 1.8,
+        "threshold": 128,
+        "upsideDown": false,
+        "spacing": true,
+        "cutting": true,
+        "command": "escpos",
+        "landscape": true,
+        "resolution": 180
+    },
     "rp_series1": {
         "host": "127.0.0.1",
         "port": 19100,
@@ -56,6 +72,21 @@
         "spacing": true,
         "cutting": true,
         "command": "sii"
+    },
+    "rp_landscape": {
+        "host": "127.0.0.1",
+        "port": 19100,
+        "asImage": false,
+        "cpl": 96,
+        "encoding": "shiftjis",
+        "gradient": true,
+        "gamma": 1.8,
+        "threshold": 128,
+        "upsideDown": false,
+        "spacing": true,
+        "cutting": true,
+        "command": "sii",
+        "landscape": true
     },
     "mc_series1": {
         "host": "127.0.0.1",
@@ -85,6 +116,21 @@
         "cutting": true,
         "command": "starsbcs"
     },
+    "mc_landscape": {
+        "host": "127.0.0.1",
+        "port": 19100,
+        "asImage": false,
+        "cpl": 96,
+        "encoding": "shiftjis",
+        "gradient": true,
+        "gamma": 1.8,
+        "threshold": 128,
+        "upsideDown": false,
+        "spacing": true,
+        "cutting": true,
+        "command": "starmbcs",
+        "landscape": true
+    },
     "ct_series1": {
         "host": "127.0.0.1",
         "port": 19100,
@@ -98,6 +144,21 @@
         "spacing": true,
         "cutting": true,
         "command": "citizen"
+    },
+    "ct_landscape": {
+        "host": "127.0.0.1",
+        "port": 19100,
+        "asImage": false,
+        "cpl": 96,
+        "encoding": "shiftjis",
+        "gradient": true,
+        "gamma": 1.8,
+        "threshold": 128,
+        "upsideDown": false,
+        "spacing": true,
+        "cutting": true,
+        "command": "citizen",
+        "landscape": true
     },
    "fp_series1": {
         "host": "127.0.0.1",

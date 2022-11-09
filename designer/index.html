@@ -131,6 +131,8 @@ limitations under the License.
             <label for="linewidth">Width</label>
             <input id="linewidth" type="range" value="576" min="288" max="576" step="12">
             <span id="dots">576</span> dots / <span id="cpl">48</span> cpl
+            <input id="landscape" type="checkbox">
+            <label for="landscape">Landscape</label>
             <input id="linespace" type="checkbox">
             <label for="linespace">Spacing</label>
         </div>
@@ -143,7 +145,9 @@ limitations under the License.
     <main>
         <textarea id="edit" rows="24" cols="80" placeholder="Receipt Markdown" autofocus="autofocus"></textarea>
         <section>
-            <div id="paper" class="receipt"></div>
+            <div class="paper">
+                <div id="printarea"></div>
+            </div>
         </section>
     </main>
     <hr>
@@ -488,6 +492,6 @@ limitations under the License.
             </div>
         </div>
     </div>
-    <footer>ReceiptLine Designer Version 1.12.0 © 2019 Open Foodservice System Consortium</footer>
+    <footer>ReceiptLine Designer Version 1.13.0 © 2019 Open Foodservice System Consortium</footer>
 </body>
 </html>

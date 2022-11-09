@@ -74,13 +74,14 @@ function initialize() {
     const wh = document.getElementById('wh');
     const lang = document.getElementById('lang');
     const linewidth = document.getElementById('linewidth');
+    const landscape = document.getElementById('landscape');
     const linespace = document.getElementById('linespace');
     const dots = document.getElementById('dots');
     const cpl = document.getElementById('cpl');
     const printerid = document.getElementById('printerid');
     const send = document.getElementById('send');
     const edit = document.getElementById('edit');
-    const paper = document.getElementById('paper');
+    const printarea = document.getElementById('printarea');
     const charWidth = 12;
     const encoding = {
         '-': 'multilingual', 'ja': 'shiftjis', 'zh-Hans': 'gb18030', 'zh-Hant': 'big5', 'ko': 'ksc5601', 'th': 'tis620'
@@ -331,18 +332,40 @@ function initialize() {
 
     // register width slidebar event listener
     linewidth.oninput = event => {
-        paper.style.width = linewidth.value + 'px';
+        if (landscape.checked) {
+            printarea.style.width = '576px';
+            printarea.style.height = linewidth.value + 'px';
+        }
+        else {
+            printarea.style.width = linewidth.value + 'px';
+            printarea.style.height = 'auto';
+        }
         dots.textContent = linewidth.value;
         cpl.textContent = linewidth.value / charWidth;
         // update receipt
         edit.oninput();
     };
 
+    // register landscape checkbox event listener
+    landscape.onchange = event => {
+        if (landscape.checked) {
+            linewidth.min = 576;
+            linewidth.max = 1152;
+        }
+        else {
+            linewidth.min = 288;
+            linewidth.max = 576;
+        }
+        // update width slidebar
+        linewidth.value = 576;
+        linewidth.oninput();
+    };
+
     // register spacing checkbox event listener
     linespace.onchange = event => edit.oninput();
 
-    // register input event listener (immediately invoked)
-    (edit.oninput = event => {
+    // register input event listener
+    edit.oninput = event => {
         const printer = {
             cpl: Number(cpl.textContent),
             encoding: encoding[lang.value],
@@ -350,11 +373,15 @@ function initialize() {
         };
         const svg = receiptline.transform(edit.value, printer);
         const dom = new DOMParser().parseFromString(svg, 'image/svg+xml').documentElement;
-        while (paper.hasChildNodes()) {
-            paper.removeChild(paper.firstChild);
+        if (landscape.checked) {
+            dom.style.transformOrigin = 'top left';
+            dom.style.transform = `rotate(-90deg) translateX(-${linewidth.value}px)`;
         }
-        paper.appendChild(dom);
-    })();
+        while (printarea.hasChildNodes()) {
+            printarea.removeChild(printarea.firstChild);
+        }
+        printarea.appendChild(dom);
+    };
 
     // register printer text box event listener
     printerid.oninput = event => {
@@ -386,6 +413,9 @@ function initialize() {
 
     // register before unload event listener
     window.onbeforeunload = event => event.returnValue = '';
+
+    // initialize receipt
+    landscape.onchange();
 }
 
 function insertText(edit, text, lf) {

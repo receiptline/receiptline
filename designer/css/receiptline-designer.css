@@ -65,10 +65,13 @@ footer {
     font-size: x-small;
     text-align: center;
 }
-.receipt {
+.paper {
     width: 576px;
     padding: 12px;
     background-color: #fff;
+}
+.paper > div {
+    overflow: hidden;
 }
 .invalid {
     background-color: #faa;
