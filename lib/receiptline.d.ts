@@ -56,8 +56,10 @@ declare module 'receiptline' {
         svg: BaseCommand;
         /** Text */
         text: BaseCommand;
-        /** ESC/POS (Epson) */
+        /** ESC/POS */
         escpos: BaseCommand;
+        /** ESC/POS (Epson) */
+        epson: BaseCommand;
         /** ESC/POS (Seiko Instruments) */
         sii: BaseCommand;
         /** ESC/POS (Citizen) */
