@@ -124,12 +124,15 @@ const svg = receiptline.transform(doc, display);
   - `true`: paper cutting (default)
 - `command`
   - `svg`: SVG (default)
-  - `escpos`: ESC/POS (Epson)
+  - `text`: Text
+  - `escpos`: ESC/POS
+  - `epson`: ESC/POS (Epson)
   - `sii`: ESC/POS (Seiko Instruments)
   - `citizen`: ESC/POS (Citizen)
   - `fit`: ESC/POS (Fujitsu)
   - `impact`: ESC/POS (TM-U220)
   - `impactb`: ESC/POS (TM-U220 Font B)
+  - `generic`: ESC/POS (Generic) Experimental
   - `starsbcs`: StarPRNT (SBCS, Thai)
   - `starmbcs`: StarPRNT (Japanese)
   - `starmbcs2`: StarPRNT (Chinese, Korean)
@@ -270,6 +273,11 @@ The ReceiptLine Designer provides more features.
     - `asImage`
       - `false`: print with device font (default)
       - `true`: print as image (Requires [puppeteer](https://www.npmjs.com/package/puppeteer) or [sharp](https://www.npmjs.com/package/sharp))
+    - `landscape`
+      - `false`: normal (default)
+      - `true`: landscape orientation (for `escpos`, `epson`, `sii`, `citizen`, `starsbcs`, `starmbcs`, `starmbcs2`)
+    - `resolution`
+      - print resolution for `landscape` (range: `180`, `203`, default: `203`)
     - `cpl`, `encoding`, `gradient`, `gamma`, `threshold`, `upsideDown`, `spacing`, `cutting`, `command`
       - see the printer configuration above
 

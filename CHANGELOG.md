@@ -1,9 +1,15 @@
 # Changelog
 
-## [Unreleased]
+## [1.13.0] - 2022-11-09
 ### Added
 - Landscape orientation
-- Generic escpos
+- "epson" alias for escpos
+- "generic" for generic escpos
+- "text" for plain text output
+- Example of receipt
+
+### Changed
+- To accept extended printer configurations
 
 ## [1.12.0] - 2022-10-20
 ### Added

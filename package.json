@@ -1,6 +1,6 @@
 {
   "name": "receiptline",
-  "version": "1.12.0",
+  "version": "1.13.0",
   "description": "Markdown for receipts. Printable digital receipts. Generate receipt printer commands and SVG images.",
   "main": "./lib/receiptline.js",
   "types": "./lib/receiptline.d.ts",
