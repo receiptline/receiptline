@@ -1,12 +1,16 @@
-# receiptline
+# ReceiptLine
 
 Markdown for receipts. Printable digital receipts. &#x1f9fe;  
-Generate receipt printer commands and SVG images.  
+Generate receipt printer commands and images.  
+
+|Package|Type|For|Description|
+|---|---|---|---|
+|[ReceiptLine](https://www.npmjs.com/package/receiptline)|SDK|Developers|Receipt description language processor|
+|[ReceiptIO](https://www.npmjs.com/package/receiptio)|Console App|Users|Print, Convert, Printer status|
+|[Designer](https://receiptline.github.io/designer/)|Tool|All|Edit, Preview|
 
 "ReceiptLine" is a coined word from "Receipt" and "Streamline".  
 Make it more efficient by making it simpler!  
-
-[ReceiptIO](https://www.npmjs.com/package/receiptio) - Simple and easy API and CLI using receiptline, supporting printer status.  
 
 ![English](screenshot_en.png)  
 ![Japanese](screenshot_ja.png)  
@@ -19,7 +23,7 @@ http://www.ofsc.or.jp/receiptline/en/
 
 ReceiptLine is the receipt description language that expresses the output image of small roll paper.  
 It supports printing paper receipts using a receipt printer and displaying electronic receipts on a POS system or smartphone.  
-It can be described simply with markdown-like text data that does not depend on the paper width.  
+It can be described simply with receipt markdown text data that does not depend on the paper width.  
 
 This reference implementation also provides the development tool "ReceiptLine Designer" for editing, previewing, hex dumps with a virtual printer, and test printing on receipt printers.  
 
@@ -124,7 +128,7 @@ const svg = receiptline.transform(doc, display);
   - `true`: paper cutting (default)
 - `command`
   - `svg`: SVG (default)
-  - `text`: Text
+  - `text`: plain text
   - `escpos`: ESC/POS
   - `epson`: ESC/POS (Epson)
   - `sii`: ESC/POS (Seiko Instruments)
@@ -132,7 +136,7 @@ const svg = receiptline.transform(doc, display);
   - `fit`: ESC/POS (Fujitsu)
   - `impact`: ESC/POS (TM-U220)
   - `impactb`: ESC/POS (TM-U220 Font B)
-  - `generic`: ESC/POS (Generic) Experimental
+  - `generic`: ESC/POS (Generic) _Experimental_
   - `starsbcs`: StarPRNT (SBCS, Thai)
   - `starmbcs`: StarPRNT (Japanese)
   - `starmbcs2`: StarPRNT (Chinese, Korean)
@@ -184,15 +188,15 @@ Print order slips from cloud server using Epson Server Direct Print or Star Clou
 
 ### example/nodejs/\*
 
-Enter markdown-like text from the web form, transform it to printer commands on the server, and print it out.  
+Enter receipt markdown text from the web form, transform it to printer commands on the server, and print it out.  
 
 ### example/js/\*
 
-Enter markdown-like text from the web form, transform it to SVG images on the web browser, and display it.  
+Enter receipt markdown text from the web form, transform it to SVG images on the web browser, and display it.  
 
 ### example/data/\*
 
-The documents (markdown-like text) are the same as the examples in the OFSC ReceiptLine Specification.  
+The documents (receipt markdown text) are the same as the examples in the OFSC ReceiptLine Specification.  
 
 ### example/command/\*
 
@@ -278,8 +282,19 @@ The ReceiptLine Designer provides more features.
       - `true`: landscape orientation (for `escpos`, `epson`, `sii`, `citizen`, `starsbcs`, `starmbcs`, `starmbcs2`)
     - `resolution`
       - print resolution for `landscape` (range: `180`, `203`, default: `203`)
-    - `cpl`, `encoding`, `gradient`, `gamma`, `threshold`, `upsideDown`, `spacing`, `cutting`, `command`
+    - `cpl`
+    - `encoding`
+    - `gradient`
+    - `gamma`
+    - `threshold`
+    - `upsideDown`
+    - `spacing`
+    - `cutting`
       - see the printer configuration above
+    - `command`
+      - see the printer configuration above
+      - `png`: PNG (Requires [puppeteer](https://www.npmjs.com/package/puppeteer) or [sharp](https://www.npmjs.com/package/sharp))
+
 
 # Serial-LAN Converter
 
@@ -539,7 +554,7 @@ http://www.ofsc.or.jp/
 
 # License
 
-- receiptline
+- ReceiptLine
   - Apache License, Version 2.0
 - QR Code Generator for JavaScript with UTF8 Support
   - MIT License

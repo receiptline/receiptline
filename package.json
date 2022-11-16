@@ -1,7 +1,7 @@
 {
   "name": "receiptline",
-  "version": "1.13.0",
-  "description": "Markdown for receipts. Printable digital receipts. Generate receipt printer commands and SVG images.",
+  "version": "1.13.1",
+  "description": "Markdown for receipts. Printable digital receipts. Generate receipt printer commands and images.",
   "main": "./lib/receiptline.js",
   "types": "./lib/receiptline.d.ts",
   "directories": {
@@ -31,6 +31,7 @@
     "kitchen",
     "ticket",
     "svg",
+    "png",
     "markdown"
   ],
   "author": "Open Foodservice System Consortium",

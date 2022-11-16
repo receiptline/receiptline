@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.13.1] - 2022-11-16
+### Fixed
+- Paper width of preview in the designer
+- The designer and an example to enable PNG output
+- Printer configuration example
+
 ## [1.13.0] - 2022-11-09
 ### Added
 - Landscape orientation
