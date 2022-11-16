@@ -53,7 +53,7 @@
         "gamma": 1.8,
         "threshold": 128,
         "upsideDown": false,
-        "spacing": true,
+        "spacing": false,
         "cutting": true,
         "command": "escpos",
         "landscape": true,
