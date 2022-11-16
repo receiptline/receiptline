@@ -128,7 +128,7 @@ if ('http' in servers) {
                                 let drain = false;
                                 sock.on('connect', () => {
                                     transform(text, printer).then(command => {
-                                        drain = sock.write(command, /^<svg/.test(command) ? 'utf8' : 'binary');
+                                        drain = sock.write(command, /^(svg|text)$/.test(printer.command) ? 'utf8' : 'binary');
                                     });
                                 });
                                 sock.on('data', data => {
@@ -172,6 +172,10 @@ if ('http' in servers) {
 }
 
 const transform = async (receiptmd, printer) => {
+    // convert receiptline to png
+    if (printer.command === 'png') {
+        return await rasterize(receiptmd, printer, 'binary');
+    }
     // convert receiptline to receiptline image
     if (printer.asImage && (puppeteer || sharp)) {
         receiptmd = `|{i:${await rasterize(receiptmd, printer, 'base64')}}`;

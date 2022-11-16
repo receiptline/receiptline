@@ -125,6 +125,7 @@ if ('http' in servers) {
                             req.on('data', chunk => text += chunk);
                             req.on('end', () => {
                                 const printer = printers[pid];
+                                printer.resolution = printer.resolution === 180 ? 180 : 203;
                                 const host = printer.host || '127.0.0.1';
                                 const port = printer.port || 19100;
                                 const sock = net.connect(port, host);
@@ -175,6 +176,10 @@ if ('http' in servers) {
 }
 
 const transform = async (receiptmd, printer) => {
+    // convert receiptline to png
+    if (printer.command === 'png') {
+        return await rasterize(receiptmd, printer, 'binary');
+    }
     // convert receiptline to image command
     if (printer.asImage && (puppeteer || sharp)) {
         receiptmd = `|{i:${await rasterize(receiptmd, printer, 'base64')}}`;
@@ -184,7 +189,6 @@ const transform = async (receiptmd, printer) => {
     if (printer.landscape && /^(escpos|epson|sii|citizen|star[sm]bcs2?)$/.test(printer.command)) {
         // landscape orientation
         printer.command = Object.assign({}, receiptline.commands[printer.command], ...landscape[printer.command]);
-        printer.resolution = printer.resolution === 180 ? 180 : 203;
     }
     return receiptline.transform(receiptmd, printer);
 };
