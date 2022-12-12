@@ -94,6 +94,12 @@ declare module 'receiptline' {
         emustarlinembcs2: BaseCommand;
         /** Star Graphic Mode (TSP100LAN) */
         stargraphic: BaseCommand;
+        /** Star Mode on dot impact printers */
+        starimpact: BaseCommand;
+        /** Star Mode on dot impact printers (Font 5x9 2P-1) */
+        starimpact2: BaseCommand;
+        /** Star Mode on dot impact printers (Font 5x9 3P-1) */
+        starimpact3: BaseCommand;
     };
     /**
      * QR Code
