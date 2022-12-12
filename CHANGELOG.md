@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.14.0] - 2022-12-12
+### Added
+- "starimpact" for Star impact printers
+
 ## [1.13.1] - 2022-11-16
 ### Fixed
 - Paper width of preview in the designer

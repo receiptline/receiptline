@@ -147,6 +147,9 @@ const svg = receiptline.transform(doc, display);
   - `emustarlinembcs`: Command Emulator Star Line Mode (Japanese)
   - `emustarlinembcs2`: Command Emulator Star Line Mode (Chinsese, Korean)
   - `stargraphic`: Star Graphic Mode (TSP100LAN)
+  - `starimpact`: Star Mode on dot impact printers _Experimental_
+  - `starimpact2`: Star Mode on dot impact printers (Font 5x9 2P-1) _Experimental_
+  - `starimpact3`: Star Mode on dot impact printers (Font 5x9 3P-1) _Experimental_
 
 # Transform stream API
 
