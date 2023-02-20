@@ -195,15 +195,24 @@ const transform = async (receiptmd, printer) => {
 
 const rasterize = async (receiptmd, printer, encoding) => {
     // convert receiptline to png
+    const c = receiptline.commands.svg.charWidth;
     if (puppeteer) {
         const display = Object.assign({}, printer, { command: 'svg' });
         const svg = receiptline.transform(receiptmd, display);
         const w = Number(svg.match(/width="(\d+)px"/)[1]);
         const h = Number(svg.match(/height="(\d+)px"/)[1]);
-        const v = printer.landscape ? { width: h, height: w } : { width: w, height: h };
+        const v = { width: w, height: h };
+        let t = '';
+        if (printer.landscape) {
+            const m = printer.margin * c || 0;
+            const n = printer.marginRight * c || 0;
+            v.width = h;
+            v.height = m + w + n;
+            t = `svg{padding-left:${m}px;padding-right:${n}px;transform-origin:top left;transform:rotate(-90deg) translateX(-${v.height}px)}`;
+            Object.assign(printer, { cpl: Math.ceil(h / 12), margin: 0, marginRight: 0 });
+        }
         const browser = await puppeteer.launch({ defaultViewport: v });
         const page = await browser.newPage();
-        const t = printer.landscape ? `svg{transform-origin:top left;transform:rotate(-90deg) translateX(-${w}px)}` : '';
         await page.setContent(`<!DOCTYPE html><html><head><meta charset="utf-8"><style>*{margin:0;background:transparent}${t}</style></head><body>${svg}</body></html>`);
         const png = await page.screenshot({ encoding: encoding, omitBackground: true });
         await browser.close();
@@ -212,8 +221,16 @@ const rasterize = async (receiptmd, printer, encoding) => {
     else if (sharp) {
         const display = Object.assign({}, printer, { command: svgsharp });
         const svg = receiptline.transform(receiptmd, display);
-        const r = printer.landscape ? -90 : 0;
-        return (await sharp(Buffer.from(svg)).rotate(r).toFormat('png').toBuffer()).toString(encoding);
+        const h = Number(svg.match(/height="(\d+)px"/)[1]);
+        const x = { background: 'transparent' };
+        let r = 0;
+        if (printer.landscape) {
+            x.bottom = printer.margin * c || 0;
+            x.top = printer.marginRight * c || 0;
+            r = -90;
+            Object.assign(printer, { cpl: Math.ceil(h / 12), margin: 0, marginRight: 0 });
+        }
+        return (await sharp(Buffer.from(svg)).rotate(r).extend(x).toFormat('png').toBuffer()).toString(encoding);
     }
     else {
         return '';
@@ -262,6 +279,7 @@ const _escpos90 = {
     content: '',
     height: 1,
     feed: 24,
+    cpl: 48,
     buffer: '',
     // start printing: ESC @ GS a n ESC M n FS ( A pL pH fn m ESC SP n FS S n1 n2 FS . GS P x y ESC L ESC T n
     open: function (printer) {
@@ -279,7 +297,9 @@ const _escpos90 = {
         this.content = '';
         this.height = 1;
         this.feed = this.charWidth * (printer.spacing ? 2.5 : 2);
-        this.sideways = printer.cpl * this.charWidth;
+        this.cpl = printer.cpl;
+        this.margin = printer.margin;
+        this.marginRight = printer.marginRight;
         this.buffer = '';
         const r = printer.resolution;
         return '\x1b@\x1da\x00\x1bM' + (printer.encoding === 'tis620' ? 'a' : '0') + '\x1c(A' + $(2, 0, 48, 0) + '\x1b \x00\x1cS\x00\x00\x1c.\x1dP' + $(r, r) + '\x1bL\x1bT' + $(printer.upsideDown ? 3 : 1);
@@ -287,8 +307,10 @@ const _escpos90 = {
     // finish printing: ESC W xL xH yL yH dxL dxH dyL dyH FF GS r n
     close: function () {
         const w = this.position;
-        const h = this.sideways;
-        return '\x1bW' + $(0, 0, 0, 0, w & 255, w >> 8 & 255, h & 255, h >> 8 & 255) + this.buffer + '\x0c' + (this.cutting ? this.cut() : '') + '\x1dr1';
+        const h = this.cpl * this.charWidth;
+        const v = (this.margin + this.cpl + this.marginRight) * this.charWidth;
+        const m = (this.upsideDown ? this.margin : this.marginRight) * this.charWidth;
+        return '\x1bW' + $(0, 0, 0, 0, w & 255, w >> 8 & 255, v & 255, v >> 8 & 255) + ' \x1bW' + $(0, 0, m & 255, m >> 8 & 255, w & 255, w >> 8 & 255, h & 255, h >> 8 & 255) + this.buffer + '\x0c' + (this.cutting ? this.cut() : '') + '\x1dr1';
     },
     // set print area:
     area: function (left, width, right) {
@@ -542,7 +564,9 @@ const _sii90 = {
         this.content = '';
         this.height = 1;
         this.feed = this.charWidth * (printer.spacing ? 2.5 : 2);
-        this.sideways = printer.cpl * this.charWidth;
+        this.cpl = printer.cpl;
+        this.margin = printer.margin;
+        this.marginRight = printer.marginRight;
         this.buffer = '';
         const r = printer.resolution;
         return '\x1b@\x1da\x00\x1bM0\x1b \x00\x1cS\x00\x00\x1c.\x1dP' + $(r, r) + '\x1bL\x1bT' + $(printer.upsideDown ? 3 : 1);
@@ -550,8 +574,10 @@ const _sii90 = {
     // finish printing: ESC W xL xH yL yH dxL dxH dyL dyH ESC $ nL nH FF DC2 q n
     close: function () {
         const w = this.position;
-        const h = this.sideways;
-        return '\x1bW' + $(0, 0, 0, 0, w & 255, w >> 8 & 255, h & 255, h >> 8 & 255) + this.buffer + '\x0c' + (this.cutting ? this.cut() : '') + '\x12q\x00';
+        const h = this.cpl * this.charWidth;
+        const v = (this.margin + this.cpl + this.marginRight) * this.charWidth;
+        const m = (this.upsideDown ? this.margin : this.marginRight) * this.charWidth;
+        return '\x1bW' + $(0, 0, 0, 0, w & 255, w >> 8 & 255, v & 255, v >> 8 & 255) + ' \x1bW' + $(0, 0, m & 255, m >> 8 & 255, w & 255, w >> 8 & 255, h & 255, h >> 8 & 255) + this.buffer + '\x0c' + (this.cutting ? this.cut() : '') + '\x12q\x00';
     },
     // feed new line: GS $ nL nH ESC $ nL nH
     lf: function () {
@@ -740,7 +766,8 @@ const _star90 = {
     content: '',
     height: 1,
     feed: 24,
-    sideways: 0,
+    cpl: 48,
+    marginRight: 0,
     buffer: '',
     // start printing: ESC @ ESC RS a n (ESC RS R n) ESC RS F n ESC SP n ESC s n1 n2 ESC GS P 0 ESC GS P 2 n
     open: function (printer) {
@@ -757,15 +784,19 @@ const _star90 = {
         this.content = '';
         this.height = 1;
         this.feed = this.charWidth * (printer.spacing ? 2.5 : 2);
-        this.sideways = printer.cpl * this.charWidth;
+        this.cpl = printer.cpl;
+        this.margin = printer.margin;
+        this.marginRight = printer.marginRight;
         this.buffer = '';
         return '\x1b@\x1b\x1ea\x00' + (printer.encoding === 'tis620' ? '\x1b\x1eR\x01': '') + '\x1b\x1eF\x00\x1b 0\x1bs00\x1b\x1dP0\x1b\x1dP2' + $(printer.upsideDown ? 3 : 1);
     },
     // finish printing: ESC GS P 3 xL xH yL yH dxL dxH dyL dyH ESC GS P 7 ESC GS ETX s n1 n2
     close: function () {
         const w = this.position;
-        const h = this.sideways;
-        return '\x1b\x1dP3' + $(0, 0, 0, 0, w & 255, w >> 8 & 255, h & 255, h >> 8 & 255) + this.buffer + '\x1b\x1dP7' + (this.cutting ? this.cut() : '') + '\x1b\x1d\x03\x01\x00\x00';
+        const h = this.cpl * this.charWidth;
+        const v = (this.margin + this.cpl + this.marginRight) * this.charWidth;
+        const m = (this.upsideDown ? this.margin : this.marginRight) * this.charWidth;
+        return '\x1b\x1dP3' + $(0, 0, 0, 0, w & 255, w >> 8 & 255, v & 255, v >> 8 & 255) + ' \x1b\x1dP3' + $(0, 0, m & 255, m >> 8 & 255, w & 255, w >> 8 & 255, h & 255, h >> 8 & 255) + this.buffer + '\x1b\x1dP7' + (this.cutting ? this.cut() : '') + '\x1b\x1d\x03\x01\x00\x00';
     },
     // set print area:
     area: function (left, width, right) {

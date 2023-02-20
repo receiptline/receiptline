@@ -195,6 +195,8 @@ limitations under the License.
         p.upsideDown = !!p.upsideDown;
         p.spacing = !!p.spacing;
         p.cutting = 'cutting' in p ? !!p.cutting : true;
+        p.margin = p.margin || 0;
+        p.marginRight = p.marginRight || 0;
         p.gradient = 'gradient' in p ? !!p.gradient : true;
         p.gamma = p.gamma || 1.8;
         p.threshold = p.threshold || 128;
@@ -1830,6 +1832,8 @@ limitations under the License.
         left: 0,
         width: 48,
         right: 0,
+        margin: 0,
+        marginRight: 0,
         // start printing: ESC @ GS a n ESC M n FS ( A pL pH fn m ESC SP n FS S n1 n2 (ESC 2) (ESC 3 n) ESC { n FS .
         open: function (printer) {
             this.upsideDown = printer.upsideDown;
@@ -1842,6 +1846,8 @@ limitations under the License.
             this.left = 0;
             this.width = printer.cpl;
             this.right = 0;
+            this.margin = printer.margin;
+            this.marginRight = printer.marginRight;
             return '\x1b@\x1da\x00\x1bM' + (printer.encoding === 'tis620' ? 'a' : '0') + '\x1c(A' + $(2, 0, 48, 0) + '\x1b \x00\x1cS\x00\x00' + (this.spacing ? '\x1b2' : '\x1b3\x00') + '\x1b{' + $(this.upsideDown) + '\x1c.';
         },
         // finish printing: GS r n
@@ -1853,7 +1859,7 @@ limitations under the License.
             this.left = left;
             this.width = width;
             this.right = right;
-            const m = left * this.charWidth;
+            const m = (this.margin + left) * this.charWidth;
             const w = width * this.charWidth;
             return '\x1dL' + $(m & 255, m >> 8 & 255) + '\x1dW' + $(w & 255, w >> 8 & 255);
         },
@@ -1927,7 +1933,7 @@ limitations under the License.
             const left = arguments[2] || this.left;
             const width = arguments[3] || this.width;
             const right = arguments[4] || this.right;
-            let r = this.upsideDown ? this.area(right, width, left) + this.align(2 - align) : '';
+            let r = this.upsideDown ? this.area(right + this.marginRight - this.margin, width, left) + this.align(2 - align) : '';
             const img = PNG.sync.read(Buffer.from(image, 'base64'));
             const w = img.width;
             const d = Array(w).fill(0);
@@ -1968,7 +1974,7 @@ limitations under the License.
         // print QR Code: GS ( k pL pH cn fn n1 n2 GS ( k pL pH cn fn n GS ( k pL pH cn fn n GS ( k pL pH cn fn m d1 ... dk GS ( k pL pH cn fn m
         qrcode: function (symbol, encoding) {
             if (typeof qrcode !== 'undefined') {
-                let r = this.upsideDown ? this.area(this.right, this.width, this.left) + this.align(2 - this.alignment) : '';
+                let r = this.upsideDown ? this.area(this.right + this.marginRight - this.margin, this.width, this.left) + this.align(2 - this.alignment) : '';
                 if (symbol.data.length > 0) {
                     const qr = qrcode(0, symbol.level.toUpperCase());
                     qr.addData(symbol.data);
@@ -2171,6 +2177,12 @@ limitations under the License.
             this.gradient = printer.gradient;
             this.gamma = printer.gamma;
             this.threshold = printer.threshold;
+            this.alignment = 0;
+            this.left = 0;
+            this.width = printer.cpl;
+            this.right = 0;
+            this.margin = printer.margin;
+            this.marginRight = printer.marginRight;
             return '\x1b@\x1da\x00\x1bM0\x1b \x00\x1cS\x00\x00' + (this.spacing ? '\x1b2' : '\x1b3\x00') + '\x1b{' + $(this.upsideDown) + '\x1c.';
         },
         // finish printing: DC2 q n
@@ -2179,12 +2191,59 @@ limitations under the License.
         },
         // set print area: GS L nL nH GS W nL nH
         area: function (left, width, right) {
-            const m = (this.upsideDown ? right : left) * this.charWidth;
+            this.left = left;
+            this.width = width;
+            this.right = right;
+            const m = (this.upsideDown ? this.marginRight + right : this.margin + left) * this.charWidth;
             const w = width * this.charWidth;
             return '\x1dL' + $(m & 255, m >> 8 & 255) + '\x1dW' + $(w & 255, w >> 8 & 255);
         },
         // image split size
         split: 1662,
+        // print image: GS 8 L p1 p2 p3 p4 m fn a bx by c xL xH yL yH d1 ... dk GS ( L pL pH m fn
+        image: function (image) {
+            const align = arguments[1] || this.alignment;
+            const left = arguments[2] || this.left;
+            const width = arguments[3] || this.width;
+            const right = arguments[4] || this.right;
+            let r = this.upsideDown ? this.area(right, width, left) + this.align(2 - align) : '';
+            const img = PNG.sync.read(Buffer.from(image, 'base64'));
+            const w = img.width;
+            const d = Array(w).fill(0);
+            let j = this.upsideDown ? img.data.length - 4 : 0;
+            for (let z = 0; z < img.height; z += this.split) {
+                const h = Math.min(this.split, img.height - z);
+                const l = (w + 7 >> 3) * h + 10;
+                r += '\x1d8L' + $(l & 255, l >> 8 & 255, l >> 16 & 255, l >> 24 & 255, 48, 112, 48, 1, 1, 49, w & 255, w >> 8 & 255, h & 255, h >> 8 & 255);
+                for (let y = 0; y < h; y++) {
+                    let i = 0, e = 0;
+                    for (let x = 0; x < w; x += 8) {
+                        let b = 0;
+                        const q = Math.min(w - x, 8);
+                        for (let p = 0; p < q; p++) {
+                            const f = Math.floor((d[i] + e * 5) / 16 + Math.pow(((img.data[j] * .299 + img.data[j + 1] * .587 + img.data[j + 2] * .114 - 255) * img.data[j + 3] + 65525) / 65525, 1 / this.gamma) * 255);
+                            j += this.upsideDown ? -4 : 4;
+                            if (this.gradient) {
+                                d[i] = e * 3;
+                                e = f < this.threshold ? (b |= 128 >> p, f) : f - 255;
+                                if (i > 0) {
+                                    d[i - 1] += e;
+                                }
+                                d[i++] += e * 7;
+                            }
+                            else {
+                                if (f < this.threshold) {
+                                    b |= 128 >> p;
+                                }
+                            }
+                        }
+                        r += $(b);
+                    }
+                }
+                r += '\x1d(L' + $(2, 0, 48, 50);
+            }
+            return r;
+        },
         // print QR Code: DC2 ; n GS p 1 model e v mode nl nh dk
         qrcode: function (symbol, encoding) {
             if (typeof qrcode !== 'undefined') {
@@ -2509,16 +2568,22 @@ limitations under the License.
         font: 0,
         style: 0,
         color: 0,
-        margin: 0,
+        left: 0,
+        right: 0,
         position: 0,
+        margin: 0,
+        marginRight: 0,
         red: [],
         black: [],
         // start printing: ESC @ GS a n ESC M n (ESC 2) (ESC 3 n) ESC { n
         open: function (printer) {
             this.style = this.font;
             this.color = 0;
-            this.margin = 0;
+            this.left = 0;
+            this.right = 0;
             this.position = 0;
+            this.margin = printer.margin;
+            this.marginRight = printer.marginRight;
             this.red = [];
             this.black = [];
             this.upsideDown = printer.upsideDown;
@@ -2535,7 +2600,8 @@ limitations under the License.
         },
         // set print area:
         area: function (left, width, right) {
-            this.margin = left;
+            this.left = this.margin + left;
+            this.right = right + this.marginRight;
             return '';
         },
         // set line alignment: ESC a n
@@ -2552,7 +2618,7 @@ limitations under the License.
         },
         // print horizontal rule: ESC t n ...
         hr: function (width) {
-            return '\x1b!' + $(this.font) + ' '.repeat(this.margin) + '\x1bt\x01' + '\x95'.repeat(width);
+            return '\x1b!' + $(this.font) + ' '.repeat(this.left) + '\x1bt\x01' + '\x95'.repeat(width);
         },
         // print vertical rules: ESC ! n ESC t n ...
         vr: function (widths, height) {
@@ -2566,17 +2632,17 @@ limitations under the License.
         },
         // start rules: ESC ! n ESC t n ...
         vrstart: function (widths) {
-            return '\x1b!' + $(this.font) + ' '.repeat(this.margin) + '\x1bt\x01' + widths.reduce((a, w) => a + '\x95'.repeat(w) + '\x91', '\x9c').slice(0, -1) + '\x9d';
+            return '\x1b!' + $(this.font) + ' '.repeat(this.left) + '\x1bt\x01' + widths.reduce((a, w) => a + '\x95'.repeat(w) + '\x91', '\x9c').slice(0, -1) + '\x9d';
         },
         // stop rules: ESC ! n ESC t n ...
         vrstop: function (widths) {
-            return '\x1b!' + $(this.font) + ' '.repeat(this.margin) + '\x1bt\x01' + widths.reduce((a, w) => a + '\x95'.repeat(w) + '\x90', '\x9e').slice(0, -1) + '\x9f';
+            return '\x1b!' + $(this.font) + ' '.repeat(this.left) + '\x1bt\x01' + widths.reduce((a, w) => a + '\x95'.repeat(w) + '\x90', '\x9e').slice(0, -1) + '\x9f';
         },
         // print vertical and horizontal rules: ESC ! n ESC t n ...
         vrhr: function (widths1, widths2, dl, dr) {
             const r1 = ' '.repeat(Math.max(-dl, 0)) + widths1.reduce((a, w) => a + '\x95'.repeat(w) + '\x90', dl > 0 ? '\x9e' : '\x9a').slice(0, -1) + (dr < 0 ? '\x9f' : '\x9b') + ' '.repeat(Math.max(dr, 0));
             const r2 = ' '.repeat(Math.max(dl, 0)) + widths2.reduce((a, w) => a + '\x95'.repeat(w) + '\x91', dl < 0 ? '\x9c' : '\x98').slice(0, -1) + (dr > 0 ? '\x9d' : '\x99') + ' '.repeat(Math.max(-dr, 0));
-            return '\x1b!' + $(this.font) + ' '.repeat(this.margin) + '\x1bt\x01' + r2.split('').reduce((a, c, i) => a + this.vrtable[c][r1[i]], '');
+            return '\x1b!' + $(this.font) + ' '.repeat(this.left) + '\x1bt\x01' + r2.split('').reduce((a, c, i) => a + this.vrtable[c][r1[i]], '');
         },
         // set line spacing and feed new line: (ESC 2) (ESC 3 n)
         vrlf: function (vr) {
@@ -2635,7 +2701,7 @@ limitations under the License.
                     const s = a + '\x1b!' + $(this.font) + ' '.repeat(c.index - p) + c.data;
                     p = c.index + c.length;
                     return s;
-                }, '\x1br\x01\x1b!' + $(this.font) + ' '.repeat(this.margin)) + '\x0d\x1br\x00';
+                }, '\x1br\x01\x1b!' + $(this.font) + ' '.repeat(this.left)) + '\x0d\x1br\x00';
             }
             if (this.black.length > 0) {
                 let p = 0;
@@ -2643,7 +2709,7 @@ limitations under the License.
                     const s = a + '\x1b!' + $(this.font) + ' '.repeat(c.index - p) + c.data;
                     p = c.index + c.length;
                     return s;
-                }, '\x1b!' + $(this.font) + ' '.repeat(this.margin));
+                }, '\x1b!' + $(this.font) + ' '.repeat(this.left));
             }
             r += '\x0a';
             this.position = 0;
@@ -2684,7 +2750,7 @@ limitations under the License.
                             }
                         }
                     }
-                    r += '\x1b*\x00' + $(w & 255, w >> 8 & 255) + b.reduce((a, c) => a + $(c), '') + '\x1bJ' + $(h * 2);
+                    r += ' '.repeat(this.left) + '\x1b*\x00' + $(w & 255, w >> 8 & 255) + b.reduce((a, c) => a + $(c), '') + ' '.repeat(this.right) + '\x1bJ' + $(h * 2);
                 }
             }
             return r;
@@ -2709,6 +2775,7 @@ limitations under the License.
         gradient: true,
         gamma: 1.8,
         threshold: 128,
+        margin: 0,
         // start printing: ESC @ ESC RS a n (ESC RS R n) ESC RS F n ESC SP n ESC s n1 n2 (ESC z n) (ESC 0) (SI) (DC2)
         open: function (printer) {
             this.upsideDown = printer.upsideDown;
@@ -2717,6 +2784,7 @@ limitations under the License.
             this.gradient = printer.gradient;
             this.gamma = printer.gamma;
             this.threshold = printer.threshold;
+            this.margin = printer.margin;
             return '\x1b@\x1b\x1ea\x00' + (printer.encoding === 'tis620' ? '\x1b\x1eR\x01': '') + '\x1b\x1eF\x00\x1b 0\x1bs00' + (this.spacing ? '\x1bz1' : '\x1b0') + (this.upsideDown ? '\x0f' : '\x12');
         },
         // finish printing: ESC GS ETX s n1 n2
@@ -2724,7 +2792,9 @@ limitations under the License.
             return (this.cutting ? this.cut() : '') + '\x1b\x1d\x03\x01\x00\x00';
         },
         // set print area: ESC l n ESC Q n
-        area: (left, width, right) => '\x1bl' + $(0) + '\x1bQ' + $(left + width + right) + '\x1bl' + $(left) + '\x1bQ' + $(left + width),
+        area: function (left, width, right) {
+            return '\x1bl' + $(0) + '\x1bQ' + $(this.margin + left + width + right) + '\x1bl' + $(this.margin + left) + '\x1bQ' + $(this.margin + left + width);
+        },
         // set line alignment: ESC GS a n
         align: align => '\x1b\x1da' + $(align),
         // set absolute print position: ESC GS A n1 n2
@@ -3052,6 +3122,7 @@ limitations under the License.
             this.gradient = printer.gradient;
             this.gamma = printer.gamma;
             this.threshold = printer.threshold;
+            this.margin = printer.margin;
             return '\x1b@\x1b\x1ea\x00\x1b' + [ 'M', 'P', ':' ][this.font] + '\x1b \x00\x1bs\x00\x00' + (this.spacing ? '\x1bz\x01' : '\x1b0') + (this.upsideDown ? '\x0f' : '\x12');
         },
         // finish printing: ESC GS ETX s n1 n2 EOT
@@ -3234,6 +3305,7 @@ limitations under the License.
         left: 0,
         width: 48,
         right: 0,
+        margin: 0,
         // start printing: ESC RS a n ESC * r A ESC * r P n NUL (ESC * r E n NUL)
         open: function (printer) {
             this.upsideDown = printer.upsideDown;
@@ -3246,6 +3318,7 @@ limitations under the License.
             this.left = 0;
             this.width = printer.cpl;
             this.right = 0;
+            this.margin = (printer.upsideDown ? printer.marginRight : printer.margin) * this.charWidth;
             return '\x1b\x1ea\x00\x1b*rA\x1b*rP0\x00' + (this.cutting ? '' : '\x1b*rE1\x00');
         },
         // finish printing: ESC * r B ESC ACK SOH
@@ -3282,7 +3355,7 @@ limitations under the License.
             const img = PNG.sync.read(Buffer.from(image, 'base64'));
             const w = img.width;
             const d = Array(w).fill(0);
-            const m = Math.max((this.upsideDown ? right : left) * this.charWidth + (width * this.charWidth - w) * (this.upsideDown ? 2 - align: align) >> 1, 0);
+            const m = this.margin + Math.max((this.upsideDown ? right : left) * this.charWidth + (width * this.charWidth - w) * (this.upsideDown ? 2 - align : align) >> 1, 0);
             const l = m + w + 7 >> 3;
             let j = this.upsideDown ? img.data.length - 4 : 0;
             for (let y = 0; y < img.height; y++) {
@@ -3321,14 +3394,14 @@ limitations under the License.
     // Plain Text
     //
     const _text = {
-        margin: 0,
+        left: 0,
         width: 48,
         position: 0,
         scale: 1,
         buffer: [],
         // start printing:
         open: function (printer) {
-            this.margin = 0;
+            this.left = 0;
             this.width = printer.cpl;
             this.position = 0;
             this.scale = 1;
@@ -3337,7 +3410,7 @@ limitations under the License.
         },
         // set print area:
         area: function (left, width, right) {
-            this.margin = left;
+            this.left = left;
             this.width = width;
             return '';
         },
@@ -3353,7 +3426,7 @@ limitations under the License.
         },
         // print horizontal rule:
         hr: function (width) {
-            return ' '.repeat(this.margin) + '-'.repeat(width);
+            return ' '.repeat(this.left) + '-'.repeat(width);
         },
         // print vertical rules:
         vr: function (widths, height) {
@@ -3366,17 +3439,17 @@ limitations under the License.
         },
         // start rules:
         vrstart: function (widths) {
-            return ' '.repeat(this.margin) + widths.reduce((a, w) => a + '-'.repeat(w) + '+', '+');
+            return ' '.repeat(this.left) + widths.reduce((a, w) => a + '-'.repeat(w) + '+', '+');
         },
         // stop rules:
         vrstop: function (widths) {
-            return ' '.repeat(this.margin) + widths.reduce((a, w) => a + '-'.repeat(w) + '+', '+');
+            return ' '.repeat(this.left) + widths.reduce((a, w) => a + '-'.repeat(w) + '+', '+');
         },
         // print vertical and horizontal rules:
         vrhr: function (widths1, widths2, dl, dr) {
             const r1 = ' '.repeat(Math.max(-dl, 0)) + widths1.reduce((a, w) => a + '-'.repeat(w) + '+', '+') + ' '.repeat(Math.max(dr, 0));
             const r2 = ' '.repeat(Math.max(dl, 0)) + widths2.reduce((a, w) => a + '-'.repeat(w) + '+', '+') + ' '.repeat(Math.max(-dr, 0));
-            return ' '.repeat(this.margin) + r2.split('').reduce((a, c, i) => a + this.vrtable[c][r1[i]], '');
+            return ' '.repeat(this.left) + r2.split('').reduce((a, c, i) => a + this.vrtable[c][r1[i]], '');
         },
         // ruled line composition
         vrtable: {
@@ -3416,7 +3489,7 @@ limitations under the License.
                     const s = a + ' '.repeat(c.index - p) + c.data;
                     p = c.index + c.length;
                     return s;
-                }, ' '.repeat(this.margin));
+                }, ' '.repeat(this.left));
             }
             r += '\n';
             this.position = 0;
@@ -3441,6 +3514,8 @@ limitations under the License.
             this.left = 0;
             this.width = printer.cpl;
             this.right = 0;
+            this.margin = printer.margin;
+            this.marginRight = printer.marginRight;
             return '\x1b@\x1da\x00\x1bM\x00\x1b \x00\x1cS\x00\x00' + (this.spacing ? '\x1b2' : '\x1b3\x00') + '\x1b{' + $(this.upsideDown) + '\x1c.';
         },
         // finish printing: GS r n
@@ -3481,7 +3556,7 @@ limitations under the License.
             const left = arguments[2] || this.left;
             const width = arguments[3] || this.width;
             const right = arguments[4] || this.right;
-            let r = this.upsideDown ? this.area(right, width, left) + this.align(2 - align) : '';
+            let r = this.upsideDown ? this.area(right + this.marginRight - this.margin, width, left) + this.align(2 - align) : '';
             const img = PNG.sync.read(Buffer.from(image, 'base64'));
             const w = img.width;
             const d = Array(w).fill(0);
@@ -3521,7 +3596,7 @@ limitations under the License.
         // print QR Code: GS ( k pL pH cn fn n1 n2 GS ( k pL pH cn fn n GS ( k pL pH cn fn n GS ( k pL pH cn fn m d1 ... dk GS ( k pL pH cn fn m
         qrcode: function (symbol, encoding) {
             if (typeof qrcode !== 'undefined') {
-                let r = this.upsideDown ? this.area(this.right, this.width, this.left) + this.align(2 - this.alignment) : '';
+                let r = this.upsideDown ? this.area(this.right + this.marginRight - this.margin, this.width, this.left) + this.align(2 - this.alignment) : '';
                 if (symbol.data.length > 0) {
                     const qr = qrcode(0, symbol.level.toUpperCase());
                     qr.addData(symbol.data);

@@ -55,6 +55,7 @@
         "upsideDown": false,
         "spacing": false,
         "cutting": true,
+        "margin": 8,
         "command": "escpos",
         "landscape": true,
         "resolution": 180
@@ -128,6 +129,7 @@
         "upsideDown": false,
         "spacing": true,
         "cutting": true,
+        "margin": 8,
         "command": "starmbcs",
         "landscape": true
     },
