@@ -310,24 +310,6 @@ function initialize() {
     wh.onclick = event => insertText(edit, '^');
 
     // register language selectbox event listener
-    const language = window.navigator.language;
-    switch (language.slice(0, 2)) {
-        case 'ja':
-            lang.value = 'ja';
-            break;
-        case 'zh':
-            lang.value = /^zh-(tw|hk|mo)/i.test(language) ? 'zh-Hant' : 'zh-Hans';
-            break;
-        case 'ko':
-            lang.value = 'ko';
-            break;
-        case 'th':
-            lang.value = 'th';
-            break;
-        default:
-            lang.value = '-';
-            break;
-    }
     lang.onchange = event => edit.oninput();
 
     // register width slidebar event listener
@@ -414,8 +396,59 @@ function initialize() {
     // register before unload event listener
     window.onbeforeunload = event => event.returnValue = '';
 
+    // query string of URL
+    const params = new URLSearchParams(window.location.search);
+    // zoom
+    const z = params.get('z');
+    if (/^-?[0-5]$/.test(z)) {
+        zoom.value = Number(z) * 2 + 20;
+        zoom.oninput();
+    }
+    // language
+    const l = params.has('l') ? params.get('l') : window.navigator.language;
+    switch (l.slice(0, 2)) {
+        case 'ja':
+            lang.value = 'ja';
+            break;
+        case 'zh':
+            lang.value = /^zh-(tw|hk|mo|hant)/i.test(l) ? 'zh-Hant' : 'zh-Hans';
+            break;
+        case 'ko':
+            lang.value = 'ko';
+            break;
+        case 'th':
+            lang.value = 'th';
+            break;
+        default:
+            lang.value = '-';
+            break;
+    }
+    // linespace
+    if (params.get('s') === '1') {
+        linespace.checked = true;
+    }
+    // landscape
+    if (params.get('v') === '1') {
+        landscape.checked = true;
+        linewidth.min = 576;
+        linewidth.max = 1152;
+    }
+    // linewidth
+    const c = params.get('c');
+    if (/^(2[4-9]|[3-8]\d|9[0-6])$/.test(c)) {
+        linewidth.value = Number(c) * 12;
+    }
+    // printerid
+    if (params.has('p')) {
+        printerid.value = params.get('p');
+        printerid.oninput();
+    }
+    // data
+    if (params.has('d')) {
+        edit.value = params.get('d');
+    }
     // initialize receipt
-    landscape.onchange();
+    linewidth.oninput();
 }
 
 function insertText(edit, text, lf) {
