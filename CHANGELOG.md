@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.15.0] - 2023-02-20
+### Added
+- Print margin
+- Initial value setting by URL query string to the designer
+
 ## [1.14.0] - 2022-12-12
 ### Added
 - "starimpact" for Star impact printers

@@ -126,6 +126,10 @@ const svg = receiptline.transform(doc, display);
 - `cutting` (for printer)
   - `false`: no paper cutting
   - `true`: paper cutting (default)
+- `margin` (for printer)
+  - print margin (left) (range: `0` - `24`, default: `0`)
+- `marginRight` (for printer)
+  - print margin (right) (range: `0` - `24`, default: `0`)
 - `command`
   - `svg`: SVG (default)
   - `text`: plain text
@@ -284,7 +288,7 @@ The ReceiptLine Designer provides more features.
       - `false`: normal (default)
       - `true`: landscape orientation (for `escpos`, `epson`, `sii`, `citizen`, `starsbcs`, `starmbcs`, `starmbcs2`)
     - `resolution`
-      - print resolution for `landscape` (range: `180`, `203`, default: `203`)
+      - print resolution for `landscape` (values: `180`, `203`, default: `203`)
     - `cpl`
     - `encoding`
     - `gradient`
@@ -293,11 +297,31 @@ The ReceiptLine Designer provides more features.
     - `upsideDown`
     - `spacing`
     - `cutting`
+    - `margin`
+    - `marginRight`
       - see the printer configuration above
     - `command`
       - see the printer configuration above
       - `png`: PNG (Requires [puppeteer](https://www.npmjs.com/package/puppeteer) or [sharp](https://www.npmjs.com/package/sharp))
 
+## URL query string
+
+The designer can set initial values in the URL query string.  
+
+### Parameters
+
+- `z`: zoom (range: `-5`-`5`, default: `0`)
+- `l`: language (`en`, `ja`, `ko`, `zh-hans`, `zh-hant`, `th`, ...)
+- `c`: characters per line (range: `24`-`96`, default: `48`)
+- `v`: landscape (values: `0`, `1`, default: `0`)
+- `s`: line spacing (values: `0`, `1`, default: `0`)
+- `p`: printer identifier (alphanumeric or underscore characters)
+- `d`: ReceiptLine document
+
+### Examples
+
+- http://localhost:8080/index.html?c=42&p=tm_series1
+- https://receiptline.github.io/designer/index.html?d={code%3A2012345678903%3Boption%3Aean%2Chri}
 
 # Serial-LAN Converter
 
