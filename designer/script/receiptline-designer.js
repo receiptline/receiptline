@@ -139,7 +139,7 @@ function initialize() {
         if (savetext.checked) {
             const a = document.createElement('a');
             a.href = window.URL.createObjectURL(new Blob([ bom, edit.value ], { type: 'text/plain' }));
-            a.download = 'receiptline.txt';
+            a.download = 'receiptline.receipt';
             a.click();
         }
         // save svg file

@@ -163,7 +163,7 @@ const svg = receiptline.transform(doc, display);
 const fs = require('fs');
 const receiptline = require('receiptline');
 
-const source = fs.createReadStream('example.txt');
+const source = fs.createReadStream('example.receipt');
 const transform = receiptline.createTransform({ command: 'svg' });
 const destination = fs.createWriteStream('example.svg');
 
