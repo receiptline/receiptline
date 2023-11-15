@@ -191,7 +191,7 @@ const rasterize = async (receiptmd, printer, encoding) => {
         const svg = receiptline.transform(receiptmd, display);
         const w = Number(svg.match(/width="(\d+)px"/)[1]);
         const h = Number(svg.match(/height="(\d+)px"/)[1]);
-        const browser = await puppeteer.launch({ defaultViewport: { width: w, height: h }});
+        const browser = await puppeteer.launch({ defaultViewport: { width: w, height: h }, headless: 'new' });
         const page = await browser.newPage();
         await page.setContent(`<!DOCTYPE html><html><head><meta charset="utf-8"><style>*{margin:0;background:transparent}</style></head><body>${svg}</body></html>`);
         const png = await page.screenshot({ encoding: encoding, omitBackground: true });
