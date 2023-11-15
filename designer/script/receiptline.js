@@ -309,7 +309,21 @@ limitations under the License.
                         }
                         // parse image property
                         if ('image' in result.property) {
-                            result.image = result.property.image;
+                            const c = result.property.image.replace(/=.*|[^A-Za-z0-9+/]/g, '');
+                            switch (c.length % 4) {
+                                case 1:
+                                    result.image = c.slice(0, -1);
+                                    break;
+                                case 2:
+                                    result.image = c + '==';
+                                    break;
+                                case 3:
+                                    result.image = c + '=';
+                                    break;
+                                default:
+                                    result.image = c;
+                                    break;
+                            }
                         }
                         // parse command property
                         if ('command' in result.property) {
