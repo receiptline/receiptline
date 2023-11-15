@@ -44,12 +44,24 @@ catch (e) {
 if ('serial' in servers) {
     const serialport = require('serialport');
     const serial = net.createServer(conn => {
+        const parity = { n: 'none', e: 'even', o: 'odd' };
+        const dev = /^([^:]*)(:((?:24|48|96|192|384|576|1152)00),?([neo]),?([78]),?([12]),?([nrx]?)$)?/i.exec(servers.serial.device);
+        const opt = { baudRate: 9600, autoOpen: false };
+        if (dev[2]) {
+            opt.baudRate = Number(dev[3]);
+            opt.parity = parity[dev[4].toLowerCase()];
+            opt.dataBits = Number(dev[5]);
+            opt.stopBits = Number(dev[6]);
+            opt.rtscts = /r/i.test(dev[7]);
+            opt.xon = opt.xonff = /x/i.test(dev[7]);
+        }
         let port;
         if ('SerialPort' in serialport) {
-            port = new serialport.SerialPort({ path: servers.serial.device, baudRate: 9600, autoOpen: false });
+            opt.path = dev[1];
+            port = new serialport.SerialPort(opt);
         }
         else {
-            port = new serialport(servers.serial.device, { autoOpen: false });
+            port = new serialport(dev[1], opt);
         }
         port.on('error', err => {
             console.log(err);

@@ -353,6 +353,27 @@ The serial-LAN converter enables test printing to USB / Bluetooth printers that 
       - local port
     - `device`
       - the system path of the serial port
+      - `<system path>[:<options>]`
+
+    Serial port options  
+
+    ```json
+        "device": "COM9:9600,N,8,1"
+    ```
+    - `<options>`
+      - `<baud rate>,<parity>,<data bits>,<stop bits>[,<flow control>]`
+      - default: `9600,N,8,1,N`
+      - commas can be omitted
+    - `<baud rate>`
+      - `2400`, `4800`, `9600`, `19200`, `38400`, `57600`, `115200`
+    - `<parity>`
+      - `N`: none, `E`: even, `O`: odd
+    - `<data bits>`
+      - `8`, `7`
+    - `<stop bits>`
+      - `1`, `2`
+    - `<flow control>`
+      - `N`: none, `R`: rts/cts, `X`: xon/xoff
 
 1. Restart the server
 
