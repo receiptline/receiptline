@@ -8,6 +8,7 @@ Generate receipt printer commands and images.
 |[ReceiptLine](https://www.npmjs.com/package/receiptline)|SDK|Developers|Receipt description language processor|
 |[ReceiptIO](https://www.npmjs.com/package/receiptio)|Console App|Users|Print, Convert, Printer status|
 |[Designer](https://receiptline.github.io/designer/)|Tool|All|Edit, Preview|
+|[Receipt Markdown](https://marketplace.visualstudio.com/items?itemName=receiptline.receipt-markdown)|VS Code Extension|All|Edit, Preview|
 
 "ReceiptLine" is a coined word from "Receipt" and "Streamline".  
 Make it more efficient by making it simpler!  
