@@ -398,100 +398,96 @@ limitations under the License.
             </div>
         </div>
     </div>
-    <div>
-        <div id="qrdialog" class="dialog">
-            <div id="qrcancel"></div>
-            <div id="qrbox">
-                <label for="qrdata">Data</label>
-                <input id="qrdata" type="text" value="https://receiptline.github.io/designer/">
-                <br>
-                <label for="qrtype">Type</label>
-                <select id="qrtype">
-                    <option value="qrcode">QR Code</option>
-                </select>
-                <br>
-                <label for="qrcell">Size</label>
-                <input id="qrcell" type="range" value="3" min="3" max="8" step="1">
-                <br>
-                <label for="qrlevel">Error correction level</label>
-                <select id="qrlevel">
-                    <option value="L">L</option>
-                    <option value="M">M</option>
-                    <option value="Q">Q</option>
-                    <option value="H">H</option>
-                </select>
-                <div class="note">Quiet zones are required around the 2D code.</div>
-                <div class="note">QR Code is a registered trademark of DENSO WAVE INCORPORATED.</div>
-                <hr>
-                <div>
-                    <button id="qrok">OK</button>
-                </div>
+    <div id="qrdialog" class="dialog">
+        <div id="qrcancel"></div>
+        <div id="qrbox">
+            <label for="qrdata">Data</label>
+            <input id="qrdata" type="text" value="https://receiptline.github.io/designer/">
+            <br>
+            <label for="qrtype">Type</label>
+            <select id="qrtype">
+                <option value="qrcode">QR Code</option>
+            </select>
+            <br>
+            <label for="qrcell">Size</label>
+            <input id="qrcell" type="range" value="3" min="3" max="8" step="1">
+            <br>
+            <label for="qrlevel">Error correction level</label>
+            <select id="qrlevel">
+                <option value="L">L</option>
+                <option value="M">M</option>
+                <option value="Q">Q</option>
+                <option value="H">H</option>
+            </select>
+            <div class="note">Quiet zones are required around the 2D code.</div>
+            <div class="note">QR Code is a registered trademark of DENSO WAVE INCORPORATED.</div>
+            <hr>
+            <div>
+                <button id="qrok">OK</button>
             </div>
         </div>
     </div>
-    <div>
-        <div id="formatdialog" class="dialog">
-            <div id="formatcancel"></div>
-            <div id="formatbox">
-                <div class="note">
-                    <svg width="325px" height="100px" viewBox="0 0 325 100" xmlns="http://www.w3.org/2000/svg" version="1.1">
-                        <path stroke="none" fill="#fff" stroke-width="1" d="M0,0h325v100h-325z"/>
-                        <path stroke="none" fill="#ddd" stroke-width="1" d="M50,25h225v50h-225z"/>
-                        <path stroke="none" fill="#bbb" stroke-width="1" d="M50,25h25v50h-25zM150,25h25v50h-25zM250,25h25v50h-25z"/>
-                        <path stroke="#000" fill="none" stroke-width="1" d="M62.5,25.5v49M162.5,25.5v49M262.5,25.5v49"/>
-                        <path stroke="#000" fill="none" stroke-width="1" d="M.5,.5v99M324.5,.5v99M.5,49.5h49m-4,-4l4,4l-4,4M324.5,49.5h-49m4,-4l-4,4l4,4"/>
-                        <path stroke="#000" fill="none" stroke-width="1" d="M75.5,49.5m4,-4l-4,4l4,4m-4,-4h74m-4,-4l4,4l-4,4M175.5,49.5m4,-4l-4,4l4,4m-4,-4h74m-4,-4l4,4l-4,4"/>
-                        <text x="25" y="45" text-anchor="middle" fill="#000" font-size="10">align</text>
-                        <text x="62.5" y="20" text-anchor="middle" fill="#000" font-size="10">border</text>
-                        <text x="112.5" y="45" text-anchor="middle" fill="#000" font-size="10">width</text>
-                        <text x="162.5" y="20" text-anchor="middle" fill="#000" font-size="10">border</text>
-                        <text x="212.5" y="45" text-anchor="middle" fill="#000" font-size="10">width</text>
-                        <text x="262.5" y="20" text-anchor="middle" fill="#000" font-size="10">border</text>
-                        <text x="300" y="45" text-anchor="middle" fill="#000" font-size="10">align</text>
-                        <text x="112.5" y="70" text-anchor="middle" fill="#000" font-size="10">text</text>
-                        <text x="110" y="85" text-anchor="end" fill="#000" font-size="10">wrap</text>
-                        <path stroke="#000" fill="none" stroke-width="1" d="M112.5,82.5h33q3 0,3 3q0 3,-3 3h-30q-3 0,-3 3q0 3,3 3h33m-4,-4l4,4l-4,4"/>
-                        <text x="212.5" y="70" text-anchor="middle" fill="#000" font-size="10">text</text>
-                        <text x="220" y="85" text-anchor="end" fill="#000" font-size="10">nowrap</text>
-                        <path stroke="#000" fill="none" stroke-width="1" d="M222.5,82.5h26m-4,-4l4,4l-4,4M249.5,78.5v9"/>
-                    </svg>
-                </div>
-                <label for="formatwidth">Column width</label>
-                <input id="formatwidth" type="text" value="auto">
-                <div class="note">default: auto (* for all columns), example: *,5,10</div>
-                <label for="formatborder">Column border</label>
-                <select id="formatborder">
-                    <option value="">-</option>
-                    <option value="none">none</option>
-                    <option value="space">space</option>
-                    <option value="line">line</option>
-                    <option value="0">0 (none)</option>
-                    <option value="1">1 (space)</option>
-                    <option value="2">2</option>
-                </select>
-                <div class="note">default: space</div>
-                <label for="formattext">Text wrapping</label>
-                <select id="formattext">
-                    <option value="">-</option>
-                    <option value="wrap">wrap</option>
-                    <option value="nowrap">nowrap</option>
-                </select>
-                <div class="note">default: wrap</div>
-                <label for="formatalign">Line alignment</label>
-                <select id="formatalign">
-                    <option value="">-</option>
-                    <option value="left">left</option>
-                    <option value="center">center</option>
-                    <option value="right">right</option>
-                </select>
-                <div class="note">default: center</div>
-                <hr>
-                <div>
-                    <button id="formatok">OK</button>
-                </div>
+    <div id="formatdialog" class="dialog">
+        <div id="formatcancel"></div>
+        <div id="formatbox">
+            <div class="note">
+                <svg width="325px" height="100px" viewBox="0 0 325 100" xmlns="http://www.w3.org/2000/svg" version="1.1">
+                    <path stroke="none" fill="#fff" stroke-width="1" d="M0,0h325v100h-325z"/>
+                    <path stroke="none" fill="#ddd" stroke-width="1" d="M50,25h225v50h-225z"/>
+                    <path stroke="none" fill="#bbb" stroke-width="1" d="M50,25h25v50h-25zM150,25h25v50h-25zM250,25h25v50h-25z"/>
+                    <path stroke="#000" fill="none" stroke-width="1" d="M62.5,25.5v49M162.5,25.5v49M262.5,25.5v49"/>
+                    <path stroke="#000" fill="none" stroke-width="1" d="M.5,.5v99M324.5,.5v99M.5,49.5h49m-4,-4l4,4l-4,4M324.5,49.5h-49m4,-4l-4,4l4,4"/>
+                    <path stroke="#000" fill="none" stroke-width="1" d="M75.5,49.5m4,-4l-4,4l4,4m-4,-4h74m-4,-4l4,4l-4,4M175.5,49.5m4,-4l-4,4l4,4m-4,-4h74m-4,-4l4,4l-4,4"/>
+                    <text x="25" y="45" text-anchor="middle" fill="#000" font-size="10">align</text>
+                    <text x="62.5" y="20" text-anchor="middle" fill="#000" font-size="10">border</text>
+                    <text x="112.5" y="45" text-anchor="middle" fill="#000" font-size="10">width</text>
+                    <text x="162.5" y="20" text-anchor="middle" fill="#000" font-size="10">border</text>
+                    <text x="212.5" y="45" text-anchor="middle" fill="#000" font-size="10">width</text>
+                    <text x="262.5" y="20" text-anchor="middle" fill="#000" font-size="10">border</text>
+                    <text x="300" y="45" text-anchor="middle" fill="#000" font-size="10">align</text>
+                    <text x="112.5" y="70" text-anchor="middle" fill="#000" font-size="10">text</text>
+                    <text x="110" y="85" text-anchor="end" fill="#000" font-size="10">wrap</text>
+                    <path stroke="#000" fill="none" stroke-width="1" d="M112.5,82.5h33q3 0,3 3q0 3,-3 3h-30q-3 0,-3 3q0 3,3 3h33m-4,-4l4,4l-4,4"/>
+                    <text x="212.5" y="70" text-anchor="middle" fill="#000" font-size="10">text</text>
+                    <text x="220" y="85" text-anchor="end" fill="#000" font-size="10">nowrap</text>
+                    <path stroke="#000" fill="none" stroke-width="1" d="M222.5,82.5h26m-4,-4l4,4l-4,4M249.5,78.5v9"/>
+                </svg>
+            </div>
+            <label for="formatwidth">Column width</label>
+            <input id="formatwidth" type="text" value="auto">
+            <div class="note">default: auto (* for all columns), example: *,5,10</div>
+            <label for="formatborder">Column border</label>
+            <select id="formatborder">
+                <option value="">-</option>
+                <option value="none">none</option>
+                <option value="space">space</option>
+                <option value="line">line</option>
+                <option value="0">0 (none)</option>
+                <option value="1">1 (space)</option>
+                <option value="2">2</option>
+            </select>
+            <div class="note">default: space</div>
+            <label for="formattext">Text wrapping</label>
+            <select id="formattext">
+                <option value="">-</option>
+                <option value="wrap">wrap</option>
+                <option value="nowrap">nowrap</option>
+            </select>
+            <div class="note">default: wrap</div>
+            <label for="formatalign">Line alignment</label>
+            <select id="formatalign">
+                <option value="">-</option>
+                <option value="left">left</option>
+                <option value="center">center</option>
+                <option value="right">right</option>
+            </select>
+            <div class="note">default: center</div>
+            <hr>
+            <div>
+                <button id="formatok">OK</button>
             </div>
         </div>
     </div>
-    <footer>ReceiptLine Designer Version 1.16.0 © 2019 Open Foodservice System Consortium</footer>
+    <footer>ReceiptLine Designer Version 1.16.1 © 2019 Open Foodservice System Consortium</footer>
 </body>
 </html>
