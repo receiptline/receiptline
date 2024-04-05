@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.16.1] - 2024-04-05
+### Fixed
+- README
+
+### Removed
+- Unnecessary div elements in the designer
+
 ## [1.16.0] - 2023-11-15
 ### Added
 - Base64 validation for images
