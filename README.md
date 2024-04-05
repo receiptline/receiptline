@@ -5,10 +5,12 @@ Generate receipt printer commands and images.
 
 |Package|Type|For|Description|
 |---|---|---|---|
-|[ReceiptLine](https://www.npmjs.com/package/receiptline)|SDK|Developers|Receipt description language processor|
-|[ReceiptIO](https://www.npmjs.com/package/receiptio)|Console App|Users|Print, Convert, Printer status|
+|[ReceiptLine](https://www.npmjs.com/package/receiptline)|SDK for **Node.js**|Developers|Receipt description language processor|
+|[ReceiptIO](https://www.npmjs.com/package/receiptio)|Node.js Console App|Users|Print, Convert, Printer status|
 |[Designer](https://receiptline.github.io/designer/)|Tool|All|Edit, Preview|
 |[Receipt Markdown](https://marketplace.visualstudio.com/items?itemName=receiptline.receipt-markdown)|VS Code Extension|All|Edit, Preview|
+|[Receipt.js](https://github.com/receiptline/receiptjs)|SDK for **JavaScript**|Developers|Receipt description language processor<br>Print, Convert, Printer status|
+|[Receipt.js Designer](https://receiptline.github.io/receiptjs-designer/)|Tool|All|Edit, Preview, **Print**|
 
 "ReceiptLine" is a coined word from "Receipt" and "Streamline".  
 Make it more efficient by making it simpler!  
@@ -215,7 +217,7 @@ Customize the command object to output your own commands.
 ### lib/receiptline.js
 
 JavaScript ES2015(ES6) version. It works on both web browser and Node.js.  
-To output printer commands on a web browser, use Browserify.  
+To output printer commands on a web browser, use [Receipt.js](https://github.com/receiptline/receiptjs) or Browserify.  
 
 ```bash
 $ browserify -o receiptline-full.js receiptline.js
