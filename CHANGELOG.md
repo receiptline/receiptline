@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.16.2] - 2025-01-19
+### Fixed
+- For bug fixes in sharp v0.32.4
+
 ## [1.16.1] - 2024-04-05
 ### Fixed
 - README
