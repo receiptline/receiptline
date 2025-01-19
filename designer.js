@@ -259,9 +259,7 @@ const svgsharp = Object.assign({}, receiptline.commands.svg, {
             const q = w * this.textScale;
             const r = (p + q / 2) * this.charWidth / this.textScale;
             p += q;
-            const s = w * this.charWidth / 2;
-            const t = attr.replace('scale(1,2)', `translate(${s}),scale(1,2)`).replace('scale(2,1)', `translate(${-s}),scale(2,1)`);
-            return a + `<text x="${r}"${t}>${c.replace(/[ &<>]/g, r => ({' ': '&#xa0;', '&': '&amp;', '<': '&lt;', '>': '&gt;'}[r]))}</text>`;
+            return a + `<text x="${r}"${attr}>${c.replace(/[ &<>]/g, r => ({' ': '&#xa0;', '&': '&amp;', '<': '&lt;', '>': '&gt;'}[r]))}</text>`;
         }, '');
         this.textPosition += this.measureText(text, encoding) * this.textScale;
         return '';
