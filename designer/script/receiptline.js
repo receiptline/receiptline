@@ -1598,7 +1598,7 @@ limitations under the License.
                 r.hri = symbol.hri;
                 r.text = s;
                 // generate bars and spaces
-                const d = symbol.data.replace(/((?!^(\d{2})+$).)*/, '', '').split('').map(c => Number(c));
+                const d = s.split('').map(c => Number(c));
                 const q = symbol.quietZone ? 'a' : '0';
                 let m = q + this.i25.start;
                 let i = 0;
@@ -3409,14 +3409,12 @@ limitations under the License.
     //
     const _text = {
         left: 0,
-        width: 48,
         position: 0,
         scale: 1,
         buffer: [],
         // start printing:
         open: function (printer) {
             this.left = 0;
-            this.width = printer.cpl;
             this.position = 0;
             this.scale = 1;
             this.buffer = [];
@@ -3425,7 +3423,6 @@ limitations under the License.
         // set print area:
         area: function (left, width, right) {
             this.left = left;
-            this.width = width;
             return '';
         },
         // set absolute print position:

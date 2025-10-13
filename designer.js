@@ -312,7 +312,7 @@ const _escpos90 = {
         this.marginRight = printer.marginRight;
         this.buffer = '';
         const r = printer.resolution;
-        return '\x1b@\x1da\x00\x1bM' + (printer.encoding === 'tis620' ? 'a' : '0') + '\x1c(A' + $(2, 0, 48, 0) + '\x1b \x00\x1cS\x00\x00\x1c.\x1dP' + $(r, r) + '\x1bL\x1bT' + $(printer.upsideDown ? 3 : 1);
+        return '\x1b@\x1da\x00\x1bM' + (printer.encoding === 'tis620' ? 'a' : '0') + '\x1c(A' + $(2, 0, 48, 0) + '\x1b \x00\x1cS\x00\x00\x1c.\x1dP' + $(r, r) + '\x1bL\x1bT' + $(this.upsideDown ? 3 : 1);
     },
     // finish printing: ESC W xL xH yL yH dxL dxH dyL dyH FF GS r n
     close: function () {
@@ -546,7 +546,7 @@ const _escpos90 = {
                     break;
             }
             d = d.slice(0, 255);
-            r += '\x1dw' + $(symbol.width) + '\x1dh' + $(symbol.height) + '\x1dH' + $(symbol.hri ? 2 : 0) + '\x1dk' + $(b, d.length) + d;
+            r += d.length > 0 ? '\x1dw' + $(symbol.width) + '\x1dh' + $(symbol.height) + '\x1dH' + $(symbol.hri ? 2 : 0) + '\x1dk' + $(b, d.length) + d : '';
             this.buffer += r;
             this.position += h;
         }
@@ -579,7 +579,7 @@ const _sii90 = {
         this.marginRight = printer.marginRight;
         this.buffer = '';
         const r = printer.resolution;
-        return '\x1b@\x1da\x00\x1bM0\x1b \x00\x1cS\x00\x00\x1c.\x1dP' + $(r, r) + '\x1bL\x1bT' + $(printer.upsideDown ? 3 : 1);
+        return '\x1b@\x1da\x00\x1bM0\x1b \x00\x1cS\x00\x00\x1c.\x1dP' + $(r, r) + '\x1bL\x1bT' + $(this.upsideDown ? 3 : 1);
     },
     // finish printing: ESC W xL xH yL yH dxL dxH dyL dyH ESC $ nL nH FF DC2 q n
     close: function () {
@@ -685,7 +685,7 @@ const _sii90 = {
     barcode: function (symbol, encoding) {
         const bar = receiptline.barcode.generate(symbol);
         if ('length' in bar) {
-            const w = bar.length + symbol.width * (/^(upc|ean|jan)$/.test(symbol.type) ? (symbol.data.length < 9 ? 14 : 18) : 20);
+            const w = bar.length + symbol.width * (/^(upc|[ej]an)$/.test(symbol.type) ? (symbol.data.length < 9 ? 14 : 18) : 20);
             const l = symbol.height;
             const h = l + (symbol.hri ? this.charWidth * 2 + 4 : 0);
             const x = this.left * this.charWidth + this.alignment * (this.width * this.charWidth - w) / 2;
@@ -710,7 +710,7 @@ const _sii90 = {
                     break;
             }
             d = d.slice(0, 255);
-            r += '\x1dw' + $(symbol.width) + '\x1dh' + $(symbol.height) + '\x1dH' + $(symbol.hri ? 2 : 0) + '\x1dk' + $(b, d.length) + d;
+            r += d.length > 0 ? '\x1dw' + $(symbol.width) + '\x1dh' + $(symbol.height) + '\x1dH' + $(symbol.hri ? 2 : 0) + '\x1dk' + $(b, d.length) + d : '';
             this.buffer += r;
             this.position += h;
         }
@@ -757,7 +757,7 @@ const _citizen90 = {
                     break;
             }
             d = d.slice(0, 255);
-            r += '\x1dw' + $(symbol.width) + '\x1dh' + $(symbol.height) + '\x1dH' + $(symbol.hri ? 2 : 0) + '\x1dk' + $(b, d.length) + d;
+            r += d.length > 0 ? '\x1dw' + $(symbol.width) + '\x1dh' + $(symbol.height) + '\x1dH' + $(symbol.hri ? 2 : 0) + '\x1dk' + $(b, d.length) + d : '';
             this.buffer += r;
             this.position += h;
         }
@@ -798,7 +798,7 @@ const _star90 = {
         this.margin = printer.margin;
         this.marginRight = printer.marginRight;
         this.buffer = '';
-        return '\x1b@\x1b\x1ea\x00' + (printer.encoding === 'tis620' ? '\x1b\x1eR\x01': '') + '\x1b\x1eF\x00\x1b 0\x1bs00\x1b\x1dP0\x1b\x1dP2' + $(printer.upsideDown ? 3 : 1);
+        return '\x1b@\x1b\x1ea\x00' + (printer.encoding === 'tis620' ? '\x1b\x1eR\x01': '') + '\x1b\x1eF\x00\x1b 0\x1bs00\x1b\x1dP0\x1b\x1dP2' + $(this.upsideDown ? 3 : 1);
     },
     // finish printing: ESC GS P 3 xL xH yL yH dxL dxH dyL dyH ESC GS P 7 ESC GS ETX s n1 n2
     close: function () {
@@ -890,7 +890,7 @@ const _star90 = {
         const y = this.position + this.charWidth * 40 / 24;
         const d = Array(w).fill(0);
         const l = w + 7 >> 3;
-        let r = '\x1b0' + '\x1b\x1dP4' + $(y & 255, y >> 8 & 255);
+        let r = '\x1b0\x1b\x1dP4' + $(y & 255, y >> 8 & 255);
         let j = 0;
         for (let y = 0; y < h; y += 24) {
             r += '\x1b\x1dA' + $(x & 255, x >> 8 & 255) + '\x1bk' + $(l & 255, l >> 8 & 255);
@@ -926,7 +926,7 @@ const _star90 = {
             }
             r += '\x0a';
         }
-        r += (this.spacing ? '\x1bz1' : '\x1b0');
+        r += this.spacing ? '\x1bz1' : '\x1b0';
         this.buffer += r;
         this.position += h;
         return '';
@@ -968,7 +968,7 @@ const _star90 = {
             for (let k = 0; k < s.length; k += 24) {
                 r += '\x1b\x1dA' + $(x & 255, x >> 8 & 255) + '\x1bk' + $(l & 255, l >> 8 & 255) + s.slice(k, k + 24).join('') + '\x0a';
             }
-            r += (this.spacing ? '\x1bz1' : '\x1b0');
+            r += this.spacing ? '\x1bz1' : '\x1b0';
             this.buffer += r;
             this.position += h;
         }
