@@ -685,7 +685,7 @@ const _sii90 = {
     barcode: function (symbol, encoding) {
         const bar = receiptline.barcode.generate(symbol);
         if ('length' in bar) {
-            const w = bar.length + symbol.width * (/^(upc|ean|jan)$/.test(symbol.type) ? (data.length < 9 ? 14 : 18) : 20);
+            const w = bar.length + symbol.width * (/^(upc|ean|jan)$/.test(symbol.type) ? (symbol.data.length < 9 ? 14 : 18) : 20);
             const l = symbol.height;
             const h = l + (symbol.hri ? this.charWidth * 2 + 4 : 0);
             const x = this.left * this.charWidth + this.alignment * (this.width * this.charWidth - w) / 2;
