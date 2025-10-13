@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.16.3] - 2025-10-13
+### Fixed
+- File extension from .txt to .receipt
+- Bugs in UPC and EAN for SII Landscape
+- SVG coordinates to integer values
+- Redundant code
+
 ## [1.16.2] - 2025-01-19
 ### Fixed
 - For bug fixes in sharp v0.32.4
