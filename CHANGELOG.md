@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.16.4] - 2025-10-16
+### Fixed
+- Bugs with symbols in Star Landscape
+- Redundant code patterns
+
 ## [1.16.3] - 2025-10-13
 ### Fixed
 - File extension from .txt to .receipt
