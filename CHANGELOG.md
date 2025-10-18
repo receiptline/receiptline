@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.16.5] - 2025-10-18
+### Removed
+- Unnecessary adjustments in Star Landscape
+
 ## [1.16.4] - 2025-10-16
 ### Fixed
 - Bugs with symbols in Star Landscape
