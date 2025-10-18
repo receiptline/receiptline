@@ -986,9 +986,6 @@ const _star90 = {
                 case 'itf':
                     w += bar.widths.reduce((a, c) => (c === 8 ? a + 1 : a), 0);
                     break;
-                case 'code128':
-                    w += symbol.width * 11;
-                    break;
                 default:
                     break;
             }
