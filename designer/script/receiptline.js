@@ -22,14 +22,12 @@ limitations under the License.
     let PNG = undefined;
     let stream = undefined;
     let decoder = undefined;
-    let qrcode = undefined;
     // Node.js
     if (typeof require !== 'undefined') {
         iconv = require('iconv-lite');
         PNG = require('pngjs').PNG;
         stream = require('stream');
         decoder = require('string_decoder');
-        qrcode = require('./qrcode-generator/qrcode.js');
     }
 
     /**
@@ -39,8 +37,6 @@ limitations under the License.
      * @returns {string} printer command or SVG image
      */
     function transform(doc, printer) {
-        // web browser
-        qrcode = qrcode || window.qrcode;
         // initialize state variables
         const state = {
             wrap: true,
@@ -771,8 +767,777 @@ limitations under the License.
         return result;
     }
 
-    // shortcut
-    const $ = String.fromCharCode;
+    //
+    // Barcode generator
+    //
+    const barcode = (() => {
+        // CODE128 patterns:
+        const c128 = {
+            element: '212222,222122,222221,121223,121322,131222,122213,122312,132212,221213,221312,231212,112232,122132,122231,113222,123122,123221,223211,221132,221231,213212,223112,312131,311222,321122,321221,312212,322112,322211,212123,212321,232121,111323,131123,131321,112313,132113,132311,211313,231113,231311,112133,112331,132131,113123,113321,133121,313121,211331,231131,213113,213311,213131,311123,311321,331121,312113,312311,332111,314111,221411,431111,111224,111422,121124,121421,141122,141221,112214,112412,122114,122411,142112,142211,241211,221114,413111,241112,134111,111242,121142,121241,114212,124112,124211,411212,421112,421211,212141,214121,412121,111143,111341,131141,114113,114311,411113,411311,113141,114131,311141,411131,211412,211214,211232,2331112'.split(','),
+            starta: 103, startb: 104, startc: 105, atob: 100, atoc: 99, btoa: 101, btoc: 99, ctoa: 101, ctob: 100, shift: 98, stop: 106
+        };
+        // generate CODE128 data (minimize symbol width):
+        const code128 = symbol => {
+            const r = {};
+            let s = symbol.data.replace(/((?!^[\x00-\x7f]+$).)*/, '');
+            if (s.length > 0) {
+                // generate HRI
+                r.hri = symbol.hri;
+                r.text = s.replace(/[\x00- \x7f]/g, ' ');
+                // minimize symbol width
+                const d = [];
+                const p = s.search(/[^ -_]/);
+                if (/^\d{2}$/.test(s)) {
+                    d.push(c128.startc, Number(s));
+                }
+                else if (/^\d{4,}/.test(s)) {
+                    code128c(c128.startc, s, d);
+                }
+                else if (p >= 0 && s.charCodeAt(p) < 32) {
+                    code128a(c128.starta, s, d);
+                }
+                else if (s.length > 0) {
+                    code128b(c128.startb, s, d);
+                }
+                else {
+                    // end
+                }
+                // calculate check digit and append stop character
+                d.push(d.reduce((a, c, i) => a + c * i) % 103, c128.stop);
+                // generate bars and spaces
+                const q = symbol.quietZone ? 'a' : '0';
+                const m = d.reduce((a, c) => a + c128.element[c], q) + q;
+                r.widths = m.split('').map(c => parseInt(c, 16) * symbol.width);
+                r.length = symbol.width * (d.length * 11 + (symbol.quietZone ? 22 : 2));
+                r.height = symbol.height;
+            }
+            return r;
+        };
+        // process CODE128 code set A:
+        const code128a = (x, s, d) => {
+            if (x !== c128.shift) {
+                d.push(x);
+            }
+            s = s.replace(/^((?!\d{4,})[\x00-_])+/, m => (m.split('').forEach(c => d.push((c.charCodeAt(0) + 64) % 96)), ''));
+            s = s.replace(/^\d(?=(\d\d){2,}(\D|$))/, m => (d.push((m.charCodeAt(0) + 64) % 96), ''));
+            const t = s.slice(1);
+            const p = t.search(/[^ -_]/);
+            if (/^\d{4,}/.test(s)) {
+                code128c(c128.atoc, s, d);
+            }
+            else if (p >= 0 && t.charCodeAt(p) < 32) {
+                d.push(c128.shift, s.charCodeAt(0) - 32);
+                code128a(c128.shift, t, d);
+            }
+            else if (s.length > 0) {
+                code128b(c128.atob, s, d);
+            }
+            else {
+                // end
+            }
+        };
+        // process CODE128 code set B:
+        const code128b = (x, s, d) => {
+            if (x !== c128.shift) {
+                d.push(x);
+            }
+            s = s.replace(/^((?!\d{4,})[ -\x7f])+/, m => (m.split('').forEach(c => d.push(c.charCodeAt(0) - 32)), ''));
+            s = s.replace(/^\d(?=(\d\d){2,}(\D|$))/, m => (d.push(m.charCodeAt(0) - 32), ''));
+            const t = s.slice(1);
+            const p = t.search(/[^ -_]/);
+            if (/^\d{4,}/.test(s)) {
+                code128c(c128.btoc, s, d);
+            }
+            else if (p >= 0 && t.charCodeAt(p) > 95) {
+                d.push(c128.shift, s.charCodeAt(0) + 64);
+                code128b(c128.shift, t, d);
+            }
+            else if (s.length > 0) {
+                code128a(c128.btoa, s, d);
+            }
+            else {
+                // end
+            }
+        };
+        // process CODE128 code set C:
+        const code128c = (x, s, d) => {
+            if (x !== c128.shift) {
+                d.push(x);
+            }
+            s = s.replace(/^\d{4,}/g, m => m.replace(/\d{2}/g, c => (d.push(Number(c)), '')));
+            const p = s.search(/[^ -_]/);
+            if (p >= 0 && s.charCodeAt(p) < 32) {
+                code128a(c128.ctoa, s, d);
+            }
+            else if (s.length > 0) {
+                code128b(c128.ctob, s, d);
+            }
+            else {
+                // end
+            }
+        };
+        // CODE93 patterns:
+        const c93 = {
+            escape: 'cU,dA,dB,dC,dD,dE,dF,dG,dH,dI,dJ,dK,dL,dM,dN,dO,dP,dQ,dR,dS,dT,dU,dV,dW,dX,dY,dZ,cA,cB,cC,cD,cE, ,sA,sB,sC,$,%,sF,sG,sH,sI,sJ,+,sL,-,.,/,0,1,2,3,4,5,6,7,8,9,sZ,cF,cG,cH,cI,cJ,cV,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,cK,cL,cM,cN,cO,cW,pA,pB,pC,pD,pE,pF,pG,pH,pI,pJ,pK,pL,pM,pN,pO,pP,pQ,pR,pS,pT,pU,pV,pW,pX,pY,pZ,cP,cQ,cR,cS,cT'.split(','),
+            code: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-. $/+%dcsp'.split('').reduce((a, c, i) => (a[c] = i, a), {}),
+            element: '131112,111213,111312,111411,121113,121212,121311,111114,131211,141111,211113,211212,211311,221112,221211,231111,112113,112212,112311,122112,132111,111123,111222,111321,121122,131121,212112,212211,211122,211221,221121,222111,112122,112221,122121,123111,121131,311112,311211,321111,112131,113121,211131,121221,312111,311121,122211,111141,1111411'.split(','),
+            start: 47, stop: 48
+        };
+        // generate CODE93 data:
+        const code93 = symbol => {
+            const r = {};
+            let s = symbol.data.replace(/((?!^[\x00-\x7f]+$).)*/, '');
+            if (s.length > 0) {
+                // generate HRI
+                r.hri = symbol.hri;
+                r.text = s.replace(/[\x00- \x7f]/g, ' ');
+                // calculate check digit
+                const d = s.split('').reduce((a, c) => a + c93.escape[c.charCodeAt(0)], '').split('').map(c => c93.code[c]);
+                d.push(d.reduceRight((a, c, i) => a + c * ((d.length - 1 - i) % 20 + 1)) % 47);
+                d.push(d.reduceRight((a, c, i) => a + c * ((d.length - 1 - i) % 15 + 1)) % 47);
+                // append start character and stop character
+                d.unshift(c93.start);
+                d.push(c93.stop);
+                // generate bars and spaces
+                const q = symbol.quietZone ? 'a' : '0';
+                const m = d.reduce((a, c) => a + c93.element[c], q) + q;
+                r.widths = m.split('').map(c => parseInt(c, 16) * symbol.width);
+                r.length = symbol.width * (d.length * 9 + (symbol.quietZone ? 21 : 1));
+                r.height = symbol.height;
+            }
+            return r;
+        };
+        // Codabar(NW-7) patterns:
+        const nw7 = {
+            '0': '2222255', '1': '2222552', '2': '2225225', '3': '5522222', '4': '2252252',
+            '5': '5222252', '6': '2522225', '7': '2522522', '8': '2552222', '9': '5225222',
+            '-': '2225522', '$': '2255222', ':': '5222525', '/': '5252225', '.': '5252522',
+            '+': '2252525', 'A': '2255252', 'B': '2525225', 'C': '2225255', 'D': '2225552'
+        };
+        // generate Codabar(NW-7) data:
+        const codabar = symbol => {
+            const r = {};
+            let s = symbol.data.replace(/((?!^[A-D][0-9\-$:/.+]+[A-D]$).)*/i, '');
+            if (s.length > 0) {
+                // generate HRI
+                r.hri = symbol.hri;
+                r.text = s;
+                // generate bars and spaces
+                const q = symbol.quietZone ? 'a' : '0';
+                const m = s.toUpperCase().split('').reduce((a, c) => a + nw7[c] + '2', q).slice(0, -1) + q;
+                r.widths = m.split('').map(c => parseInt(c, 16) * symbol.width + 1 >> 1);
+                const w = [ 25, 39, 50, 3, 5, 6 ];
+                r.length = s.length * w[symbol.width - 2] - (s.match(/[\d\-$]/g) || []).length * w[symbol.width + 1] + symbol.width * (symbol.quietZone ? 19 : -1);
+                r.height = symbol.height;
+            }
+            return r;
+        };
+        // Interleaved 2 of 5 patterns:
+        const i25 = {
+            element: '22552,52225,25225,55222,22525,52522,25522,22255,52252,25252'.split(','),
+            start: '2222', stop: '522'
+        };
+        // generate Interleaved 2 of 5 data:
+        const itf = symbol => {
+            const r = {};
+            let s = symbol.data.replace(/((?!^(\d{2})+$).)*/, '');
+            if (s.length > 0) {
+                // generate HRI
+                r.hri = symbol.hri;
+                r.text = s;
+                // generate bars and spaces
+                const d = s.split('').map(c => Number(c));
+                const q = symbol.quietZone ? 'a' : '0';
+                let m = q + i25.start;
+                let i = 0;
+                while (i < d.length) {
+                    const b = i25.element[d[i++]];
+                    const s = i25.element[d[i++]];
+                    m += b.split('').reduce((a, c, j) => a + c + s[j], '');
+                }
+                m += i25.stop + q;
+                r.widths = m.split('').map(c => parseInt(c, 16) * symbol.width + 1 >> 1);
+                const w = [ 16, 25, 32, 17, 26, 34 ];
+                r.length = s.length * w[symbol.width - 2] + w[symbol.width + 1] + symbol.width * (symbol.quietZone ? 20 : 0);
+                r.height = symbol.height;
+            }
+            return r;
+        };
+        // CODE39 patterns:
+        const c39 = {
+            '0': '222552522', '1': '522522225', '2': '225522225', '3': '525522222', '4': '222552225',
+            '5': '522552222', '6': '225552222', '7': '222522525', '8': '522522522', '9': '225522522',
+            'A': '522225225', 'B': '225225225', 'C': '525225222', 'D': '222255225', 'E': '522255222',
+            'F': '225255222', 'G': '222225525', 'H': '522225522', 'I': '225225522', 'J': '222255522',
+            'K': '522222255', 'L': '225222255', 'M': '525222252', 'N': '222252255', 'O': '522252252',
+            'P': '225252252', 'Q': '222222555', 'R': '522222552', 'S': '225222552', 'T': '222252552',
+            'U': '552222225', 'V': '255222225', 'W': '555222222', 'X': '252252225', 'Y': '552252222',
+            'Z': '255252222', '-': '252222525', '.': '552222522', ' ': '255222522', '$': '252525222',
+            '/': '252522252', '+': '252225252', '%': '222525252', '*': '252252522'
+        };
+        // generate CODE39 data:
+        const code39 = symbol => {
+            const r = {};
+            let s = symbol.data.replace(/((?!^\*?[0-9A-Z\-. $/+%]+\*?$).)*/, '');
+            if (s.length > 0) {
+                // append start character and stop character
+                s = s.replace(/^\*?([^*]+)\*?$/, '*$1*');
+                // generate HRI
+                r.hri = symbol.hri;
+                r.text = s;
+                // generate bars and spaces
+                const q = symbol.quietZone ? 'a' : '0';
+                const m = s.split('').reduce((a, c) => a + c39[c] + '2', q).slice(0, -1) + q;
+                r.widths = m.split('').map(c => parseInt(c, 16) * symbol.width + 1 >> 1);
+                const w = [ 29, 45, 58 ];
+                r.length = s.length * w[symbol.width - 2] + symbol.width * (symbol.quietZone ? 19 : -1);
+                r.height = symbol.height;
+            }
+            return r;
+        };
+        // UPC/EAN/JAN patterns:
+        const ean = {
+            a: '3211,2221,2122,1411,1132,1231,1114,1312,1213,3112'.split(','),
+            b: '1123,1222,2212,1141,2311,1321,4111,2131,3121,2113'.split(','),
+            c: '3211,2221,2122,1411,1132,1231,1114,1312,1213,3112'.split(','),
+            g: '111,11111,111111,11,112'.split(','),
+            p: 'aaaaaa,aababb,aabbab,aabbba,abaabb,abbaab,abbbaa,ababab,ababba,abbaba'.split(','),
+            e: 'bbbaaa,bbabaa,bbaaba,bbaaab,babbaa,baabba,baaabb,bababa,babaab,baabab'.split(',')
+        };
+        // generate UPC-A data:
+        const upca = symbol => {
+            const s = Object.assign({}, symbol);
+            s.data = '0' + symbol.data;
+            const r = ean13(s);
+            if ('text' in r) {
+                r.text = r.text.slice(1);
+            }
+            return r;
+        };
+        // generate UPC-E data:
+        const upce = symbol => {
+            const r = {};
+            const d = symbol.data.replace(/((?!^0\d{6,7}$).)*/, '').split('').map(c => Number(c));
+            if (d.length > 0) {
+                // calculate check digit
+                d[7] = 0;
+                d[7] = (10 - upcetoa(d).reduce((a, c, i) => a + c * (3 - (i % 2) * 2), 0) % 10) % 10;
+                // generate HRI
+                r.hri = symbol.hri;
+                r.text = d.join('');
+                // generate bars and spaces
+                const q = symbol.quietZone ? '7' : '0';
+                let m = q + ean.g[0];
+                for (let i = 1; i < 7; i++) m += ean[ean.e[d[7]][i - 1]][d[i]];
+                m += ean.g[2] + q;
+                r.widths = m.split('').map(c => parseInt(c, 16) * symbol.width);
+                r.length = symbol.width * (symbol.quietZone ? 65 : 51);
+                r.height = symbol.height;
+            }
+            return r;
+        };
+        // convert UPC-E to UPC-A:
+        const upcetoa = e => {
+            const a = e.slice(0, 3);
+            switch (e[6]) {
+                case 0: case 1: case 2:
+                    a.push(e[6], 0, 0, 0, 0, e[3], e[4], e[5]);
+                    break;
+                case 3:
+                    a.push(e[3], 0, 0, 0, 0, 0, e[4], e[5]);
+                    break;
+                case 4:
+                    a.push(e[3], e[4], 0, 0, 0, 0, 0, e[5]);
+                    break;
+                default:
+                    a.push(e[3], e[4], e[5], 0, 0, 0, 0, e[6]);
+                    break;
+            }
+            a.push(e[7]);
+            return a;
+        };
+        // generate EAN-13(JAN-13) data:
+        const ean13 = symbol => {
+            const r = {};
+            const d = symbol.data.replace(/((?!^\d{12,13}$).)*/, '').split('').map(c => Number(c));
+            if (d.length > 0) {
+                // calculate check digit
+                d[12] = 0;
+                d[12] = (10 - d.reduce((a, c, i) => a + c * ((i % 2) * 2 + 1)) % 10) % 10;
+                // generate HRI
+                r.hri = symbol.hri;
+                r.text = d.join('');
+                // generate bars and spaces
+                let m = (symbol.quietZone ? 'b' : '0') + ean.g[0];
+                for (let i = 1; i < 7; i++) m += ean[ean.p[d[0]][i - 1]][d[i]];
+                m += ean.g[1];
+                for (let i = 7; i < 13; i++) m += ean.c[d[i]];
+                m += ean.g[0] + (symbol.quietZone ? '7' : '0');
+                r.widths = m.split('').map(c => parseInt(c, 16) * symbol.width);
+                r.length = symbol.width * (symbol.quietZone ? 113 : 95);
+                r.height = symbol.height;
+            }
+            return r;
+        };
+        // generate EAN-8(JAN-8) data:
+        const ean8 = symbol => {
+            const r = {};
+            const d = symbol.data.replace(/((?!^\d{7,8}$).)*/, '').split('').map(c => Number(c));
+            if (d.length > 0) {
+                // calculate check digit
+                d[7] = 0;
+                d[7] = (10 - d.reduce((a, c, i) => a + c * (3 - (i % 2) * 2), 0) % 10) % 10;
+                // generate HRI
+                r.hri = symbol.hri;
+                r.text = d.join('');
+                // generate bars and spaces
+                const q = symbol.quietZone ? '7' : '0';
+                let m = q + ean.g[0];
+                for (let i = 0; i < 4; i++) m += ean.a[d[i]];
+                m += ean.g[1];
+                for (let i = 4; i < 8; i++) m += ean.c[d[i]];
+                m += ean.g[0] + q;
+                r.widths = m.split('').map(c => parseInt(c, 16) * symbol.width);
+                r.length = symbol.width * (symbol.quietZone ? 81 : 67);
+                r.height = symbol.height;
+            }
+            return r;
+        };
+        return {
+            /**
+             * Generate barcode.
+             * @param {object} symbol barcode information (data, type, width, height, hri, quietZone)
+             * @returns {object} barcode form
+             */
+            generate(symbol) {
+                let r = {};
+                switch (symbol.type) {
+                    case 'upc':
+                        r = symbol.data.length < 9 ? upce(symbol) : upca(symbol);
+                        break;
+                    case 'ean':
+                    case 'jan':
+                        r = symbol.data.length < 9 ? ean8(symbol) : ean13(symbol);
+                        break;
+                    case 'code39':
+                        r = code39(symbol);
+                        break;
+                    case 'itf':
+                        r = itf(symbol);
+                        break;
+                    case 'codabar':
+                    case 'nw7':
+                        r = codabar(symbol);
+                        break;
+                    case 'code93':
+                        r = code93(symbol);
+                        break;
+                    case 'code128':
+                        r = code128(symbol);
+                        break;
+                    default:
+                        break;
+                }
+                return r;
+            }
+        };
+    })();
+
+    //
+    // QR Code generator
+    //
+    const qrcode = (() => {
+        // Reed-Solomon codes
+        const rs = (() => {
+            const gfexp = new Uint8Array(512);
+            const gflog = new Uint8Array(256);
+            let p = 1;
+            for (let i = 0; i < 255; i++) {
+                gfexp[i] = p;
+                gflog[p] = i;
+                p <<= 1;
+                if (p & 0x100) {
+                    p ^= 0x11d;
+                }
+            }
+            for (let i = 255; i < 512; i++) {
+                gfexp[i] = gfexp[i - 255];
+            }
+            const gfmul = (a, b) => a === 0 || b === 0 ? 0 : gfexp[gflog[a] + gflog[b]];
+            const mulpoly = (p1, p2) => {
+                const r = new Uint8Array(p1.length + p2.length - 1);
+                for (let i = 0; i < p1.length; i++) {
+                    for (let j = 0; j < p2.length; j++) {
+                        r[i + j] ^= gfmul(p1[i], p2[j]);
+                    }
+                }
+                return r;
+            };
+            const genpoly = eclen => {
+                let gx = [1];
+                for (let i = 0; i < eclen; i++) {
+                    gx = mulpoly(gx, [1, gfexp[i]]);
+                }
+                return gx;
+            };
+            return {
+                encode: (data, eclen) => {
+                    const gx = genpoly(eclen);
+                    const mx = new Uint8Array(data.length + eclen);
+                    mx.set(data);
+                    for (let i = 0; i < data.length; i++) {
+                        const m = mx[i];
+                        if (m !== 0) {
+                            for (let j = 0; j < gx.length; j++) {
+                                mx[i + j] ^= gfmul(m, gx[j]);
+                            }
+                        }
+                    }
+                    mx.set(data);
+                    return mx;
+                }
+            };
+        })();
+        // encoding
+        const rstable = {
+            l: [
+                , [1, 0, 26, 19], [1, 0, 44, 34], [1, 0, 70, 55], [1, 0, 100, 80],
+                [1, 0, 134, 108], [2, 0, 86, 68], [2, 0, 98, 78], [2, 0, 121, 97],
+                [2, 0, 146, 116], [2, 2, 86, 68], [4, 0, 101, 81], [2, 2, 116, 92],
+                [4, 0, 133, 107], [3, 1, 145, 115], [5, 1, 109, 87], [5, 1, 122, 98],
+                [1, 5, 135, 107], [5, 1, 150, 120], [3, 4, 141, 113], [3, 5, 135, 107],
+                [4, 4, 144, 116], [2, 7, 139, 111], [4, 5, 151, 121], [6, 4, 147, 117],
+                [8, 4, 132, 106], [10, 2, 142, 114], [8, 4, 152, 122], [3, 10, 147, 117],
+                [7, 7, 146, 116], [5, 10, 145, 115], [13, 3, 145, 115], [17, 0, 145, 115],
+                [17, 1, 145, 115], [13, 6, 145, 115], [12, 7, 151, 121], [6, 14, 151, 121],
+                [17, 4, 152, 122], [4, 18, 152, 122], [20, 4, 147, 117], [19, 6, 148, 118]
+            ],
+            m: [
+                , [1, 0, 26, 16], [1, 0, 44, 28], [1, 0, 70, 44], [2, 0, 50, 32],
+                [2, 0, 67, 43], [4, 0, 43, 27], [4, 0, 49, 31], [2, 2, 60, 38],
+                [3, 2, 58, 36], [4, 1, 69, 43], [1, 4, 80, 50], [6, 2, 58, 36],
+                [8, 1, 59, 37], [4, 5, 64, 40], [5, 5, 65, 41], [7, 3, 73, 45],
+                [10, 1, 74, 46], [9, 4, 69, 43], [3, 11, 70, 44], [3, 13, 67, 41],
+                [17, 0, 68, 42], [17, 0, 74, 46], [4, 14, 75, 47], [6, 14, 73, 45],
+                [8, 13, 75, 47], [19, 4, 74, 46], [22, 3, 73, 45], [3, 23, 73, 45],
+                [21, 7, 73, 45], [19, 10, 75, 47], [2, 29, 74, 46], [10, 23, 74, 46],
+                [14, 21, 74, 46], [14, 23, 74, 46], [12, 26, 75, 47], [6, 34, 75, 47],
+                [29, 14, 74, 46], [13, 32, 74, 46], [40, 7, 75, 47], [18, 31, 75, 47]
+            ],
+            q: [
+                , [1, 0, 26, 13], [1, 0, 44, 22], [2, 0, 35, 17], [2, 0, 50, 24],
+                [2, 2, 33, 15], [4, 0, 43, 19], [2, 4, 32, 14], [4, 2, 40, 18],
+                [4, 4, 36, 16], [6, 2, 43, 19], [4, 4, 50, 22], [4, 6, 46, 20],
+                [8, 4, 44, 20], [11, 5, 36, 16], [5, 7, 54, 24], [15, 2, 43, 19],
+                [1, 15, 50, 22], [17, 1, 50, 22], [17, 4, 47, 21], [15, 5, 54, 24],
+                [17, 6, 50, 22], [7, 16, 54, 24], [11, 14, 54, 24], [11, 16, 54, 24],
+                [7, 22, 54, 24], [28, 6, 50, 22], [8, 26, 53, 23], [4, 31, 54, 24],
+                [1, 37, 53, 23], [15, 25, 54, 24], [42, 1, 54, 24], [10, 35, 54, 24],
+                [29, 19, 54, 24], [44, 7, 54, 24], [39, 14, 54, 24], [46, 10, 54, 24],
+                [49, 10, 54, 24], [48, 14, 54, 24], [43, 22, 54, 24], [34, 34, 54, 24]
+            ],
+            h: [
+                , [1, 0, 26, 9], [1, 0, 44, 16], [2, 0, 35, 13], [4, 0, 25, 9],
+                [2, 2, 33, 11], [4, 0, 43, 15], [4, 1, 39, 13], [4, 2, 40, 14],
+                [4, 4, 36, 12], [6, 2, 43, 15], [3, 8, 36, 12], [7, 4, 42, 14],
+                [12, 4, 33, 11], [11, 5, 36, 12], [11, 7, 36, 12], [3, 13, 45, 15],
+                [2, 17, 42, 14], [2, 19, 42, 14], [9, 16, 39, 13], [15, 10, 43, 15],
+                [19, 6, 46, 16], [34, 0, 37, 13], [16, 14, 45, 15], [30, 2, 46, 16],
+                [22, 13, 45, 15], [33, 4, 46, 16], [12, 28, 45, 15], [11, 31, 45, 15],
+                [19, 26, 45, 15], [23, 25, 45, 15], [23, 28, 45, 15], [19, 35, 45, 15],
+                [11, 46, 45, 15], [59, 1, 46, 16], [22, 41, 45, 15], [2, 64, 45, 15],
+                [24, 46, 45, 15], [42, 32, 45, 15], [10, 67, 45, 15], [20, 61, 45, 15]
+            ]
+        };
+        const getCapacity = (level, version) => {
+            const t = rstable[level][version];
+            return t[0] * t[3] + t[1] * (t[3] + 1) - (version < 10 ? 2 : 3);
+        };
+        const selectVersion = (data, level) => {
+            const t = data.length;
+            let l = 1, r = 40;
+            while (l <= r) {
+                const m = Math.floor((l + r) / 2);
+                const c = getCapacity(level, m);
+                if (c === t) {
+                    return m;
+                }
+                else if (c < t) {
+                    l = m + 1;
+                }
+                else {
+                    r = m - 1;
+                }
+            }
+            return l;
+        };
+        const createData = (utf8, level, version) => {
+            const mode = 4;
+            const len = utf8.length;
+            const d = version < 10 ? [mode, len, ...utf8] : [mode, len >> 8, len, ...utf8];
+            const data = new Uint8Array(getCapacity(level, version) + d.length - len);
+            data.set(d.map((c, i) => c << 4 | (i < d.length - 1 ? d[i + 1] : 0) >> 4));
+            for (let i = d.length; i < data.length; i++) {
+                data[i] = (i - d.length) % 2 ? 0x11 : 0xec;
+            }
+            const block = [];
+            const t = rstable[level][version];
+            const x = t[0], n = t[2], k = t[3];
+            let a = 0;
+            for (let i = 0; i < 2; i++) {
+                const m = k + i;
+                for (let j = 0; j < t[i]; j++) {
+                    block.push(rs.encode(data.slice(a, a + m), n - k));
+                    a += m;
+                }
+            }
+            const msg = [];
+            for (let i = 0; i < n; i++) {
+                if (i === k) {
+                    for (let j = x; j < block.length; j++) {
+                        msg.push(block[j][k]);
+                    }
+                }
+                for (let j = 0; j < block.length; j++) {
+                    msg.push(block[j][i < k || j < x ? i : i + 1]);
+                }
+            }
+            return new Uint8Array(msg);
+        };
+        // finder patterns
+        const finder = [
+            '11111110', '10000010', '10111010', '10111010',
+            '10111010', '10000010', '11111110', '00000000'
+        ];
+        const drawFinder = matrix => {
+            const size = matrix.length;
+            for (let i = 0; i < 8; i++) {
+                matrix[i].set(finder[i]);
+                matrix[i].set(finder[i].split('').reverse(), size - 8);
+                matrix[size - 1 - i].set(finder[i]);
+            }
+        };
+        // alignment patterns
+        const align = ['11111', '10001', '10101', '10001', '11111'];
+        const alignpos = [
+            , [], [6, 18], [6, 22],
+            [6, 26], [6, 30], [6, 34],
+            [6, 22, 38], [6, 24, 42], [6, 26, 46],
+            [6, 28, 50], [6, 30, 54], [6, 32, 58], [6, 34, 62],
+            [6, 26, 46, 66], [6, 26, 48, 70],[6, 26, 50, 74],
+            [6, 30, 54, 78], [6, 30, 56, 82], [6, 30, 58, 86], [6, 34, 62, 90],
+            [6, 28, 50, 72, 94], [6, 26, 50, 74, 98],
+            [6, 30, 54, 78, 102], [6, 28, 54, 80, 106],
+            [6, 32, 58, 84, 110], [6, 30, 58, 86, 114], [6, 34, 62, 90, 118],
+            [6, 26, 50, 74, 98, 122], [6, 30, 54, 78, 102, 126],
+            [6, 26, 52, 78, 104, 130], [6, 30, 56, 82, 108, 134],
+            [6, 34, 60, 86, 112, 138], [6, 30, 58, 86, 114, 142], [6, 34, 62, 90, 118, 146],
+            [6, 30, 54, 78, 102, 126, 150], [6, 24, 50, 76, 102, 128, 154],
+            [6, 28, 54, 80, 106, 132, 158], [6, 32, 58, 84, 110, 136, 162],
+            [6, 26, 54, 82, 110, 138, 166], [6, 30, 58, 86, 114, 142, 170]
+        ];
+        const drawAlign = (matrix, version) => {
+            const p = alignpos[version];
+            for (let r = 0; r < p.length; r++) {
+                for (let c = 0; c < p.length; c++) {
+                    const row = p[r];
+                    const col = p[c];
+                    if (matrix[row][col] === 255) {
+                        for (let i = 0; i < 5; i++) {
+                            matrix[row - 2 + i].set(align[i], col - 2);
+                        }
+                    }
+                }
+            }
+        };
+        // timing patterns
+        const drawTiming = matrix => {
+            const size = matrix.length;
+            for (let i = 8; i < size - 8; i++) {
+                matrix[i][6] = matrix[6][i] = 1 - i % 2;
+            }
+        };
+        // format information
+        const bch15m = [
+            0x5412, 0x5125, 0x5e7c, 0x5b4b, 0x45f9, 0x40ce, 0x4f97, 0x4aa0,
+            0x77c4, 0x72f3, 0x7daa, 0x789d, 0x662f, 0x6318, 0x6c41, 0x6976,
+            0x1689, 0x13be, 0x1ce7, 0x19d0, 0x0762, 0x0255, 0x0d0c, 0x083b,
+            0x355f, 0x3068, 0x3f31, 0x3a06, 0x24b4, 0x2183, 0x2eda, 0x2bed
+        ];
+        const eclevel = {
+            l: 1, m: 0, q: 3, h: 2
+        };
+        const drawFormat = (matrix, level, mask) => {
+            const size = matrix.length;
+            const d = bch15m[eclevel[level] << 3 | mask];
+            let r = 0;
+            let c = size - 1;
+            for (let i = 0; i < 15; i++) {
+                matrix[r][8] = matrix[8][c] = d >> i & 1;
+                r += i === 5 ? 2 : i === 7 ? size - 15 : 1;
+                c -= i === 7 ? size - 15 : i === 8 ? 2 : 1;
+            }
+            matrix[size - 8][8] = 1;
+        };
+        // version information
+        const bch18 = [
+            ,,,,,,,  0x07c94, 0x085bc, 0x09a99, 0x0a4d3,
+            0x0bbf6, 0x0c762, 0x0d847, 0x0e60d, 0x0f928,
+            0x10b78, 0x1145d, 0x12a17, 0x13532, 0x149a6,
+            0x15683, 0x168c9, 0x177ec, 0x18ec4, 0x191e1,
+            0x1afab, 0x1b08e, 0x1cc1a, 0x1d33f, 0x1ed75,
+            0x1f250, 0x209d5, 0x216f0, 0x228ba, 0x2379f,
+            0x24b0b, 0x2542e, 0x26a64, 0x27541, 0x28c69
+        ];
+        const drawVersion = (matrix, version) => {
+            if (version >= 7) {
+                const size = matrix.length;
+                let i = 0;
+                for (let r = 0; r < 6; r++) {
+                    for (let c = size - 11; c < size - 8; c++) {
+                        matrix[r][c] = matrix[c][r] = bch18[version] >> i++ & 1;
+                    }
+                }
+            }
+        };
+        // data and error correction codewords
+        const maskfn = [
+            (i, j) => (i + j) % 2 === 0 ? 1 : 0,
+            (i, j) => i % 2 === 0 ? 1 : 0,
+            (i, j) => j % 3 === 0 ? 1 : 0,
+            (i, j) => (i + j) % 3 === 0 ? 1 : 0,
+            (i, j) => (Math.floor(i / 2) + Math.floor(j / 3)) % 2 === 0 ? 1 : 0,
+            (i, j) => (i * j) % 2 + (i * j) % 3 === 0 ? 1 : 0,
+            (i, j) => ((i * j) % 2 + (i * j) % 3) % 2 === 0 ? 1 : 0,
+            (i, j) => ((i * j) % 3 + (i + j) % 2) % 2 === 0 ? 1 : 0
+        ];
+        function* bitgen(cword) {
+            for (let w of cword) {
+                for (let i = 7; i >= 0; i--) {
+                    yield w >> i & 1;
+                }
+            }
+        }
+        const drawData = (matrix, data, mask) => {
+            const size = matrix.length;
+            const f = maskfn[mask];
+            const g = bitgen(data);
+            let a = -1;
+            let c = size - 1;
+            let r = size - 1;
+            while (c > 0) {
+                for (let i = c; i > c - 2; i--) {
+                    if (matrix[r][i] === 255) {
+                        const { value, done } = g.next();
+                        matrix[r][i] = (done ? 0 : value) ^ f(r, i);
+                    }
+                }
+                r += a;
+                if (r < 0 || r > size - 1) {
+                    a = -a;
+                    c -= c === 8 ? 3 : 2;
+                    r += a;
+                }
+            }
+        };
+        // matrix
+        const createMatrix = (data, level, version, mask) => {
+            const size = version * 4 + 17;
+            const matrix = Array.from({ length: size }, () => new Uint8Array(size).fill(255));
+            drawFinder(matrix);
+            drawAlign(matrix, version);
+            drawTiming(matrix);
+            drawFormat(matrix, level, mask);
+            drawVersion(matrix, version);
+            drawData(matrix, data, mask);
+            return matrix;
+        };
+        // masking
+        const evaluateMask = m => {
+            const size = m.length;
+            let score = 0;
+            const p = [1, 1, 3, 1, 1];
+            for (let r = 0; r < size; r++) {
+                const h = [], v = [];
+                let a = 0, b = 0, x = 0; y = 0;
+                for (let c = 0; c < size; c++) {
+                    if (x !== m[r][c]) {
+                        h.push(a);
+                        x = 1 - x;
+                        a = 1;
+                    }
+                    else {
+                        a++;
+                    }
+                    if (y !== m[c][r]) {
+                        v.push(b);
+                        y = 1 - y;
+                        b = 1;
+                    }
+                    else {
+                        b++;
+                    }
+                }
+                h.push(a);
+                if (x) {
+                    h.push(0);
+                }
+                v.push(b);
+                if (y) {
+                    v.push(0);
+                }
+                // rule 1
+                score += h.reduce((s, c) => s + (c >= 5 ? c - 2 : 0), 0);
+                score += v.reduce((s, c) => s + (c >= 5 ? c - 2 : 0), 0);
+                // rule 3
+                for (let i = 1; i < h.length - 5; i += 2) {
+                    if (p.every((c, j) => c === h[i + j]) && (i === 1 || h[i - 1] >= 4 || i === h.length - 6 || h[i + 5] >= 4)) {
+                        score += 40;
+                    }
+                }
+                for (let i = 1; i < v.length - 5; i += 2) {
+                    if (p.every((c, j) => c === v[i + j]) && (i === 1 || v[i - 1] >= 4 || i === v.length - 6 || v[i + 5] >= 4)) {
+                        score += 40;
+                    }
+                }
+            }
+            // rule 2
+            for (let r = 1; r < size; r++) {
+                for (let c = 1; c < size; c++) {
+                    const z = m[r][c];
+                    if (z === m[r][c - 1] && z === m[r - 1][c] && z === m[r - 1][c - 1]) {
+                        score += 3;
+                    }
+                }
+            }
+            // rule 4
+            const d = m.reduce((a, r) => a + r.reduce((b, c) => b + c, 0), 0);
+            score += Math.ceil(Math.abs(d * 100 / (size * size) - 50) / 5) * 10 - 10;
+            return score;
+        };
+        const selectMask = (data, level, version) => {
+            const score = new Array(8);
+            for (let i = 0; i < 8; i++) {
+                score[i] = evaluateMask(createMatrix(data, level, version, i));
+            }
+            return score.reduce((a, v, i) => v < score[a] ? i : a, 0);
+        };
+        return {
+            /**
+             * Generate QR Code.
+             * @param {object} symbol QR Code information (data, type, cell, level)
+             * @returns {Uint8Array[]} QR Code form
+             */
+            generate: symbol => {
+                const level = symbol.level;
+                const utf8 = new TextEncoder().encode(symbol.data).slice(0, getCapacity(level, 40));
+                const version = selectVersion(utf8, level);
+                const data = createData(utf8, level, version);
+                const mask = selectMask(data, level, version);
+                return createMatrix(data, level, version, mask);
+            }
+        };
+    })();
 
     //
     // Command base object
@@ -1341,15 +2106,23 @@ limitations under the License.
         },
         // print QR Code:
         qrcode: function (symbol, encoding) {
-            if (typeof qrcode !== 'undefined' && symbol.data.length > 0) {
-                const qr = qrcode(0, symbol.level.toUpperCase());
-                qr.addData(symbol.data);
-                qr.make();
-                qr.createSvgTag(symbol.cell, 0).replace(/width="(\d+)px".*height="(\d+)px".*(<path.*?>)/, (match, w, h, path) => {
-                    const margin = Math.floor(this.lineMargin * this.charWidth + (this.lineWidth * this.charWidth - Number(w)) * this.lineAlign / 2);
-                    this.svgContent += `<g transform="translate(${margin},${this.svgHeight})">${path}</g>`;
-                    this.svgHeight += Number(h);
-                });
+            if (symbol.data.length > 0) {
+                const matrix = qrcode.generate(symbol);
+                const w = matrix.length;
+                const h = w;
+                const c = symbol.cell;
+                let path = '<path d="';
+                for (let y = 0; y < h; y++) {
+                    for (let x = 0; x < w; x++) {
+                        if (matrix[y][x] == 1) {
+                            path += `M${x * c},${y * c}l${c},0 0,${c} -${c},0 0,-${c}z `;
+                        }
+                    }
+                }
+                path += '" stroke="transparent" fill="black"/>';
+                const margin = Math.floor(this.lineMargin * this.charWidth + (this.lineWidth * this.charWidth - w * c) * this.lineAlign / 2);
+                this.svgContent += `<g transform="translate(${margin},${this.svgHeight})">${path}</g>`;
+                this.svgHeight += h * c;
             }
             return '';
         },
@@ -1384,378 +2157,112 @@ limitations under the License.
     };
 
     //
-    // Barcode Generator
+    // Plain Text
     //
-    const barcode = {
-        /**
-         * Generate barcode.
-         * @param {object} symbol barcode information (data, type, width, height, hri, quietZone)
-         * @returns {object} barcode form
-         */
-        generate: function (symbol) {
-            let r = {};
-            switch (symbol.type) {
-                case 'upc':
-                    r = symbol.data.length < 9 ? this.upce(symbol) : this.upca(symbol);
-                    break;
-                case 'ean':
-                case 'jan':
-                    r = symbol.data.length < 9 ? this.ean8(symbol) : this.ean13(symbol);
-                    break;
-                case 'code39':
-                    r = this.code39(symbol);
-                    break;
-                case 'itf':
-                    r = this.itf(symbol);
-                    break;
-                case 'codabar':
-                case 'nw7':
-                    r = this.codabar(symbol);
-                    break;
-                case 'code93':
-                    r = this.code93(symbol);
-                    break;
-                case 'code128':
-                    r = this.code128(symbol);
-                    break;
-                default:
-                    break;
-            }
-            return r;
+    const _text = {
+        left: 0,
+        position: 0,
+        scale: 1,
+        buffer: [],
+        // start printing:
+        open: function (printer) {
+            this.left = 0;
+            this.position = 0;
+            this.scale = 1;
+            this.buffer = [];
+            return '';
         },
-        // CODE128 patterns:
-        c128: {
-            element: '212222,222122,222221,121223,121322,131222,122213,122312,132212,221213,221312,231212,112232,122132,122231,113222,123122,123221,223211,221132,221231,213212,223112,312131,311222,321122,321221,312212,322112,322211,212123,212321,232121,111323,131123,131321,112313,132113,132311,211313,231113,231311,112133,112331,132131,113123,113321,133121,313121,211331,231131,213113,213311,213131,311123,311321,331121,312113,312311,332111,314111,221411,431111,111224,111422,121124,121421,141122,141221,112214,112412,122114,122411,142112,142211,241211,221114,413111,241112,134111,111242,121142,121241,114212,124112,124211,411212,421112,421211,212141,214121,412121,111143,111341,131141,114113,114311,411113,411311,113141,114131,311141,411131,211412,211214,211232,2331112'.split(','),
-            starta: 103, startb: 104, startc: 105, atob: 100, atoc: 99, btoa: 101, btoc: 99, ctoa: 101, ctob: 100, shift: 98, stop: 106
+        // set print area:
+        area: function (left, width, right) {
+            this.left = left;
+            return '';
         },
-        // generate CODE128 data (minimize symbol width):
-        code128: function (symbol) {
-            const r = {};
-            let s = symbol.data.replace(/((?!^[\x00-\x7f]+$).)*/, '');
-            if (s.length > 0) {
-                // generate HRI
-                r.hri = symbol.hri;
-                r.text = s.replace(/[\x00- \x7f]/g, ' ');
-                // minimize symbol width
-                const d = [];
-                const p = s.search(/[^ -_]/);
-                if (/^\d{2}$/.test(s)) {
-                    d.push(this.c128.startc, Number(s));
-                }
-                else if (/^\d{4,}/.test(s)) {
-                    this.code128c(this.c128.startc, s, d);
-                }
-                else if (p >= 0 && s.charCodeAt(p) < 32) {
-                    this.code128a(this.c128.starta, s, d);
-                }
-                else if (s.length > 0) {
-                    this.code128b(this.c128.startb, s, d);
-                }
-                else {
-                    // end
-                }
-                // calculate check digit and append stop character
-                d.push(d.reduce((a, c, i) => a + c * i) % 103, this.c128.stop);
-                // generate bars and spaces
-                const q = symbol.quietZone ? 'a' : '0';
-                const m = d.reduce((a, c) => a + this.c128.element[c], q) + q;
-                r.widths = m.split('').map(c => parseInt(c, 16) * symbol.width);
-                r.length = symbol.width * (d.length * 11 + (symbol.quietZone ? 22 : 2));
-                r.height = symbol.height;
-            }
-            return r;
+        // set absolute print position:
+        absolute: function (position) {
+            this.position = position;
+            return '';
         },
-        // process CODE128 code set A:
-        code128a: function (x, s, d) {
-            if (x !== this.c128.shift) {
-                d.push(x);
-            }
-            s = s.replace(/^((?!\d{4,})[\x00-_])+/, m => (m.split('').forEach(c => d.push((c.charCodeAt(0) + 64) % 96)), ''));
-            s = s.replace(/^\d(?=(\d\d){2,}(\D|$))/, m => (d.push((m.charCodeAt(0) + 64) % 96), ''));
-            const t = s.slice(1);
-            const p = t.search(/[^ -_]/);
-            if (/^\d{4,}/.test(s)) {
-                this.code128c(this.c128.atoc, s, d);
-            }
-            else if (p >= 0 && t.charCodeAt(p) < 32) {
-                d.push(this.c128.shift, s.charCodeAt(0) - 32);
-                this.code128a(this.c128.shift, t, d);
-            }
-            else if (s.length > 0) {
-                this.code128b(this.c128.atob, s, d);
-            }
-            else {
-                // end
-            }
+        // set relative print position:
+        relative: function (position) {
+            this.position += Math.round(position);
+            return '';
         },
-        // process CODE128 code set B:
-        code128b: function (x, s, d) {
-            if (x !== this.c128.shift) {
-                d.push(x);
-            }
-            s = s.replace(/^((?!\d{4,})[ -\x7f])+/, m => (m.split('').forEach(c => d.push(c.charCodeAt(0) - 32)), ''));
-            s = s.replace(/^\d(?=(\d\d){2,}(\D|$))/, m => (d.push(m.charCodeAt(0) - 32), ''));
-            const t = s.slice(1);
-            const p = t.search(/[^ -_]/);
-            if (/^\d{4,}/.test(s)) {
-                this.code128c(this.c128.btoc, s, d);
-            }
-            else if (p >= 0 && t.charCodeAt(p) > 95) {
-                d.push(this.c128.shift, s.charCodeAt(0) + 64);
-                this.code128b(this.c128.shift, t, d);
-            }
-            else if (s.length > 0) {
-                this.code128a(this.c128.btoa, s, d);
-            }
-            else {
-                // end
-            }
+        // print horizontal rule:
+        hr: function (width) {
+            return ' '.repeat(this.left) + '-'.repeat(width);
         },
-        // process CODE128 code set C:
-        code128c: function (x, s, d) {
-            if (x !== this.c128.shift) {
-                d.push(x);
+        // print vertical rules:
+        vr: function (widths, height) {
+            this.buffer.push({ data: '|', index: this.position, length: 1 });
+            widths.forEach(w => {
+                this.position += w + 1;
+                this.buffer.push({ data: '|', index: this.position, length: 1 });
+            });
+            return '';
+        },
+        // start rules:
+        vrstart: function (widths) {
+            return ' '.repeat(this.left) + widths.reduce((a, w) => a + '-'.repeat(w) + '+', '+');
+        },
+        // stop rules:
+        vrstop: function (widths) {
+            return ' '.repeat(this.left) + widths.reduce((a, w) => a + '-'.repeat(w) + '+', '+');
+        },
+        // print vertical and horizontal rules:
+        vrhr: function (widths1, widths2, dl, dr) {
+            const r1 = ' '.repeat(Math.max(-dl, 0)) + widths1.reduce((a, w) => a + '-'.repeat(w) + '+', '+') + ' '.repeat(Math.max(dr, 0));
+            const r2 = ' '.repeat(Math.max(dl, 0)) + widths2.reduce((a, w) => a + '-'.repeat(w) + '+', '+') + ' '.repeat(Math.max(-dr, 0));
+            return ' '.repeat(this.left) + r2.split('').reduce((a, c, i) => a + this.vrtable[c][r1[i]], '');
+        },
+        // ruled line composition
+        vrtable: {
+            ' ' : { ' ' : ' ', '+' : '+', '-' : '-' },
+            '+' : { ' ' : '+', '+' : '+', '-' : '+' },
+            '-' : { ' ' : '-', '+' : '+', '-' : '-' }
+        },
+        // set line spacing and feed new line:
+        vrlf: function(vr) {
+            return this.lf();
+        },
+        // scale up text:
+        wh: function (wh) {
+            const w = wh < 2 ? wh + 1 : wh - 1;
+            this.scale = w;
+            return '';
+        },
+        // cancel text decoration:
+        normal: function () {
+            this.scale = 1;
+            return '';
+        },
+        // print text:
+        text: function (text, encoding) {
+            const d = this.arrayFrom(text, encoding).reduce((a, c) => a + c + ' '.repeat(this.measureText(c, encoding) * (this.scale - 1)), '');
+            const l = this.measureText(text, encoding) * this.scale;
+            this.buffer.push({ data: d, index: this.position, length: l });
+            this.position += l;
+            return '';
+        },
+        // feed new line:
+        lf: function () {
+            let r = '';
+            if (this.buffer.length > 0) {
+                let p = 0;
+                r += this.buffer.sort((a, b) => a.index - b.index).reduce((a, c) => {
+                    const s = a + ' '.repeat(c.index - p) + c.data;
+                    p = c.index + c.length;
+                    return s;
+                }, ' '.repeat(this.left));
             }
-            s = s.replace(/^\d{4,}/g, m => m.replace(/\d{2}/g, c => (d.push(Number(c)), '')));
-            const p = s.search(/[^ -_]/);
-            if (p >= 0 && s.charCodeAt(p) < 32) {
-                this.code128a(this.c128.ctoa, s, d);
-            }
-            else if (s.length > 0) {
-                this.code128b(this.c128.ctob, s, d);
-            }
-            else {
-                // end
-            }
-        },
-        // CODE93 patterns:
-        c93: {
-            escape: 'cU,dA,dB,dC,dD,dE,dF,dG,dH,dI,dJ,dK,dL,dM,dN,dO,dP,dQ,dR,dS,dT,dU,dV,dW,dX,dY,dZ,cA,cB,cC,cD,cE, ,sA,sB,sC,$,%,sF,sG,sH,sI,sJ,+,sL,-,.,/,0,1,2,3,4,5,6,7,8,9,sZ,cF,cG,cH,cI,cJ,cV,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,cK,cL,cM,cN,cO,cW,pA,pB,pC,pD,pE,pF,pG,pH,pI,pJ,pK,pL,pM,pN,pO,pP,pQ,pR,pS,pT,pU,pV,pW,pX,pY,pZ,cP,cQ,cR,cS,cT'.split(','),
-            code: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-. $/+%dcsp'.split('').reduce((a, c, i) => (a[c] = i, a), {}),
-            element: '131112,111213,111312,111411,121113,121212,121311,111114,131211,141111,211113,211212,211311,221112,221211,231111,112113,112212,112311,122112,132111,111123,111222,111321,121122,131121,212112,212211,211122,211221,221121,222111,112122,112221,122121,123111,121131,311112,311211,321111,112131,113121,211131,121221,312111,311121,122211,111141,1111411'.split(','),
-            start: 47, stop: 48
-        },
-        // generate CODE93 data:
-        code93: function (symbol) {
-            const r = {};
-            let s = symbol.data.replace(/((?!^[\x00-\x7f]+$).)*/, '');
-            if (s.length > 0) {
-                // generate HRI
-                r.hri = symbol.hri;
-                r.text = s.replace(/[\x00- \x7f]/g, ' ');
-                // calculate check digit
-                const d = s.split('').reduce((a, c) => a + this.c93.escape[c.charCodeAt(0)], '').split('').map(c => this.c93.code[c]);
-                d.push(d.reduceRight((a, c, i) => a + c * ((d.length - 1 - i) % 20 + 1)) % 47);
-                d.push(d.reduceRight((a, c, i) => a + c * ((d.length - 1 - i) % 15 + 1)) % 47);
-                // append start character and stop character
-                d.unshift(this.c93.start);
-                d.push(this.c93.stop);
-                // generate bars and spaces
-                const q = symbol.quietZone ? 'a' : '0';
-                const m = d.reduce((a, c) => a + this.c93.element[c], q) + q;
-                r.widths = m.split('').map(c => parseInt(c, 16) * symbol.width);
-                r.length = symbol.width * (d.length * 9 + (symbol.quietZone ? 21 : 1));
-                r.height = symbol.height;
-            }
-            return r;
-        },
-        // Codabar(NW-7) patterns:
-        nw7: {
-            '0': '2222255', '1': '2222552', '2': '2225225', '3': '5522222', '4': '2252252',
-            '5': '5222252', '6': '2522225', '7': '2522522', '8': '2552222', '9': '5225222',
-            '-': '2225522', '$': '2255222', ':': '5222525', '/': '5252225', '.': '5252522',
-            '+': '2252525', 'A': '2255252', 'B': '2525225', 'C': '2225255', 'D': '2225552'
-        },
-        // generate Codabar(NW-7) data:
-        codabar: function (symbol) {
-            const r = {};
-            let s = symbol.data.replace(/((?!^[A-D][0-9\-$:/.+]+[A-D]$).)*/i, '');
-            if (s.length > 0) {
-                // generate HRI
-                r.hri = symbol.hri;
-                r.text = s;
-                // generate bars and spaces
-                const q = symbol.quietZone ? 'a' : '0';
-                const m = s.toUpperCase().split('').reduce((a, c) => a + this.nw7[c] + '2', q).slice(0, -1) + q;
-                r.widths = m.split('').map(c => parseInt(c, 16) * symbol.width + 1 >> 1);
-                const w = [ 25, 39, 50, 3, 5, 6 ];
-                r.length = s.length * w[symbol.width - 2] - (s.match(/[\d\-$]/g) || []).length * w[symbol.width + 1] + symbol.width * (symbol.quietZone ? 19 : -1);
-                r.height = symbol.height;
-            }
-            return r;
-        },
-        // Interleaved 2 of 5 patterns:
-        i25: {
-            element: '22552,52225,25225,55222,22525,52522,25522,22255,52252,25252'.split(','),
-            start: '2222', stop: '522'
-        },
-        // generate Interleaved 2 of 5 data:
-        itf: function (symbol) {
-            const r = {};
-            let s = symbol.data.replace(/((?!^(\d{2})+$).)*/, '');
-            if (s.length > 0) {
-                // generate HRI
-                r.hri = symbol.hri;
-                r.text = s;
-                // generate bars and spaces
-                const d = s.split('').map(c => Number(c));
-                const q = symbol.quietZone ? 'a' : '0';
-                let m = q + this.i25.start;
-                let i = 0;
-                while (i < d.length) {
-                    const b = this.i25.element[d[i++]];
-                    const s = this.i25.element[d[i++]];
-                    m += b.split('').reduce((a, c, j) => a + c + s[j], '');
-                }
-                m += this.i25.stop + q;
-                r.widths = m.split('').map(c => parseInt(c, 16) * symbol.width + 1 >> 1);
-                const w = [ 16, 25, 32, 17, 26, 34 ];
-                r.length = s.length * w[symbol.width - 2] + w[symbol.width + 1] + symbol.width * (symbol.quietZone ? 20 : 0);
-                r.height = symbol.height;
-            }
-            return r;
-        },
-        // CODE39 patterns:
-        c39: {
-            '0': '222552522', '1': '522522225', '2': '225522225', '3': '525522222', '4': '222552225',
-            '5': '522552222', '6': '225552222', '7': '222522525', '8': '522522522', '9': '225522522',
-            'A': '522225225', 'B': '225225225', 'C': '525225222', 'D': '222255225', 'E': '522255222',
-            'F': '225255222', 'G': '222225525', 'H': '522225522', 'I': '225225522', 'J': '222255522',
-            'K': '522222255', 'L': '225222255', 'M': '525222252', 'N': '222252255', 'O': '522252252',
-            'P': '225252252', 'Q': '222222555', 'R': '522222552', 'S': '225222552', 'T': '222252552',
-            'U': '552222225', 'V': '255222225', 'W': '555222222', 'X': '252252225', 'Y': '552252222',
-            'Z': '255252222', '-': '252222525', '.': '552222522', ' ': '255222522', '$': '252525222',
-            '/': '252522252', '+': '252225252', '%': '222525252', '*': '252252522'
-        },
-        // generate CODE39 data:
-        code39: function (symbol) {
-            const r = {};
-            let s = symbol.data.replace(/((?!^\*?[0-9A-Z\-. $/+%]+\*?$).)*/, '');
-            if (s.length > 0) {
-                // append start character and stop character
-                s = s.replace(/^\*?([^*]+)\*?$/, '*$1*');
-                // generate HRI
-                r.hri = symbol.hri;
-                r.text = s;
-                // generate bars and spaces
-                const q = symbol.quietZone ? 'a' : '0';
-                const m = s.split('').reduce((a, c) => a + this.c39[c] + '2', q).slice(0, -1) + q;
-                r.widths = m.split('').map(c => parseInt(c, 16) * symbol.width + 1 >> 1);
-                const w = [ 29, 45, 58 ];
-                r.length = s.length * w[symbol.width - 2] + symbol.width * (symbol.quietZone ? 19 : -1);
-                r.height = symbol.height;
-            }
-            return r;
-        },
-        // UPC/EAN/JAN patterns:
-        ean: {
-            a: '3211,2221,2122,1411,1132,1231,1114,1312,1213,3112'.split(','),
-            b: '1123,1222,2212,1141,2311,1321,4111,2131,3121,2113'.split(','),
-            c: '3211,2221,2122,1411,1132,1231,1114,1312,1213,3112'.split(','),
-            g: '111,11111,111111,11,112'.split(','),
-            p: 'aaaaaa,aababb,aabbab,aabbba,abaabb,abbaab,abbbaa,ababab,ababba,abbaba'.split(','),
-            e: 'bbbaaa,bbabaa,bbaaba,bbaaab,babbaa,baabba,baaabb,bababa,babaab,baabab'.split(',')
-        },
-        // generate UPC-A data:
-        upca: function (symbol) {
-            const s = Object.assign({}, symbol);
-            s.data = '0' + symbol.data;
-            const r = this.ean13(s);
-            if ('text' in r) {
-                r.text = r.text.slice(1);
-            }
-            return r;
-        },
-        // generate UPC-E data:
-        upce: function (symbol) {
-            const r = {};
-            const d = symbol.data.replace(/((?!^0\d{6,7}$).)*/, '').split('').map(c => Number(c));
-            if (d.length > 0) {
-                // calculate check digit
-                d[7] = 0;
-                d[7] = (10 - this.upcetoa(d).reduce((a, c, i) => a + c * (3 - (i % 2) * 2), 0) % 10) % 10;
-                // generate HRI
-                r.hri = symbol.hri;
-                r.text = d.join('');
-                // generate bars and spaces
-                const q = symbol.quietZone ? '7' : '0';
-                let m = q + this.ean.g[0];
-                for (let i = 1; i < 7; i++) m += this.ean[this.ean.e[d[7]][i - 1]][d[i]];
-                m += this.ean.g[2] + q;
-                r.widths = m.split('').map(c => parseInt(c, 16) * symbol.width);
-                r.length = symbol.width * (symbol.quietZone ? 65 : 51);
-                r.height = symbol.height;
-            }
-            return r;
-        },
-        // convert UPC-E to UPC-A:
-        upcetoa: e => {
-            const a = e.slice(0, 3);
-            switch (e[6]) {
-                case 0: case 1: case 2:
-                    a.push(e[6], 0, 0, 0, 0, e[3], e[4], e[5]);
-                    break;
-                case 3:
-                    a.push(e[3], 0, 0, 0, 0, 0, e[4], e[5]);
-                    break;
-                case 4:
-                    a.push(e[3], e[4], 0, 0, 0, 0, 0, e[5]);
-                    break;
-                default:
-                    a.push(e[3], e[4], e[5], 0, 0, 0, 0, e[6]);
-                    break;
-            }
-            a.push(e[7]);
-            return a;
-        },
-        // generate EAN-13(JAN-13) data:
-        ean13: function (symbol) {
-            const r = {};
-            const d = symbol.data.replace(/((?!^\d{12,13}$).)*/, '').split('').map(c => Number(c));
-            if (d.length > 0) {
-                // calculate check digit
-                d[12] = 0;
-                d[12] = (10 - d.reduce((a, c, i) => a + c * ((i % 2) * 2 + 1)) % 10) % 10;
-                // generate HRI
-                r.hri = symbol.hri;
-                r.text = d.join('');
-                // generate bars and spaces
-                let m = (symbol.quietZone ? 'b' : '0') + this.ean.g[0];
-                for (let i = 1; i < 7; i++) m += this.ean[this.ean.p[d[0]][i - 1]][d[i]];
-                m += this.ean.g[1];
-                for (let i = 7; i < 13; i++) m += this.ean.c[d[i]];
-                m += this.ean.g[0] + (symbol.quietZone ? '7' : '0');
-                r.widths = m.split('').map(c => parseInt(c, 16) * symbol.width);
-                r.length = symbol.width * (symbol.quietZone ? 113 : 95);
-                r.height = symbol.height;
-            }
-            return r;
-        },
-        // generate EAN-8(JAN-8) data:
-        ean8: function (symbol) {
-            const r = {};
-            const d = symbol.data.replace(/((?!^\d{7,8}$).)*/, '').split('').map(c => Number(c));
-            if (d.length > 0) {
-                // calculate check digit
-                d[7] = 0;
-                d[7] = (10 - d.reduce((a, c, i) => a + c * (3 - (i % 2) * 2), 0) % 10) % 10;
-                // generate HRI
-                r.hri = symbol.hri;
-                r.text = d.join('');
-                // generate bars and spaces
-                const q = symbol.quietZone ? '7' : '0';
-                let m = q + this.ean.g[0];
-                for (let i = 0; i < 4; i++) m += this.ean.a[d[i]];
-                m += this.ean.g[1];
-                for (let i = 4; i < 8; i++) m += this.ean.c[d[i]];
-                m += this.ean.g[0] + q;
-                r.widths = m.split('').map(c => parseInt(c, 16) * symbol.width);
-                r.length = symbol.width * (symbol.quietZone ? 81 : 67);
-                r.height = symbol.height;
-            }
+            r += '\n';
+            this.position = 0;
+            this.buffer = [];
             return r;
         }
     };
+
+    // shortcut
+    const $ = String.fromCharCode;
 
     //
     // multilingual conversion table (cp437, cp852, cp858, cp866, cp1252)
@@ -1987,45 +2494,36 @@ limitations under the License.
         },
         // print QR Code: GS ( k pL pH cn fn n1 n2 GS ( k pL pH cn fn n GS ( k pL pH cn fn n GS ( k pL pH cn fn m d1 ... dk GS ( k pL pH cn fn m
         qrcode: function (symbol, encoding) {
-            if (typeof qrcode !== 'undefined') {
-                let r = this.upsideDown ? this.area(this.right + this.marginRight - this.margin, this.width, this.left) + this.align(2 - this.alignment) : '';
-                if (symbol.data.length > 0) {
-                    const qr = qrcode(0, symbol.level.toUpperCase());
-                    qr.addData(symbol.data);
-                    qr.make();
-                    let img = qr.createASCII(2, 0);
-                    if (this.upsideDown) {
-                        img = img.split('').reverse().join('');
-                    }
-                    img = img.split('\n');
-                    const w = img.length * symbol.cell;
-                    const h = w;
-                    const l = (w + 7 >> 3) * h + 10;
-                    r += '\x1d8L' + $(l & 255, l >> 8 & 255, l >> 16 & 255, l >> 24 & 255, 48, 112, 48, 1, 1, 49, w & 255, w >> 8 & 255, h & 255, h >> 8 & 255);
-                    for (let i = 0; i < img.length; i++) {
-                        let d = '';
-                        for (let j = 0; j < w; j += 8) {
-                            let b = 0;
-                            const q = Math.min(w - j, 8);
-                            for (let p = 0; p < q; p++) {
-                                if (img[i][Math.floor((j + p) / symbol.cell) * 2] === ' ') {
-                                    b |= 128 >> p;
-                                }
-                            }
-                            d += $(b);
-                        }
-                        for (let k = 0; k < symbol.cell; k++) {
-                            r += d;
-                        }
-                    }
-                    r += '\x1d(L' + $(2, 0, 48, 50);
+            let r = this.upsideDown ? this.area(this.right + this.marginRight - this.margin, this.width, this.left) + this.align(2 - this.alignment) : '';
+            if (symbol.data.length > 0) {
+                const matrix = qrcode.generate(symbol);
+                if (this.upsideDown) {
+                    matrix.forEach(row => row.reverse());
+                    matrix.reverse();
                 }
-                return r;
+                const w = matrix.length * symbol.cell;
+                const h = w;
+                const l = (w + 7 >> 3) * h + 10;
+                r += '\x1d8L' + $(l & 255, l >> 8 & 255, l >> 16 & 255, l >> 24 & 255, 48, 112, 48, 1, 1, 49, w & 255, w >> 8 & 255, h & 255, h >> 8 & 255);
+                for (let i = 0; i < matrix.length; i++) {
+                    let d = '';
+                    for (let j = 0; j < w; j += 8) {
+                        let b = 0;
+                        const q = Math.min(w - j, 8);
+                        for (let p = 0; p < q; p++) {
+                            if (matrix[i][Math.floor((j + p) / symbol.cell)] === 1) {
+                                b |= 128 >> p;
+                            }
+                        }
+                        d += $(b);
+                    }
+                    for (let k = 0; k < symbol.cell; k++) {
+                        r += d;
+                    }
+                }
+                r += '\x1d(L' + $(2, 0, 48, 50);
             }
-            else {
-                const d = iconv.encode(symbol.data, encoding === 'multilingual' ? 'ascii' : encoding).toString('binary').slice(0, 7089);
-                return d.length > 0 ? '\x1d(k' + $(4, 0, 49, 65, 50, 0) + '\x1d(k' + $(3, 0, 49, 67, symbol.cell) + '\x1d(k' + $(3, 0, 49, 69, this.qrlevel[symbol.level]) + '\x1d(k' + $(d.length + 3 & 255, d.length + 3 >> 8 & 255, 49, 80, 48) + d + '\x1d(k' + $(3, 0, 49, 81, 48) : '';
-            }
+            return r;
         },
         // QR Code error correction level:
         qrlevel: {
@@ -2260,45 +2758,36 @@ limitations under the License.
         },
         // print QR Code: DC2 ; n GS p 1 model e v mode nl nh dk
         qrcode: function (symbol, encoding) {
-            if (typeof qrcode !== 'undefined') {
-                let r = this.upsideDown ? this.area(this.right, this.width, this.left) + this.align(2 - this.alignment) : '';
-                if (symbol.data.length > 0) {
-                    const qr = qrcode(0, symbol.level.toUpperCase());
-                    qr.addData(symbol.data);
-                    qr.make();
-                    let img = qr.createASCII(2, 0);
-                    if (this.upsideDown) {
-                        img = img.split('').reverse().join('');
-                    }
-                    img = img.split('\n');
-                    const w = img.length * symbol.cell;
-                    const h = w;
-                    const l = (w + 7 >> 3) * h + 10;
-                    r += '\x1d8L' + $(l & 255, l >> 8 & 255, l >> 16 & 255, l >> 24 & 255, 48, 112, 48, 1, 1, 49, w & 255, w >> 8 & 255, h & 255, h >> 8 & 255);
-                    for (let i = 0; i < img.length; i++) {
-                        let d = '';
-                        for (let j = 0; j < w; j += 8) {
-                            let b = 0;
-                            const q = Math.min(w - j, 8);
-                            for (let p = 0; p < q; p++) {
-                                if (img[i][Math.floor((j + p) / symbol.cell) * 2] === ' ') {
-                                    b |= 128 >> p;
-                                }
-                            }
-                            d += $(b);
-                        }
-                        for (let k = 0; k < symbol.cell; k++) {
-                            r += d;
-                        }
-                    }
-                    r += '\x1d(L' + $(2, 0, 48, 50);
+            let r = this.upsideDown ? this.area(this.right, this.width, this.left) + this.align(2 - this.alignment) : '';
+            if (symbol.data.length > 0) {
+                const matrix = qrcode.generate(symbol);
+                if (this.upsideDown) {
+                    matrix.forEach(row => row.reverse());
+                    matrix.reverse();
                 }
-                return r;
+                const w = matrix.length * symbol.cell;
+                const h = w;
+                const l = (w + 7 >> 3) * h + 10;
+                r += '\x1d8L' + $(l & 255, l >> 8 & 255, l >> 16 & 255, l >> 24 & 255, 48, 112, 48, 1, 1, 49, w & 255, w >> 8 & 255, h & 255, h >> 8 & 255);
+                for (let i = 0; i < matrix.length; i++) {
+                    let d = '';
+                    for (let j = 0; j < w; j += 8) {
+                        let b = 0;
+                        const q = Math.min(w - j, 8);
+                        for (let p = 0; p < q; p++) {
+                            if (matrix[i][Math.floor((j + p) / symbol.cell)] === 1) {
+                                b |= 128 >> p;
+                            }
+                        }
+                        d += $(b);
+                    }
+                    for (let k = 0; k < symbol.cell; k++) {
+                        r += d;
+                    }
+                }
+                r += '\x1d(L' + $(2, 0, 48, 50);
             }
-            else {
-                const d = iconv.encode(symbol.data, encoding === 'multilingual' ? 'ascii' : encoding).toString('binary').slice(0, 7089);
-                return d.length > 0 ? '\x12;' + $(symbol.cell) + '\x1dp' + $(1, 2, this.qrlevel[symbol.level], 0, 77, d.length & 255, d.length >> 8 & 255) + d : '';
-            }
+            return r;
         },
         // QR Code error correction levels:
         qrlevel: {
@@ -2537,41 +3026,32 @@ limitations under the License.
         },
         // print QR Code: GS ( k pL pH cn fn n1 n2 GS ( k pL pH cn fn n GS ( k pL pH cn fn n GS ( k pL pH cn fn m d1 ... dk GS ( k pL pH cn fn m
         qrcode: function (symbol, encoding) {
-            if (typeof qrcode !== 'undefined') {
-                let r = this.upsideDown && this.alignment === 2 ? this.area(this.right, this.width, this.left) : '';
-                if (symbol.data.length > 0) {
-                    const qr = qrcode(0, symbol.level.toUpperCase());
-                    qr.addData(symbol.data);
-                    qr.make();
-                    const img = qr.createASCII(2, 0).split('\n');
-                    const w = img.length * symbol.cell;
-                    const h = w;
-                    const l = (w + 7 >> 3) * h + 10;
-                    r += '\x1d8L' + $(l & 255, l >> 8 & 255, l >> 16 & 255, l >> 24 & 255, 48, 112, 48, 1, 1, 49, w & 255, w >> 8 & 255, h & 255, h >> 8 & 255);
-                    for (let i = 0; i < img.length; i++) {
-                        let d = '';
-                        for (let j = 0; j < w; j += 8) {
-                            let b = 0;
-                            const q = Math.min(w - j, 8);
-                            for (let p = 0; p < q; p++) {
-                                if (img[i][Math.floor((j + p) / symbol.cell) * 2] === ' ') {
-                                    b |= 128 >> p;
-                                }
+            let r = this.upsideDown && this.alignment === 2 ? this.area(this.right, this.width, this.left) : '';
+            if (symbol.data.length > 0) {
+                const matrix = qrcode.generate(symbol);
+                const w = matrix.length * symbol.cell;
+                const h = w;
+                const l = (w + 7 >> 3) * h + 10;
+                r += '\x1d8L' + $(l & 255, l >> 8 & 255, l >> 16 & 255, l >> 24 & 255, 48, 112, 48, 1, 1, 49, w & 255, w >> 8 & 255, h & 255, h >> 8 & 255);
+                for (let i = 0; i < matrix.length; i++) {
+                    let d = '';
+                    for (let j = 0; j < w; j += 8) {
+                        let b = 0;
+                        const q = Math.min(w - j, 8);
+                        for (let p = 0; p < q; p++) {
+                            if (matrix[i][Math.floor((j + p) / symbol.cell)] === 1) {
+                                b |= 128 >> p;
                             }
-                            d += $(b);
                         }
-                        for (let k = 0; k < symbol.cell; k++) {
-                            r += d;
-                        }
+                        d += $(b);
                     }
-                    r += '\x1d(L' + $(2, 0, 48, 50);
+                    for (let k = 0; k < symbol.cell; k++) {
+                        r += d;
+                    }
                 }
-                return r;
+                r += '\x1d(L' + $(2, 0, 48, 50);
             }
-            else {
-                const d = iconv.encode(symbol.data, encoding === 'multilingual' ? 'ascii' : encoding).toString('binary').slice(0, 7089);
-                return d.length > 0 ? '\x1d(k' + $(4, 0, 49, 65, 50, 0) + '\x1d(k' + $(3, 0, 49, 67, symbol.cell) + '\x1d(k' + $(3, 0, 49, 69, this.qrlevel[symbol.level]) + '\x1d(k' + $(d.length + 3 & 255, d.length + 3 >> 8 & 255, 49, 80, 48) + d + '\x1d(k' + $(3, 0, 49, 81, 48) : '';
-            }
+            return r;
         }
     };
 
@@ -2926,40 +3406,31 @@ limitations under the License.
         },
         // print QR Code: ESC GS y S 0 n ESC GS y S 1 n ESC GS y S 2 n ESC GS y D 1 m nL nH d1 d2 ... dk ESC GS y P
         qrcode: function (symbol, encoding) {
-            if (typeof qrcode !== 'undefined') {
-                let r = '';
-                if (symbol.data.length > 0) {
-                    const qr = qrcode(0, symbol.level.toUpperCase());
-                    qr.addData(symbol.data);
-                    qr.make();
-                    const img = qr.createASCII(2, 0).split('\n');
-                    const w = img.length * symbol.cell;
-                    const h = w;
-                    const l = w + 7 >> 3;
-                    r += '\x1b\x1dS' + $(1, l & 255, l >> 8 & 255, h & 255, h >> 8 & 255, 0);
-                    for (let i = 0; i < img.length; i++) {
-                        let d = '';
-                        for (let j = 0; j < w; j += 8) {
-                            let b = 0;
-                            const q = Math.min(w - j, 8);
-                            for (let p = 0; p < q; p++) {
-                                if (img[i][Math.floor((j + p) / symbol.cell) * 2] === ' ') {
-                                    b |= 128 >> p;
-                                }
+            let r = '';
+            if (symbol.data.length > 0) {
+                const matrix = qrcode.generate(symbol);
+                const w = matrix.length * symbol.cell;
+                const h = w;
+                const l = w + 7 >> 3;
+                r += '\x1b\x1dS' + $(1, l & 255, l >> 8 & 255, h & 255, h >> 8 & 255, 0);
+                for (let i = 0; i < matrix.length; i++) {
+                    let d = '';
+                    for (let j = 0; j < w; j += 8) {
+                        let b = 0;
+                        const q = Math.min(w - j, 8);
+                        for (let p = 0; p < q; p++) {
+                            if (matrix[i][Math.floor((j + p) / symbol.cell)] === 1) {
+                                b |= 128 >> p;
                             }
-                            d += $(b);
                         }
-                        for (let k = 0; k < symbol.cell; k++) {
-                            r += d;
-                        }
+                        d += $(b);
+                    }
+                    for (let k = 0; k < symbol.cell; k++) {
+                        r += d;
                     }
                 }
-                return r;
             }
-            else {
-                const d = iconv.encode(symbol.data, encoding === 'multilingual' ? 'ascii' : encoding).toString('binary').slice(0, 7089);
-                return d.length > 0 ? '\x1b\x1dyS0' + $(2) + '\x1b\x1dyS1' + $(this.qrlevel[symbol.level]) + '\x1b\x1dyS2' + $(symbol.cell) + '\x1b\x1dyD1' + $(0, d.length & 255, d.length >> 8 & 255) + d + '\x1b\x1dyP' : '';
-            }
+            return r;
         },
         // QR Code error correction levels:
         qrlevel: {
@@ -3071,55 +3542,46 @@ limitations under the License.
         },
         // print QR Code: ESC GS y S 0 n ESC GS y S 1 n ESC GS y S 2 n ESC GS y D 1 m nL nH d1 d2 ... dk ESC GS y P
         qrcode: function (symbol, encoding) {
-            if (typeof qrcode !== 'undefined') {
-                let r = '';
-                if (symbol.data.length > 0) {
-                    const qr = qrcode(0, symbol.level.toUpperCase());
-                    qr.addData(symbol.data);
-                    qr.make();
-                    const img = qr.createASCII(2, 0).split('\n');
-                    const w = img.length * symbol.cell;
-                    const l = w + 7 >> 3;
-                    const s = [];
-                    for (let i = 0; i < img.length; i++) {
-                        let d = '';
-                        for (let j = 0; j < w; j += 8) {
-                            let b = 0;
-                            const q = Math.min(w - j, 8);
-                            for (let p = 0; p < q; p++) {
-                                if (img[i][Math.floor((j + p) / symbol.cell) * 2] === ' ') {
-                                    b |= 128 >> p;
-                                }
+            let r = '';
+            if (symbol.data.length > 0) {
+                const matrix = qrcode.generate(symbol);
+                const w = matrix.length * symbol.cell;
+                const l = w + 7 >> 3;
+                const s = [];
+                for (let i = 0; i < matrix.length; i++) {
+                    let d = '';
+                    for (let j = 0; j < w; j += 8) {
+                        let b = 0;
+                        const q = Math.min(w - j, 8);
+                        for (let p = 0; p < q; p++) {
+                            if (matrix[i][Math.floor((j + p) / symbol.cell)] === 1) {
+                                b |= 128 >> p;
                             }
-                            d += $(b);
                         }
-                        for (let k = 0; k < symbol.cell; k++) {
-                            s.push(d);
-                        }
+                        d += $(b);
                     }
-                    while (s.length % 24) {
-                        const d = '\x00'.repeat(l);
+                    for (let k = 0; k < symbol.cell; k++) {
                         s.push(d);
                     }
-                    if (this.upsideDown) {
-                        s.reverse();
-                    }
-                    r += '\x1b0';
-                    for (let k = 0; k < s.length; k += 24) {
-                        const a = s.slice(k, k + 24);
-                        if (this.upsideDown) {
-                            a.reverse();
-                        }
-                        r += '\x1bk' + $(l & 255, l >> 8 & 255) + a.join('') + '\x0a';
-                    }
-                    r += this.spacing ? '\x1bz1' : '\x1b0';
                 }
-                return r;
+                while (s.length % 24) {
+                    const d = '\x00'.repeat(l);
+                    s.push(d);
+                }
+                if (this.upsideDown) {
+                    s.reverse();
+                }
+                r += '\x1b0';
+                for (let k = 0; k < s.length; k += 24) {
+                    const a = s.slice(k, k + 24);
+                    if (this.upsideDown) {
+                        a.reverse();
+                    }
+                    r += '\x1bk' + $(l & 255, l >> 8 & 255) + a.join('') + '\x0a';
+                }
+                r += this.spacing ? '\x1bz1' : '\x1b0';
             }
-            else {
-                const d = iconv.encode(symbol.data, encoding === 'multilingual' ? 'ascii' : encoding).toString('binary').slice(0, 7089);
-                return '\x1b\x1dyS0' + $(2) + '\x1b\x1dyS1' + $(this.qrlevel[symbol.level]) + '\x1b\x1dyS2' + $(symbol.cell) + '\x1b\x1dyD1' + $(0, d.length & 255, d.length >> 8 & 255) + d + '\x1b\x1dyP';
-            }
+            return r;
         }
     };
 
@@ -3405,111 +3867,6 @@ limitations under the License.
     };
 
     //
-    // Plain Text
-    //
-    const _text = {
-        left: 0,
-        position: 0,
-        scale: 1,
-        buffer: [],
-        // start printing:
-        open: function (printer) {
-            this.left = 0;
-            this.position = 0;
-            this.scale = 1;
-            this.buffer = [];
-            return '';
-        },
-        // set print area:
-        area: function (left, width, right) {
-            this.left = left;
-            return '';
-        },
-        // set absolute print position:
-        absolute: function (position) {
-            this.position = position;
-            return '';
-        },
-        // set relative print position:
-        relative: function (position) {
-            this.position += Math.round(position);
-            return '';
-        },
-        // print horizontal rule:
-        hr: function (width) {
-            return ' '.repeat(this.left) + '-'.repeat(width);
-        },
-        // print vertical rules:
-        vr: function (widths, height) {
-            this.buffer.push({ data: '|', index: this.position, length: 1 });
-            widths.forEach(w => {
-                this.position += w + 1;
-                this.buffer.push({ data: '|', index: this.position, length: 1 });
-            });
-            return '';
-        },
-        // start rules:
-        vrstart: function (widths) {
-            return ' '.repeat(this.left) + widths.reduce((a, w) => a + '-'.repeat(w) + '+', '+');
-        },
-        // stop rules:
-        vrstop: function (widths) {
-            return ' '.repeat(this.left) + widths.reduce((a, w) => a + '-'.repeat(w) + '+', '+');
-        },
-        // print vertical and horizontal rules:
-        vrhr: function (widths1, widths2, dl, dr) {
-            const r1 = ' '.repeat(Math.max(-dl, 0)) + widths1.reduce((a, w) => a + '-'.repeat(w) + '+', '+') + ' '.repeat(Math.max(dr, 0));
-            const r2 = ' '.repeat(Math.max(dl, 0)) + widths2.reduce((a, w) => a + '-'.repeat(w) + '+', '+') + ' '.repeat(Math.max(-dr, 0));
-            return ' '.repeat(this.left) + r2.split('').reduce((a, c, i) => a + this.vrtable[c][r1[i]], '');
-        },
-        // ruled line composition
-        vrtable: {
-            ' ' : { ' ' : ' ', '+' : '+', '-' : '-' },
-            '+' : { ' ' : '+', '+' : '+', '-' : '+' },
-            '-' : { ' ' : '-', '+' : '+', '-' : '-' }
-        },
-        // set line spacing and feed new line:
-        vrlf: function(vr) {
-            return this.lf();
-        },
-        // scale up text:
-        wh: function (wh) {
-            const w = wh < 2 ? wh + 1 : wh - 1;
-            this.scale = w;
-            return '';
-        },
-        // cancel text decoration:
-        normal: function () {
-            this.scale = 1;
-            return '';
-        },
-        // print text:
-        text: function (text, encoding) {
-            const d = this.arrayFrom(text, encoding).reduce((a, c) => a + c + ' '.repeat(this.measureText(c, encoding) * (this.scale - 1)), '');
-            const l = this.measureText(text, encoding) * this.scale;
-            this.buffer.push({ data: d, index: this.position, length: l });
-            this.position += l;
-            return '';
-        },
-        // feed new line:
-        lf: function () {
-            let r = '';
-            if (this.buffer.length > 0) {
-                let p = 0;
-                r += this.buffer.sort((a, b) => a.index - b.index).reduce((a, c) => {
-                    const s = a + ' '.repeat(c.index - p) + c.data;
-                    p = c.index + c.length;
-                    return s;
-                }, ' '.repeat(this.left));
-            }
-            r += '\n';
-            this.position = 0;
-            this.buffer = [];
-            return r;
-        }
-    };
-
-    //
     // ESC/POS Generic
     //
     const _generic = {
@@ -3606,44 +3963,35 @@ limitations under the License.
         },
         // print QR Code: GS ( k pL pH cn fn n1 n2 GS ( k pL pH cn fn n GS ( k pL pH cn fn n GS ( k pL pH cn fn m d1 ... dk GS ( k pL pH cn fn m
         qrcode: function (symbol, encoding) {
-            if (typeof qrcode !== 'undefined') {
-                let r = this.upsideDown ? this.area(this.right + this.marginRight - this.margin, this.width, this.left) + this.align(2 - this.alignment) : '';
-                if (symbol.data.length > 0) {
-                    const qr = qrcode(0, symbol.level.toUpperCase());
-                    qr.addData(symbol.data);
-                    qr.make();
-                    let img = qr.createASCII(2, 0);
-                    if (this.upsideDown) {
-                        img = img.split('').reverse().join('');
-                    }
-                    img = img.split('\n');
-                    const w = img.length * symbol.cell;
-                    const h = w;
-                    const l = w + 7 >> 3;
-                    r += '\x1dv0' + $(0, l & 255, l >> 8 & 255, h & 255, h >> 8 & 255);
-                    for (let i = 0; i < img.length; i++) {
-                        let d = '';
-                        for (let j = 0; j < w; j += 8) {
-                            let b = 0;
-                            const q = Math.min(w - j, 8);
-                            for (let p = 0; p < q; p++) {
-                                if (img[i][Math.floor((j + p) / symbol.cell) * 2] === ' ') {
-                                    b |= 128 >> p;
-                                }
+            let r = this.upsideDown ? this.area(this.right + this.marginRight - this.margin, this.width, this.left) + this.align(2 - this.alignment) : '';
+            if (symbol.data.length > 0) {
+                const matrix = qrcode.generate(symbol);
+                if (this.upsideDown) {
+                    matrix.forEach(row => row.reverse());
+                    matrix.reverse();
+                }
+                const w = matrix.length * symbol.cell;
+                const h = w;
+                const l = w + 7 >> 3;
+                r += '\x1dv0' + $(0, l & 255, l >> 8 & 255, h & 255, h >> 8 & 255);
+                for (let i = 0; i < matrix.length; i++) {
+                    let d = '';
+                    for (let j = 0; j < w; j += 8) {
+                        let b = 0;
+                        const q = Math.min(w - j, 8);
+                        for (let p = 0; p < q; p++) {
+                            if (matrix[i][Math.floor((j + p) / symbol.cell)] === 1) {
+                                b |= 128 >> p;
                             }
-                            d += $(b);
                         }
-                        for (let k = 0; k < symbol.cell; k++) {
-                            r += d;
-                        }
+                        d += $(b);
+                    }
+                    for (let k = 0; k < symbol.cell; k++) {
+                        r += d;
                     }
                 }
-                return r;
             }
-            else {
-                const d = iconv.encode(symbol.data, encoding === 'multilingual' ? 'ascii' : encoding).toString('binary').slice(0, 7089);
-                return d.length > 0 ? '\x1d(k' + $(4, 0, 49, 65, 50, 0) + '\x1d(k' + $(3, 0, 49, 67, symbol.cell) + '\x1d(k' + $(3, 0, 49, 69, this.qrlevel[symbol.level]) + '\x1d(k' + $(d.length + 3 & 255, d.length + 3 >> 8 & 255, 49, 80, 48) + d + '\x1d(k' + $(3, 0, 49, 81, 48) : '';
-            }
+            return r;
         }
     }
 
@@ -3678,11 +4026,11 @@ limitations under the License.
 
     // web browser
     if (typeof window !== 'undefined') {
-        window.receiptline = { transform: transform, createTransform: createTransform, commands: commands, barcode: barcode };
+        window.receiptline = { transform: transform, createTransform: createTransform, commands: commands, barcode: barcode, qrcode: qrcode };
     }
     // Node.js
     if (typeof module !== 'undefined') {
-        module.exports = { transform: transform, createTransform: createTransform, commands: commands, barcode: barcode };
+        module.exports = { transform: transform, createTransform: createTransform, commands: commands, barcode: barcode, qrcode: qrcode };
     }
 
 })();

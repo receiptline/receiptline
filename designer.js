@@ -23,7 +23,6 @@ const net = require('net');
 const receiptline = require('receiptline');
 const iconv = require('iconv-lite');
 const PNG = require('pngjs').PNG;
-const qrcode = require('./lib/qrcode-generator/qrcode.js');
 const servers = require('./servers.json');
 let puppeteer;
 try {
@@ -481,25 +480,22 @@ const _escpos90 = {
     },
     // print QR Code: GS $ nL nH ESC $ nL nH GS 8 L p1 p2 p3 p4 m fn a bx by c xL xH yL yH d1 ... dk
     qrcode: function (symbol, encoding) {
-        if (typeof qrcode !== 'undefined' && symbol.data.length > 0) {
-            const qr = qrcode(0, symbol.level.toUpperCase());
-            qr.addData(symbol.data);
-            qr.make();
-            const img = qr.createASCII(2, 0).split('\n');
-            const w = img.length * symbol.cell;
+        if (symbol.data.length > 0) {
+            const matrix = receiptline.qrcode.generate(symbol);
+            const w = matrix.length * symbol.cell;
             const h = w;
             const x = this.left * this.charWidth + this.alignment * (this.width * this.charWidth - w) / 2;
             const y = this.position;
             let r = '\x1d$' + $(y + h - 1 & 255, y + h - 1 >> 8 & 255) + '\x1b$' + $(x & 255, x >> 8 & 255);
             const l = (w + 7 >> 3) * h + 10;
             r += '\x1d8L' + $(l & 255, l >> 8 & 255, l >> 16 & 255, l >> 24 & 255, 48, 112, 48, 1, 1, 49, w & 255, w >> 8 & 255, h & 255, h >> 8 & 255);
-            for (let i = 0; i < img.length; i++) {
+            for (let i = 0; i < matrix.length; i++) {
                 let d = '';
                 for (let j = 0; j < w; j += 8) {
                     let b = 0;
                     const q = Math.min(w - j, 8);
                     for (let p = 0; p < q; p++) {
-                        if (img[i][Math.floor((j + p) / symbol.cell) * 2] === ' ') {
+                        if (matrix[i][Math.floor((j + p) / symbol.cell)] === 1) {
                             b |= 128 >> p;
                         }
                     }
@@ -648,25 +644,22 @@ const _sii90 = {
     },
     // print QR Code: GS $ nL nH ESC $ nL nH GS 8 L p1 p2 p3 p4 m fn a bx by c xL xH yL yH d1 ... dk
     qrcode: function (symbol, encoding) {
-        if (typeof qrcode !== 'undefined' && symbol.data.length > 0) {
-            const qr = qrcode(0, symbol.level.toUpperCase());
-            qr.addData(symbol.data);
-            qr.make();
-            const img = qr.createASCII(2, 0).split('\n');
-            const w = img.length * symbol.cell;
+        if (symbol.data.length > 0) {
+            const matrix = receiptline.qrcode.generate(symbol);
+            const w = matrix.length * symbol.cell;
             const h = w;
             const x = this.left * this.charWidth + this.alignment * (this.width * this.charWidth - w) / 2;
             const y = this.position;
             let r = '\x1d$' + $(y + h & 255, y + h >> 8 & 255) + '\x1b$' + $(x & 255, x >> 8 & 255);
             const l = (w + 7 >> 3) * h + 10;
             r += '\x1d8L' + $(l & 255, l >> 8 & 255, l >> 16 & 255, l >> 24 & 255, 48, 112, 48, 1, 1, 49, w & 255, w >> 8 & 255, h & 255, h >> 8 & 255);
-            for (let i = 0; i < img.length; i++) {
+            for (let i = 0; i < matrix.length; i++) {
                 let d = '';
                 for (let j = 0; j < w; j += 8) {
                     let b = 0;
                     const q = Math.min(w - j, 8);
                     for (let p = 0; p < q; p++) {
-                        if (img[i][Math.floor((j + p) / symbol.cell) * 2] === ' ') {
+                        if (matrix[i][Math.floor((j + p) / symbol.cell)] === 1) {
                             b |= 128 >> p;
                         }
                     }
@@ -933,25 +926,22 @@ const _star90 = {
     },
     // print QR Code: ESC GS P 4 nL nH ESC GS A n1 n2 ESC k n1 n2 d1 ... dk
     qrcode: function (symbol, encoding) {
-        if (typeof qrcode !== 'undefined' && symbol.data.length > 0) {
-            const qr = qrcode(0, symbol.level.toUpperCase());
-            qr.addData(symbol.data);
-            qr.make();
-            const img = qr.createASCII(2, 0).split('\n');
-            const w = img.length * symbol.cell;
+        if (symbol.data.length > 0) {
+            const matrix = receiptline.qrcode.generate(symbol);
+            const w = matrix.length * symbol.cell;
             const h = w;
             const x = this.left * this.charWidth + this.alignment * (this.width * this.charWidth - w) / 2;
             const y = this.position + this.charWidth * 40 / 24;
             const l = w + 7 >> 3;
             let r = '\x1b0\x1b\x1dP4' + $(y & 255, y >> 8 & 255);
             const s = [];
-            for (let i = 0; i < img.length; i++) {
+            for (let i = 0; i < matrix.length; i++) {
                 let d = '';
                 for (let j = 0; j < w; j += 8) {
                     let b = 0;
                     const q = Math.min(w - j, 8);
                     for (let p = 0; p < q; p++) {
-                        if (img[i][Math.floor((j + p) / symbol.cell) * 2] === ' ') {
+                        if (matrix[i][Math.floor((j + p) / symbol.cell)] === 1) {
                             b |= 128 >> p;
                         }
                     }

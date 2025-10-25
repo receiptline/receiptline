@@ -158,6 +158,17 @@ declare module 'receiptline' {
         generate(symbol: Barcode): BarcodeForm;
     }
     /**
+     * QR Code generator
+     */
+    interface QRCodeGenerator {
+        /**
+         * Generate QR Code.
+         * @param {QRCode} symbol QR Code information (data, type, cell, level)
+         * @returns {Uint8Array[]} QR Code form
+         */
+        generate(symbol: QRCode): Uint8Array[];
+    }
+    /**
      * Base command set
      */
     interface BaseCommand {
@@ -365,4 +376,9 @@ declare module 'receiptline' {
      * @type {BarcodeGenerator} barcode generator
      */
     export const barcode: BarcodeGenerator;
+    /**
+     * QR Code generator.
+     * @type {QRCodeGenerator} QR Code generator
+     */
+    export const qrcode: QRCodeGenerator;
 }
