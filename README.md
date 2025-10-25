@@ -216,16 +216,12 @@ Customize the command object to output your own commands.
 
 ### lib/receiptline.js
 
-JavaScript ES2015(ES6) version. It works on both web browser and Node.js.  
+It works on both web browser and Node.js.  
 To output printer commands on a web browser, use [Receipt.js](https://github.com/receiptline/receiptjs) or Browserify.  
 
 ```bash
 $ browserify -o receiptline-full.js receiptline.js
 ```
-
-### lib/qrcode-generator/qrcode.js
-
-Generate the QR Code for display. Optional.  
 
 # ReceiptLine Designer
 
@@ -602,10 +598,3 @@ Escape special characters.
 
 Open Foodservice System Consortium  
 http://www.ofsc.or.jp/  
-
-# License
-
-- ReceiptLine
-  - Apache License, Version 2.0
-- QR Code Generator for JavaScript with UTF8 Support
-  - MIT License

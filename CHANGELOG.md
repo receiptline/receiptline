@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.0.0] - 2025-10-25
+### Changed
+- QR code / barcode generator
+
 ## [1.16.5] - 2025-10-18
 ### Removed
 - Unnecessary adjustments in Star Landscape
