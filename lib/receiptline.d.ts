@@ -113,6 +113,8 @@ declare module 'receiptline' {
         cell: number;
         /** error correction level */
         level: 'l' | 'm' | 'q' | 'h';
+        /** quiet zone for 2d code generator */
+        quietZone?: boolean;
     };
     /**
      * Barcode

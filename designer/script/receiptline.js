@@ -43,7 +43,7 @@ limitations under the License.
             border: 1,
             width: [],
             align: 1,
-            option: { type: 'code128', width: 2, height: 72, hri: false, cell: 3, level: 'l' },
+            option: { type: 'code128', width: 2, height: 72, hri: false, cell: 3, level: 'l', quietZone: false },
             line: 'waiting',
             rules: { left: 0, width: 0, right: 0, widths: [] }
         };
@@ -99,7 +99,7 @@ limitations under the License.
             border: 1,
             width: [],
             align: 1,
-            option: { type: 'code128', width: 2, height: 72, hri: false, cell: 3, level: 'l' },
+            option: { type: 'code128', width: 2, height: 72, hri: false, cell: 3, level: 'l', quietZone: false },
             line: 'waiting',
             rules: { left: 0, width: 0, right: 0, widths: [] }
         };
@@ -296,7 +296,8 @@ limitations under the License.
                                 height: Number(option.find(c => /^\d+$/.test(c) && Number(c) >= 24 && Number(c) <= 240) || '72'),
                                 hri: !!option.find(c => /^hri$/.test(c)),
                                 cell: Number(option.find(c => /^\d+$/.test(c) && Number(c) >= 3 && Number(c) <= 8) || '3'),
-                                level: (option.find(c => /^[lmqh]$/.test(c)) || 'l')
+                                level: (option.find(c => /^[lmqh]$/.test(c)) || 'l'),
+                                quietZone: false
                             };
                         }
                         // parse code property
@@ -1525,7 +1526,7 @@ limitations under the License.
         return {
             /**
              * Generate QR Code.
-             * @param {object} symbol QR Code information (data, type, cell, level)
+             * @param {object} symbol QR Code information (data, type, cell, level, quietZone)
              * @returns {Uint8Array[]} QR Code form
              */
             generate: symbol => {
@@ -1534,7 +1535,16 @@ limitations under the License.
                 const version = selectVersion(utf8, level);
                 const data = createData(utf8, level, version);
                 const mask = selectMask(data, level, version);
-                return createMatrix(data, level, version, mask);
+                const matrix = createMatrix(data, level, version, mask);
+                if (symbol.quietZone) {
+                    const size = matrix.length + 8;
+                    const m = Array.from({ length: size }, () => new Uint8Array(size));
+                    matrix.forEach((r, i) => m[i + 4].set(r, 4));
+                    return m;
+                }
+                else {
+                    return matrix;
+                }
             }
         };
     })();
