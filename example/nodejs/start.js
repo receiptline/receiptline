@@ -213,13 +213,13 @@ const svgsharp = Object.assign({}, receiptline.commands.svg, {
     text: function (text, encoding) {
         let p = this.textPosition;
         const attr = Object.keys(this.textAttributes).reduce((a, key) => a + ` ${key}="${this.textAttributes[key]}"`, '');
-        this.textElement += this.arrayFrom(text, encoding).reduce((a, c) => {
-            const w = this.measureText(c, encoding);
-            const q = w * this.textScale;
-            const r = (p + q / 2) * this.charWidth / this.textScale;
+        const tspan = this.arrayFrom(text, encoding).reduce((a, c) => {
+            const q = this.measureText(c, encoding) * this.textScale;
+            const r = Math.floor((p + q / 2) * this.charWidth / this.textScale);
             p += q;
-            return a + `<text x="${r}"${attr}>${c.replace(/[ &<>]/g, r => ({' ': '&#xa0;', '&': '&amp;', '<': '&lt;', '>': '&gt;'}[r]))}</text>`;
+            return a + `<tspan${attr} x="${r}">${c.replace(/[ &<>]/g, r => ({' ': '&#xa0;', '&': '&amp;', '<': '&lt;', '>': '&gt;'}[r]))}</tspan>`;
         }, '');
+        this.textElement += `<text${attr}>${tspan}</text>`;
         this.textPosition += this.measureText(text, encoding) * this.textScale;
         return '';
     }
