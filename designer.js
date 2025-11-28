@@ -262,18 +262,6 @@ const svgsharp = Object.assign({}, receiptline.commands.svg, {
         }, '');
         this.textPosition += this.measureText(text, encoding) * this.textScale;
         return '';
-    },
-    // feed new line:
-    lf: function () {
-        const h = this.lineHeight * this.charWidth * 2;
-        if (this.textElement.length > 0) {
-            this.svgContent += `<g transform="translate(${this.lineMargin * this.charWidth},${this.svgHeight + h * 5 / 6})">${this.textElement}</g>`;
-        }
-        this.svgHeight += Math.max(h, this.feedMinimum);
-        this.lineHeight = 1;
-        this.textElement = '';
-        this.textPosition = 0;
-        return '';
     }
 });
 
