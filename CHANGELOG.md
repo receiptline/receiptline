@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.1.1] - 2025-11-28
+### Fixed
+- For bug fixes in sharp v0.34.0
+- Text decoration in PNG output using sharp
+
 ## [2.1.0] - 2025-10-29
 ### Added
 - Quiet zone option to QR code generator
