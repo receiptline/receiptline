@@ -1111,30 +1111,31 @@ limitations under the License.
              * @returns {object} barcode form
              */
             generate(symbol) {
+                const s = { data: '', type: 'code128', width: 2, height: 72, hri: false, cell: 3, level: 'l', quietZone: false, ...symbol };
                 let r = {};
-                switch (symbol.type) {
+                switch (s.type) {
                     case 'upc':
-                        r = symbol.data.length < 9 ? upce(symbol) : upca(symbol);
+                        r = s.data.length < 9 ? upce(s) : upca(s);
                         break;
                     case 'ean':
                     case 'jan':
-                        r = symbol.data.length < 9 ? ean8(symbol) : ean13(symbol);
+                        r = s.data.length < 9 ? ean8(s) : ean13(s);
                         break;
                     case 'code39':
-                        r = code39(symbol);
+                        r = code39(s);
                         break;
                     case 'itf':
-                        r = itf(symbol);
+                        r = itf(s);
                         break;
                     case 'codabar':
                     case 'nw7':
-                        r = codabar(symbol);
+                        r = codabar(s);
                         break;
                     case 'code93':
-                        r = code93(symbol);
+                        r = code93(s);
                         break;
                     case 'code128':
-                        r = code128(symbol);
+                        r = code128(s);
                         break;
                     default:
                         break;
@@ -1376,7 +1377,7 @@ limitations under the License.
             for (let i = 0; i < 15; i++) {
                 matrix[r][8] = matrix[8][c] = d >> i & 1;
                 r += i === 5 ? 2 : i === 7 ? size - 15 : 1;
-                c -= i === 7 ? size - 15 : i === 8 ? 2 : 1;
+                c -= i === 8 ? 2 : i === 7 ? size - 15 : 1;
             }
             matrix[size - 8][8] = 1;
         };
@@ -1530,13 +1531,17 @@ limitations under the License.
              * @returns {Uint8Array[]} QR Code form
              */
             generate: symbol => {
-                const level = symbol.level;
-                const utf8 = new TextEncoder().encode(symbol.data).slice(0, getCapacity(level, 40));
+                const s = { data: '', type: 'code128', width: 2, height: 72, hri: false, cell: 3, level: 'l', quietZone: false, ...symbol };
+                const level = s.level;
+                const utf8 = new TextEncoder().encode(s.data);
+                if (utf8.length === 0 || utf8.length > getCapacity(level, 40)) {
+                    return [];
+                }
                 const version = selectVersion(utf8, level);
                 const data = createData(utf8, level, version);
                 const mask = selectMask(data, level, version);
                 const matrix = createMatrix(data, level, version, mask);
-                if (symbol.quietZone) {
+                if (s.quietZone) {
                     const size = matrix.length + 8;
                     const m = Array.from({ length: size }, () => new Uint8Array(size));
                     matrix.forEach((r, i) => m[i + 4].set(r, 4));
