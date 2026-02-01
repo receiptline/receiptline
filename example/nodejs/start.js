@@ -174,7 +174,8 @@ if ('http' in servers) {
 const transform = async (receiptmd, printer) => {
     // convert receiptline to png
     if (printer.command === 'png') {
-        return await rasterize(receiptmd, printer, 'binary');
+        const png = { ...printer, landscape: false, margin: 0, marginRight: 0 };
+        return await rasterize(receiptmd, png, 'binary');
     }
     // convert receiptline to receiptline image
     if (printer.asImage && (puppeteer || sharp)) {
