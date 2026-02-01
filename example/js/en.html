@@ -49,10 +49,7 @@ limitations under the License.
                         };
                         const svg = receiptline.transform(reader.result, printer);
                         const dom = new DOMParser().parseFromString(svg, 'image/svg+xml').documentElement;
-                        while (paper.hasChildNodes()) {
-                            paper.removeChild(paper.firstChild);
-                        }
-                        paper.appendChild(dom);
+                        paper.replaceChildren(dom);
                     }
                     reader.readAsText(file);
                 }

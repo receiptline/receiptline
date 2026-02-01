@@ -359,10 +359,7 @@ function initialize() {
             dom.style.transformOrigin = 'top left';
             dom.style.transform = `rotate(-90deg) translateX(-${linewidth.value}px)`;
         }
-        while (printarea.hasChildNodes()) {
-            printarea.removeChild(printarea.firstChild);
-        }
-        printarea.appendChild(dom);
+        printarea.replaceChildren(dom);
     };
 
     // register printer text box event listener

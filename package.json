@@ -1,6 +1,6 @@
 {
   "name": "receiptline",
-  "version": "3.0.0",
+  "version": "4.0.0",
   "description": "Markdown for receipts. Printable digital receipts. Generate receipt printer commands and images.",
   "main": "./lib/receiptline.js",
   "types": "./lib/receiptline.d.ts",
@@ -43,8 +43,5 @@
   "dependencies": {
     "iconv-lite": "^0.6.0",
     "pngjs": "^5.0.0"
-  },
-  "devDependencies": {
-    "qrcode-generator": "^1.4.4"
   }
 }

@@ -9,6 +9,7 @@ Generate receipt printer commands and images.
 |[ReceiptIO](https://www.npmjs.com/package/receiptio)|Node.js Console App|Users|Print, Convert, Printer status|
 |[Receipt.js](https://github.com/receiptline/receiptjs)|SDK for **JavaScript**|Developers|Receipt description language processor<br>Print, Convert, Printer status|
 |[Receipt.js Designer](https://receiptline.github.io/receiptjs-designer/)|Tool|All|Edit, Preview, Print|
+|[QR Code Generator](https://receiptline.github.io/receiptjs/qr/)|Tool|All|Free QR Code Generator|
 |[ReceiptSharp](https://www.nuget.org/packages/ReceiptSharp)|**.NET** Standard library|Developers|Receipt description language processor<br>Print, Convert, Printer status|
 |[Receipt Markdown](https://marketplace.visualstudio.com/items?itemName=receiptline.receipt-markdown)|VS Code Extension|All|Edit, Preview|
 
@@ -158,7 +159,82 @@ const svg = receiptline.transform(doc, display);
   - `starimpact2`: Star Mode on dot impact printers (Font 5x9 2P-1) _Experimental_
   - `starimpact3`: Star Mode on dot impact printers (Font 5x9 3P-1) _Experimental_
 
-# Transform stream API
+## Generate barcodes and QR Codes
+
+`receiptline.barcode.generate()` method generates a barcode.  
+`receiptline.qrcode.generate()` method generates a QR Code.  
+
+```javascript
+const bar = { data: '1234', type: 'code39', width: 2, quietZone: true };
+const barform = receiptline.barcode.generate(bar);
+
+const qr = { data: 'abcdefgh', level: 'm', quietZone: true };
+const qrform = receiptline.qrcode.generate(qr);
+```
+
+## Method
+
+`receiptline.barcode.generate(symbol)`  
+
+### Parameters
+
+- `symbol` &lt;object&gt;: barcode data
+  - `data` &lt;string&gt;: data to encode
+  - `type` &lt;string&gt;: barcode type
+    - `upc`: UPC-A, UPC-E (check digit can be omitted)
+    - `ean`, `jan`: EAN-13, EAN-8 (check digit can be omitted)
+    - `code39`: CODE39
+    - `itf`: Interleaved 2 of 5
+    - `codabar`, `nw7`: Codabar (NW-7)
+    - `code93`: CODE93
+    - `code128`: CODE128
+    - default: `code128`
+  - `width` &lt;number&gt;: module width
+    - range: `2`-`4`
+    - default: `2`
+  - `height` &lt;number&gt;: module height
+    - range: `24`-`240`
+    - default: `72`
+  - `hri` &lt;boolean&gt;: human readable interpretation
+    - default: `false`
+  - `quietZone` &lt;boolean&gt;: quiet zone
+    - default: `false`
+
+### Return value
+
+- &lt;object&gt;: barcode form
+  - `length` &lt;number&gt;: barcode width (sum of widths)
+  - `height` &lt;number&gt;: barcode height
+  - `widths` &lt;number[]&gt;: bar / space width (quiet zone, bar, space, ... , bar, quiet zone)
+  - `hri` &lt;boolean&gt;: human readable interpretation
+  - `text` &lt;string&gt;: human readable interpretation text
+
+## Method
+
+`receiptline.qrcode.generate(symbol)`  
+
+### Parameters
+
+- `symbol` &lt;object&gt;: QR Code data
+  - `data` &lt;string&gt;: data to encode
+  - `level` &lt;string&gt;: error correction level
+    - `l`: Low
+    - `m`: Middle
+    - `q`: Quartile
+    - `h`: High
+    - default: `l`
+  - `quietZone` &lt;boolean&gt;: quiet zone
+    - default: `false`
+
+### Return value
+
+- &lt;Uint8Array[]&gt;: QR Code form (matrix of dark and light modules)
+    - `0`: light
+    - `1`: dark
+
+QR Code is a registered trademark of DENSO WAVE INCORPORATED.  
+
+## Transform stream API
 
 `receiptline.createTransform()` method is the stream version of the `receiptline.transform()`.  
 
