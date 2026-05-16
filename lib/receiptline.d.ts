@@ -84,13 +84,13 @@ declare module 'receiptline' {
         starlinesbcs: BaseCommand;
         /** Star Line Mode (Japanese) */
         starlinembcs: BaseCommand;
-        /** Star Line Mode (Chinsese, Korean) */
+        /** Star Line Mode (Chinese, Korean) */
         starlinembcs2: BaseCommand;
         /** Command Emulator Star Line Mode (SBCS) */
         emustarlinesbcs: BaseCommand;
         /** Command Emulator Star Line Mode (Japanese) */
         emustarlinembcs: BaseCommand;
-        /** Command Emulator Star Line Mode (Chinsese, Korean) */
+        /** Command Emulator Star Line Mode (Chinese, Korean) */
         emustarlinembcs2: BaseCommand;
         /** Star Graphic Mode (TSP100LAN) */
         stargraphic: BaseCommand;

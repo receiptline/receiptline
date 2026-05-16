@@ -150,10 +150,10 @@ const svg = receiptline.transform(doc, display);
   - `starmbcs2`: StarPRNT (Chinese, Korean)
   - `starlinesbcs`: Star Line Mode (SBCS)
   - `starlinembcs`: Star Line Mode (Japanese)
-  - `starlinembcs2`: Star Line Mode (Chinsese, Korean)
+  - `starlinembcs2`: Star Line Mode (Chinese, Korean)
   - `emustarlinesbcs`: Command Emulator Star Line Mode (SBCS)
   - `emustarlinembcs`: Command Emulator Star Line Mode (Japanese)
-  - `emustarlinembcs2`: Command Emulator Star Line Mode (Chinsese, Korean)
+  - `emustarlinembcs2`: Command Emulator Star Line Mode (Chinese, Korean)
   - `stargraphic`: Star Graphic Mode (TSP100LAN)
   - `starimpact`: Star Mode on dot impact printers _Experimental_
   - `starimpact2`: Star Mode on dot impact printers (Font 5x9 2P-1) _Experimental_
