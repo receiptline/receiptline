@@ -28,8 +28,8 @@ main {
     justify-content: start;
 }
 textarea {
-    color: #fff;
-    background-color: #000;
+    color: #ddd;
+    background-color: #222;
     font-family: monospace;
     font-size: 20px;
     resize: none;
