@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.0.1] - 2026-05-23
+### Changed
+- Textarea colors to improve readability
+
+### Fixed
+- Typos in documentation
+
 ## [4.0.0] - 2026-02-01
 ### Added
 - QR code / barcode generator API
