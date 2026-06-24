@@ -22,14 +22,11 @@ Make it more efficient by making it simpler!
 
 # Features
 
-The reference implementation of the OFSC ReceiptLine Specification.  
-http://www.ofsc.or.jp/receiptline/en/  
-
 ReceiptLine is the receipt description language that expresses the output image of small roll paper.  
 It supports printing paper receipts using a receipt printer and displaying electronic receipts on a POS system or smartphone.  
 It can be described simply with receipt markdown text data that does not depend on the paper width.  
 
-This reference implementation also provides the development tool "ReceiptLine Designer" for editing, previewing, hex dumps with a virtual printer, and test printing on receipt printers.  
+This implementation also provides the development tool "ReceiptLine Designer" for editing, previewing, hex dumps with a virtual printer, and test printing on receipt printers.  
 
 # Receipt Printers
 
@@ -673,4 +670,4 @@ Escape special characters.
 # Author
 
 Open Foodservice System Consortium  
-http://www.ofsc.or.jp/  
+Receipt Project  

@@ -1,6 +1,6 @@
 {
   "name": "receiptline",
-  "version": "4.0.1",
+  "version": "4.0.2",
   "description": "Markdown for receipts. Printable digital receipts. Generate receipt printer commands and images.",
   "main": "./lib/receiptline.js",
   "types": "./lib/receiptline.d.ts",
@@ -34,7 +34,7 @@
     "png",
     "markdown"
   ],
-  "author": "Open Foodservice System Consortium",
+  "author": "Open Foodservice System Consortium, Receipt Project",
   "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/receiptline/receiptline/issues"

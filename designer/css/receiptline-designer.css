@@ -1,5 +1,6 @@
 /*
 Copyright 2019 Open Foodservice System Consortium
+Copyright 2026 Receipt Project
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -62,7 +63,7 @@ figure img {
     height: auto;
 }
 footer {
-    font-size: x-small;
+    font-size: xx-small;
     text-align: center;
 }
 .paper {

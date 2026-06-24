@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.0.2] - 2026-06-24
+### Changed
+- Icons, favicons, and logos
+
+### Fixed
+- Variable initialization
+
 ## [4.0.1] - 2026-05-23
 ### Changed
 - Textarea colors to improve readability
