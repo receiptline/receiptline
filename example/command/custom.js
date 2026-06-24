@@ -1,5 +1,6 @@
 /*
 Copyright 2022 Open Foodservice System Consortium
+Copyright 2026 Receipt Project
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -71,6 +72,6 @@ const custom = Object.assign({}, receiptline.commands.escpos, {
 });
 
 // test image
-const source = '{image:iVBORw0KGgoAAAANSUhEUgAAAIAAAAAwAQMAAADjOuD9AAAABlBMVEUAAAD///+l2Z/dAAAAZklEQVQoz2P4jwYYRrrABwYGOwYG5gMMDBUMDPxAgQcMDDJAgQYGhgJcAv//yMj//9/8//+HerAZRAsAzUASAJoGMhRF4AC6ANCIAhQz8AkAXQoUOIDidBQBkG8hAj8gAqPJAa8AAGjulhOsX97yAAAAAElFTkSuQmCC}';
+const source = '{image:iVBORw0KGgoAAAANSUhEUgAAAIAAAAAwAgMAAACkmpotAAAADFBMVEVlLWdzAGcAAAD///98qlo+AAAAAXRSTlMAQObYZgAAAEhJREFUOMtjYBgFowAFcK0CgQVcK4BsrQUwHoSiloIVCEprASpFLQUothKtAIsvcCoAA3TLCStYgRbe+BRgD0mqKhgFo4B4AACanYyrOJrmgQAAAABJRU5ErkJggg==}';
 // transform with custom command object
 const result = receiptline.transform(source, { command: custom });

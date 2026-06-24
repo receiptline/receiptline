@@ -1,5 +1,6 @@
 /*
 Copyright 2021 Open Foodservice System Consortium
+Copyright 2026 Receipt Project
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,7 +22,7 @@ const net = require('net');
 const receiptline = require('receiptline');
 
 // ReceiptLine
-const text = `{image:iVBORw0KGgoAAAANSUhEUgAAAQAAAAA8AgMAAAD004yXAAAACVBMVEVwAJsAAAD///+esS7BAAAAAXRSTlMAQObYZgAAAZtJREFUSMftlkGOwyAMRW0J76kE97GlZu9KcP+rzCekKak6bWdGmrZS6KIG/7yAbQhEe+tN6qUpDZ1KPHT8SnhpeaP6FlA2wicBsgOeBpTF6gDfZHgj9Jt1sAMeAYYE/RFQngYMuX49gD8fMObjkwB+++h+DeB3x/qdvfD/AP4QwPXX+ceAUdV6Y7K/3Vr7rWhv73ZN9XVHzOUdlm6v9ay3pM1eLT+Ppv63BWjz8jJU0vpUWgGs5yfihrN451G+lq7i2bkF8Bagw3Qv0hEQKGTPPjnGxJtZrSIcJy5ciJ3JStbarjrgwOtVK7Z1iLFOOgOSR3WstTqMqCcVFlITDnhhNhMKzJNIA3iEBr1uaAfArA7bSWdAkRrIsJSMrwXbJBowEhogwe9F+NilC8D1oIyg43fA+1WwKpoktXUmsiOCjxFMR+gEBfwcaJ7qDBBWNTVSxKsZZhwkUgkppEiJ1VOIQdCFtAmNBQg9QWj9POQWFW4Bh0HVipRIHlpEUVzUAmslpgQpVcS0SklcrBqf03u/UvVhLd8H5Hffil/ia4Io3warBgAAAABJRU5ErkJggg==}
+const text = `{image:iVBORw0KGgoAAAANSUhEUgAAAIAAAAAwAgMAAACkmpotAAAADFBMVEVlLWdzAGcAAAD///98qlo+AAAAAXRSTlMAQObYZgAAAEhJREFUOMtjYBgFowAFcK0CgQVcK4BsrQUwHoSiloIVCEprASpFLQUothKtAIsvcCoAA3TLCStYgRbe+BRgD0mqKhgFo4B4AACanYyrOJrmgQAAAABJRU5ErkJggg==}
 
 Ichigaya Terminal
 1-Y-X Kudan, Chiyoda-ku
