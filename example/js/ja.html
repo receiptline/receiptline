@@ -1,5 +1,6 @@
 ﻿<!--
 Copyright 2019 Open Foodservice System Consortium
+Copyright 2026 OpenReceipt Project
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,7 +22,7 @@ limitations under the License.
     <title>ReceiptLine JavaScript Example</title>
     <script type="text/javascript" src="receiptline.js"></script>
     <script type="text/javascript">
-        function initialize() {
+        window.addEventListener('load', _event => {
             const load = document.getElementById('load');
             const paper = document.getElementById('paper');
             load.onclick = event => load.value = '';
@@ -54,10 +55,10 @@ limitations under the License.
                     reader.readAsText(file);
                 }
             };
-        }
+        });
     </script>
 </head>
-<body onload="initialize()" style="background-color: #eee;">
+<body style="background-color: #eee;">
     <label for="load">Load</label>
     <input id="load" type="file" accept=".receipt,text/plain">
     <hr>

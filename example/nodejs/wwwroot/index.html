@@ -1,5 +1,6 @@
 ﻿<!--
 Copyright 2019 Open Foodservice System Consortium
+Copyright 2026 OpenReceipt Project
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -25,7 +26,7 @@ limitations under the License.
         }
     </style>
     <script type="text/javascript">
-        function initialize() {
+        window.addEventListener('load', _event => {
             const load = document.getElementById('load');
             const printerid = document.getElementById('printerid');
             const send = document.getElementById('send');
@@ -63,10 +64,10 @@ limitations under the License.
                 xhr.timeout = 300000;
                 xhr.send(edit.value);
             };
-        }
+        });
     </script>
 </head>
-<body onload="initialize()" style="background-color: #eee;">
+<body style="background-color: #eee;">
     <label for="load">Load</label>
     <input id="load" type="file" accept=".receipt,text/plain">
     <label for="printerid">Printer</label>

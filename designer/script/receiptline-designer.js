@@ -1,5 +1,6 @@
 /*
 Copyright 2019 Open Foodservice System Consortium
+Copyright 2026 OpenReceipt Project
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,7 +17,7 @@ limitations under the License.
 
 // QR Code is a registered trademark of DENSO WAVE INCORPORATED.
 
-function initialize() {
+window.addEventListener('load', _event => {
     const load = document.getElementById('load');
     const loaddialog = document.getElementById('loaddialog');
     const loadbox = document.getElementById('loadbox');
@@ -446,7 +447,7 @@ function initialize() {
     }
     // initialize receipt
     linewidth.oninput();
-}
+});
 
 function insertText(edit, text, lf) {
     // get focus
