@@ -1,6 +1,6 @@
 /*
 Copyright 2019 Open Foodservice System Consortium
-Copyright 2026 Receipt Project
+Copyright 2026 OpenReceipt Project
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
