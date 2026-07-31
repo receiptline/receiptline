@@ -671,4 +671,4 @@ Escape special characters.
 
 OpenReceipt Project  
 
-*This project was formerly recognized by the Open Foodservice System Consortium as a reference implementation of the specification. It is currently maintained as an independent, vendor-neutral open-source project.*  
+This project was formerly recognized by the Open Foodservice System Consortium as a reference implementation of the specification. It is currently maintained as an independent, vendor-neutral open-source project.  

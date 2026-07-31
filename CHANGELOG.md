@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.4] - 2026-07-31
+### Added
+- Project name
+
 ## [4.0.3] - 2026-07-28
 ### Changed
 - Page load event
